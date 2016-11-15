@@ -64,9 +64,11 @@ class Parameter:
                 temp = line.strip().split()
                 temp[0] = temp[0].strip().lower()
                 if temp[0] == 'end': return parameters
-                elif temp[0] == '@@': parameters.append(param)
+                elif temp[0] == '@@':
+                    if param: parameters.append(param)
+                    param = None
                 elif temp[0] == '@': param = Parameter()
-                else:
+                elif param:
                     temp = line.split('=')
                     for i in range(len(temp)): temp[i] = temp[i].strip()
                     if len(temp) == 2:

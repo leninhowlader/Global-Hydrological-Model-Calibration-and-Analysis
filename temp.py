@@ -1,10 +1,10 @@
 __author__ = 'mhasan'
 
-from fileio import *
-from grid import grid
+from utilities.fileio import *
+from utilities.grid import grid
 import numpy as np
 import shapefile as shp
-from upstream import Upstream
+from utilities.upstream import Upstream
 
 # method of finding stations from the station file
 def find_stations_from_file(station_file):
@@ -20,7 +20,7 @@ def find_stations_from_file(station_file):
 
 station_file = 'STATIONS.DAT'
 stations = find_stations_from_file(station_file)
-output_filename = 'brahmaputra.shp'
+output_filename = 'ganges_basin.shp'
 
 
 
@@ -36,7 +36,7 @@ for i in range(len(upstream_cells)):
     for j in range(len(basin)):
         basin[j] = grid.find_centroid(basin[j][0], basin[j][1], deg_resolution=0.5)
 
-succeed = True
+succeed = False
 try:
     s_a = shp.Writer(shp.POLYLINE)
     s_a.field('ARROW', 'N', 8)
@@ -66,9 +66,10 @@ try:
 
         basin_id += 1
     s_b.save(output_filename)
-    s_a.save('direction.shp')
+    #s_a.save('direction.shp')
 except: succeed = False
 
+succeed = True
 # write projection files
 if succeed:
     try:

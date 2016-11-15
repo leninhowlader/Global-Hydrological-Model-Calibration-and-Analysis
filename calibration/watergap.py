@@ -215,23 +215,23 @@ class WaterGAP:
         return succeed
 
     @staticmethod
-    def remove_files():
+    def remove_files(abspath_paramfile, abspath_datadirfile, abspath_output_directory):
         try:
-            shutil.rmtree(WaterGAP.__temp_output_dir)
-            os.remove(WaterGAP.__temp_param_filename)
-            os.remove(WaterGAP.__temp_dir_filename)
+            shutil.rmtree(abspath_output_directory)
+            os.remove(abspath_paramfile)
+            os.remove(abspath_datadirfile)
             return True
         except: return False
 
     @staticmethod
-    def read_predictions(sim_vars):
+    def read_predictions(sim_vars, output_directory_name=''):
         # update the output filename in sim-variables
-        output_dir = ''
-        if WaterGAP.__temp_output_dir: output_dir = WaterGAP.__temp_output_dir
-        else: output_dir = WaterGAP.dir_info.output_directory
+        if not output_directory_name: output_directory_name = WaterGAP.dir_info.output_directory
+
+        output_directory_name = os.path.join(WaterGAP.home_directory, output_directory_name)
 
         for var in sim_vars:
-            var.data_source.filename = os.path.join(output_dir, var.data_source.filename)
+            var.data_source.filename = os.path.join(output_directory_name, var.data_source.filename)
             var.data_source.file_endian = WaterGAP.output_endian_type
 
         # read sim-output

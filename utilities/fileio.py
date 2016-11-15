@@ -96,7 +96,6 @@ def read_binary_file(filename, chunk_size, chunk_format):
             else: break
     except:
         print('%s does not exist!'%filename)
-        return None
     finally:
         try: f.close()
         except: pass
@@ -106,7 +105,16 @@ def read_binary_file(filename, chunk_size, chunk_format):
 def read_UNF_file(filename, endian='big-endian', unf_type=-1, ncol=1):
     succeed = True
 
-    if ncol < 0: succeed = False
+    if ncol <= 0:
+        if filename.count('.') > 2:
+            ndx1 = filename.find('.')
+            ndx2 = filename.find('.', ndx1+1)
+
+            temp = filename[ndx1+1: ndx2]
+            try: ncol = int(temp)
+            except: pass
+
+        if not ncol> 0: succeed = False
 
     if succeed and unf_type not in [0,1,2,4]:
         try:

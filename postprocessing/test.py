@@ -14,7 +14,7 @@ if not (config.is_okay() and WaterGAP.is_okay()):
 
 simvars = config.sim_variables
 succeed = WaterGAP.update_directory_info('OUTPUT', 'DATA.DIR')
-succeed = WaterGAP.read_predictions(simvars)
+# succeed = WaterGAP.read_predictions(simvars)
 
 # if succeed:
 #     funs = ['mean', 'std', 'min', 'max', 'q1', 'median', 'q3']
@@ -43,15 +43,16 @@ succeed = WaterGAP.read_predictions(simvars)
 
 simvars = config.sim_variables
 obsvars = config.obs_variables
-for i in range(len(config.derived_variables)):
-    v = config.derived_variables[i]
-    v.derive_data(simvars=simvars, obsvars=obsvars)
-    filename = 'output/'+ v.varname + '_00001.csv'
-    config.derived_variables[i].data_cloud.print_data(filename)
+# for i in range(len(config.derived_variables)):
+#     v = config.derived_variables[i]
+#     v.derive_data(simvars=simvars, obsvars=obsvars)
+#     filename = 'output/'+ v.varname + '_00001.csv'
+#     config.derived_variables[i].data_cloud.print_data(filename)
 
 for v in simvars:
-    filename = 'output/' + v.varname + '_00001.csv'
-    v.data_cloud.print_data(filename)
+    # filename = 'output/' + v.varname + '_00001.csv'
+    # v.data_cloud.print_data(filename)
+    print(len(v.cell_weights[0]))
 
 # filename = 'test_0001.csv'
 # var = simvars[0]

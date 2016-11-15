@@ -7,26 +7,36 @@ sys.path.append('..')
 from utilities.grid import grid
 from utilities.upstream import Upstream
 from utilities.station import Station
+from calibration.variable import SimVariable
+from calibration.wgapoutput import WGapOutput
+from calibration.enums import FileEndian
 
 from calibration.configuration import Configuration
 from calibration.watergap import WaterGAP
 
-config = Configuration.read_configuration_file('ganges_configuration.txt')
-print(config.parameters)
-# Upstream.set_flow_direction_file('preparation/flow-direction.asc')
+filename_config = 'ganges_configuration_km3.txt'
+config = Configuration.read_configuration_file(filename_config)
 
-# filename = ''# 'input/STATIONS.DAT'
-# stations = Station.read_stations(filename)
-# print(stations)
+succeed = False
+if config and config.is_okay() and WaterGAP and WaterGAP.is_okay(): succeed = True
 
-# station = stations[0]
-# # find upstream cells
-# row, col = grid.find_row_column(station[0],station[1], degree_resolution=0.5)
-# up_cells = Upstream.get_upstream_cells(row, col)
+if succeed: succeed = WaterGAP.read_predictions(config.sim_variables)
+
+if succeed:
+    for var in config.sim_variables:
+        if var.data_cloud:
+            filename = 'output/' + var.varname + '.csv'
+            succeed = var.data_cloud.print_data(filename)
+        if not succeed: break
+
+print(succeed)
+
 #
-# a = np.array(up_cells)
-# # x_max, x_min, y_max, y_min = 0.0,0.0,0.0,0.0
-# #print(a)
-# print(a.shape)
-print(config.is_okay())
-print(WaterGAP.is_okay())
+# print(len(config.sim_variables[1].cell_groups))
+#
+#
+# filename = '../wgap_home/OUTPUT/G_TOTAL_STORAGES_km3_2002.12.UNF0'
+# d = WGapOutput.read_unf(filename, file_endian=FileEndian.big_endian)
+# d = WGapOutput.summarize(d, basin=config.sim_variables[1].cell_groups[0])
+# # for i in range(len(d)): print(d[i]/len(config.sim_variables[1].cell_groups[0]))
+# print(d)

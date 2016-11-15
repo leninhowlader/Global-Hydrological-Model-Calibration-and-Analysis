@@ -4,16 +4,16 @@ from utilities.fileio import read_flat_file, write_flat_file
 from utilities.grid import grid
 
 
-basin_extent_filename = 'extent_papa_etal.dat'
+basin_extent_filename = ''#''extent_papa_etal.dat'
 data_directory = '/media/sf_mhasan/private/new_data_from_fabrice_papa/Surface_Volumes'
 upstream_filename = 'ganges_upstream.txt'
 cell_area_filename = 'ganges_area.txt'
-output_datafile = 'papa_etal_2015_Ev2.dat'
+output_datafile = 'papa_etal_2015_mm_basin.csv'
 output_subbasin_filename = 'sub_basin_ganges.txt'
 output_shapefile = 'papa_etal_2015.shp'
 calculate_basin_total = True
 basin_id = 1
-unit_conversion_factor = 1
+unit_conversion_factor = 10**6
 
 def read_data(data_directory):
     data = {}  # structure: {(yr, mon): [data], ..}
@@ -218,17 +218,19 @@ def main():
     # writing datafile
     print('Printing data into output file..'.ljust(50, ' '), end='', flush=True)
     data_out.sort()
-    write_flat_file(output_datafile, data_out, data_headers=headers_out, separator=' ')
+    write_flat_file(output_datafile, data_out, data_headers=headers_out, separator=',')
 
     # writing sub-basin cells
     if output_subbasin_filename:
         sub_basin = []
-
+        sub_basin_area = []
         for c in slc.keys():
             row, col = grid.find_row_column(c[0], c[1])
             sub_basin.append(grid.map_wghm_cell_number(row, col))
+            sub_basin_area.append(grid.find_wghm_cellarea(row))
 
         grid.write_groupfile(output_subbasin_filename, [sub_basin])
+        grid.write_groupfile('sub_basin_area.txt', [sub_basin_area])
     print('[done]')
 
     if msgs:

@@ -1,10 +1,10 @@
 import shapefile as shp
 import sys
-from grid import grid
+from utilities.grid import grid
 
 
 
-filename = 'upstream_brahmaputra.txt'
+filename = 'ganges_upstream.txt'
 up_cells = grid.read_groupfile(filename)[0]
 
 for i in range(len(up_cells)):
@@ -16,6 +16,7 @@ up_cells = grid.combine_grid_cells(up_cells, deg_resolution=0.5)
 # up_cells = grid.bubble_sort(up_cells)
 #print(up_cells)
 # print(up_cells)
+output_filename = 'ganges_basin.shp'
 try:
     points = []
     for ucg in up_cells:
@@ -38,8 +39,18 @@ try:
         s_b.poly(parts=[pt], shapeType=shp.POLYGON)
         s_b.record(fid)
         fid += 1
-    s_b.save('brahmaputra_001.shp')
+    s_b.save(output_filename)
 
     print('shape has been created!!')
 
 except: pass
+try:
+    ndx = output_filename.lower().find('.shp')
+    if ndx >= 0: output_filename = output_filename[:ndx]
+    output_filename += '.prj'
+    f = open(output_filename, 'w')
+    prj_string = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]'
+    f.write(prj_string)
+    f.close()
+except:
+    pass

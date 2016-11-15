@@ -7,4 +7,4 @@ basin = Upstream.get_upstream_cells(row, col)
 area = 0
 for c in basin:
     area += grid.find_wghm_cellarea(c[0])
-print(area)
+print('Area: %f Cell Count: %d' %(area, len(basin)))

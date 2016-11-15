@@ -7,6 +7,7 @@ from utilities.fileio import read_binary_file, read_flat_file, write_flat_file
 from calibration.stats import stats
 from calendar import isleap
 from collections import OrderedDict
+from calibration.wgapoutput import WGapOutput
 
 class DataSource:
     def __init__(self):
@@ -312,9 +313,11 @@ class ObsVariable(Variable):
                     temp = line.split()
                     temp[0] = temp[0].strip().lower()
                     if temp[0] == 'end': return variables
-                    elif temp[0] == '@@': variables.append(var)
+                    elif temp[0] == '@@':
+                        if var: variables.append(var)
+                        var = None
                     elif temp[0] == '@': var = ObsVariable()
-                    else:
+                    elif var:
                         temp = line.split('=')
                         for i in range(len(temp)): temp[i] = temp[i].strip()
                         if len(temp) >= 2:
@@ -490,9 +493,11 @@ class SimVariable(Variable):
                     temp = line.split()
                     temp[0] = temp[0].strip().lower()
                     if temp[0] == 'end': return variables
-                    elif temp[0] == '@@': variables.append(var)
+                    elif temp[0] == '@@':
+                        if var: variables.append(var)
+                        var = None
                     elif temp[0] == '@': var = SimVariable()
-                    else:
+                    elif var:
                         temp = line.split('=')
                         for i in range(len(temp)): temp[i] = temp[i].strip()
                         if len(temp) >= 2:
@@ -571,8 +576,9 @@ class SimVariable(Variable):
 
         return groups # 2-D array
 
+
     @staticmethod
-    def data_collection(sim_vars, start_year, end_year):
+    def data_collection_old(sim_vars, start_year, end_year): # function can be deleted once the new one becomes functional
         succeed = True
 
         # collection of distinct data-sources
@@ -765,6 +771,115 @@ class SimVariable(Variable):
 
         return succeed
 
+    @staticmethod
+    def data_collection(sim_vars, start_year, end_year):
+        succeed = True
+
+        # collection of distinct data-sources
+        data_sources = []
+        try:
+            for var in sim_vars:
+                add = True
+                for ds in data_sources:
+                    if (
+                                    var.data_source.file_type == ds.file_type and var.data_source.prediction_type == ds.prediction_type
+                        and var.data_source.filename == ds.filename and var.data_source.file_endian == ds.file_endian):
+                        add = False
+                        break
+                if add: data_sources.append(var.data_source)
+        except:
+            succeed = False
+
+        # read (collect data from) each distinct data-source
+        year_count = end_year - start_year + 1
+        data = []
+        if succeed:
+            try:
+                for ds in data_sources:
+                    ds_data = []
+                    if ds.file_type == FileType.wghm_binary:  # which is always true for simulation variables
+                        for year in range(start_year, end_year + 1):
+                            file_name = ds.filename
+                            ndx = file_name.lower().find('[year]')
+                            if ndx > 0:
+                                file_name = file_name[:ndx] + str(year) + file_name[ndx + 6:]
+                                year_dt = WGapOutput.read_unf(file_name, file_endian=ds.file_endian)
+
+                                if year_dt:
+                                    for var in sim_vars:
+                                        if (var.data_source.file_type == ds.file_type and var.data_source.prediction_type == ds.prediction_type
+                                            and var.data_source.filename == ds.filename and var.data_source.file_endian == ds.file_endian):
+                                            if var.cell_groups:
+                                                group_ndx = 1
+                                                for j in range(len(var.cell_groups)):
+                                                    basin = var.cell_groups[j]
+                                                    weights = []
+                                                    if var.cell_weights: weights = var.cell_weights[j]
+
+                                                    summary = WGapOutput.summarize(year_dt, basin=basin,
+                                                                                   weights=weights)
+
+                                                    group_ndx += j
+                                                    data_indices = var.data_cloud.data_indices
+                                                    if len(
+                                                            summary) == 365:  # that is data is comming from a daily output file (.365 format)
+                                                        # add indices
+                                                        for day in range(1, 60): data_indices.append(
+                                                            [group_ndx, year, day])
+
+                                                        plus_one_day = 0
+                                                        if isleap(year): plus_one_day += 1
+
+                                                        for day in range(60 + plus_one_day, 366): data_indices.append(
+                                                            [group_ndx, year, day])
+
+                                                        # add data
+                                                        var.data_cloud.data += summary
+                                                    elif len(summary) == 12:  # that is we are dealing with monthly data
+                                                        # add indices
+                                                        for month in range(1, 13): data_indices.append(
+                                                            [group_ndx, year, month])
+
+                                                        # add data
+                                                        var.data_cloud.data += summary
+                                                    elif len(summary) == 1:  # yearly data
+                                                        # add data
+                                                        var.data_cloud.data.append(summary[0])
+
+                                                        # add indices
+                                                        var.data_cloud.data_indices.append([group_ndx, year])
+                                            else:  # no basin info available
+                                                summary = WGapOutput.summarize(year_dt)
+                                                if len(summary) == 365:  # daily data
+                                                    # add indices
+                                                    for day in range(1, 60): data_indices.append([year, day])
+
+                                                    plus_one_day = 0
+                                                    if isleap(year): plus_one_day += 1
+
+                                                    for day in range(60 + plus_one_day, 366): data_indices.append(
+                                                        [year, day])
+
+                                                    # add data
+                                                    var.data_cloud.data += summary
+                                                elif len(summary) == 12:  # that is we are dealing with monthly data
+                                                    # add indices
+                                                    for month in range(1, 13): data_indices.append([year, month])
+
+                                                    # add data
+                                                    var.data_cloud.data += summary
+                                                elif len(summary) == 1:  # yearly data
+                                                    # add data
+                                                    var.data_cloud.data.append(summary[0])
+
+                                                    # add indices
+                                                    var.data_cloud.data_indices.append([year])
+            except:
+                print('(Error) Failed to read simulation output!')
+                succeed = False
+
+        return succeed
+
 class DerivedVariable(Variable):
     def __init__(self):
         Variable.__init__(self)
@@ -842,13 +957,12 @@ class DerivedVariable(Variable):
                 if line:
                     temp = line.split()
                     temp[0] = temp[0].strip().lower()
-                    if temp[0] == 'end':
-                        return variables
+                    if temp[0] == 'end': return variables
                     elif temp[0] == '@@':
-                        variables.append(var)
-                    elif temp[0] == '@':
-                        var = DerivedVariable()
-                    else:
+                        if var: variables.append(var)
+                        var = None
+                    elif temp[0] == '@': var = DerivedVariable()
+                    elif var:
                         temp = line.split('=')
                         for i in range(len(temp)): temp[i] = temp[i].strip()
                         if len(temp) >= 2:
