@@ -341,7 +341,7 @@ class ObsVariable(Variable):
                                     try: temp[i] = int(temp[i].strip())
                                     except: temp.pop(i)
                                 var.data_source.data_index_column_nums = temp
-                            elif key in ['data_file', 'data file', 'data filename']: var.data_source.filename = value
+                            elif key in ['data_file', 'data file', 'data config_filename']: var.data_source.filename = value
                             elif key in ['data_file_type', 'data file type']:
                                 value = value.lower()
                                 if value in ['csv', 'text', 'flat', 'flatfile', 'flat file']: var.data_source.file_type = FileType.flat
@@ -503,7 +503,7 @@ class SimVariable(Variable):
                         if len(temp) >= 2:
                             key, value = temp[0], temp[1]
                             if key in ['var_name', 'varname', 'var name', 'variable_name', 'variable name']: var.varname = value
-                            elif key in ['data_file', 'data file', 'data filename']: var.data_source.filename = value
+                            elif key in ['data_file', 'data file', 'data config_filename']: var.data_source.filename = value
                             elif key in ['value_type', 'value type', 'data_type', 'data type']:
                                 value = value.lower()
                                 if value in ['monthly', 'month']: var.data_source.prediction_type = PredictionType.monthly
@@ -517,7 +517,7 @@ class SimVariable(Variable):
                                 if value.find(':') > 0:
                                     temp = value.split(':')
                                     for i in range(len(temp)): temp[i] = temp[i].strip()
-                                    if len(temp) ==2 and temp[0].lower() == 'filename':
+                                    if len(temp) == 2 and temp[0].lower() == 'filename':
                                         filename, temp_str = temp[1], ''
 
                                         fs = None
@@ -542,7 +542,7 @@ class SimVariable(Variable):
                                 if value.find(':') > 0:
                                     temp = value.split(':')
                                     for i in range(len(temp)): temp[i] = temp[i].strip()
-                                    if len(temp) ==2 and temp[0].lower() == 'filename':
+                                    if len(temp) ==2 and temp[0].lower() == 'config_filename':
                                         filename, temp_str = temp[1], ''
 
                                         fs = None
@@ -809,36 +809,58 @@ class SimVariable(Variable):
                                     for var in sim_vars:
                                         if (var.data_source.file_type == ds.file_type and var.data_source.prediction_type == ds.prediction_type
                                             and var.data_source.filename == ds.filename and var.data_source.file_endian == ds.file_endian):
-                                            if var.cell_groups:
-                                                group_ndx = 1
-                                                for j in range(len(var.cell_groups)):
-                                                    basin = var.cell_groups[j]
-                                                    weights = []
-                                                    if var.cell_weights: weights = var.cell_weights[j]
+                                            if var.group_stats:
+                                                if var.cell_groups:
+                                                    group_ndx = 1
+                                                    for j in range(len(var.cell_groups)):
+                                                        basin = var.cell_groups[j]
+                                                        weights = []
+                                                        if var.cell_weights: weights = var.cell_weights[j]
 
-                                                    summary = WGapOutput.summarize(year_dt, basin=basin,
-                                                                                   weights=weights)
+                                                        summary = WGapOutput.summarize(year_dt, basin=basin, weights=weights)
 
-                                                    group_ndx += j
+                                                        group_ndx += j
+                                                        data_indices = var.data_cloud.data_indices
+                                                        if len(summary) == 365:  # that is data is comming from a daily output file (.365 format)
+                                                            # add indices
+                                                            for day in range(1, 60): data_indices.append([group_ndx, year, day])
+
+                                                            plus_one_day = 0
+                                                            if isleap(year): plus_one_day += 1
+
+                                                            for day in range(60 + plus_one_day, 366): data_indices.append([group_ndx, year, day])
+
+                                                            # add data
+                                                            var.data_cloud.data += summary
+                                                        elif len(summary) == 12:  # that is we are dealing with monthly data
+                                                            # add indices
+                                                            for month in range(1, 13): data_indices.append([group_ndx, year, month])
+
+                                                            # add data
+                                                            var.data_cloud.data += summary
+                                                        elif len(summary) == 1:  # yearly data
+                                                            # add data
+                                                            var.data_cloud.data.append(summary[0])
+
+                                                            # add indices
+                                                            var.data_cloud.data_indices.append([group_ndx, year])
+                                                else:  # no basin info available
                                                     data_indices = var.data_cloud.data_indices
-                                                    if len(
-                                                            summary) == 365:  # that is data is comming from a daily output file (.365 format)
+                                                    summary = WGapOutput.summarize(year_dt)
+                                                    if len(summary) == 365:  # daily data
                                                         # add indices
-                                                        for day in range(1, 60): data_indices.append(
-                                                            [group_ndx, year, day])
+                                                        for day in range(1, 60): data_indices.append([year, day])
 
                                                         plus_one_day = 0
                                                         if isleap(year): plus_one_day += 1
 
-                                                        for day in range(60 + plus_one_day, 366): data_indices.append(
-                                                            [group_ndx, year, day])
+                                                        for day in range(60 + plus_one_day, 366): data_indices.append([year, day])
 
                                                         # add data
                                                         var.data_cloud.data += summary
                                                     elif len(summary) == 12:  # that is we are dealing with monthly data
                                                         # add indices
-                                                        for month in range(1, 13): data_indices.append(
-                                                            [group_ndx, year, month])
+                                                        for month in range(1, 13): data_indices.append([year, month])
 
                                                         # add data
                                                         var.data_cloud.data += summary
@@ -847,33 +869,39 @@ class SimVariable(Variable):
                                                         var.data_cloud.data.append(summary[0])
 
                                                         # add indices
-                                                        var.data_cloud.data_indices.append([group_ndx, year])
-                                            else:  # no basin info available
-                                                summary = WGapOutput.summarize(year_dt)
-                                                if len(summary) == 365:  # daily data
-                                                    # add indices
-                                                    for day in range(1, 60): data_indices.append([year, day])
+                                                        var.data_cloud.data_indices.append([year])
+                                            else:
+                                                clist = []
+                                                if var.cell_groups:
+                                                    for cgroup in var.cell_groups:
+                                                        for c in cgroup:
+                                                            if c not in clist: clist.append(c)
 
-                                                    plus_one_day = 0
-                                                    if isleap(year): plus_one_day += 1
+                                                if not clist: clist = list(range(1, len(year_dt) + 1))
 
-                                                    for day in range(60 + plus_one_day, 366): data_indices.append(
-                                                        [year, day])
+                                                data_indices = var.data_cloud.data_indices
+                                                if len(year_dt[0]) == 365:
+                                                    for c in clist:
+                                                        cdt = year_dt[c-1]
 
-                                                    # add data
-                                                    var.data_cloud.data += summary
-                                                elif len(summary) == 12:  # that is we are dealing with monthly data
-                                                    # add indices
-                                                    for month in range(1, 13): data_indices.append([year, month])
+                                                        for day in range(1, 60): data_indices.append([c, year, day])
 
-                                                    # add data
-                                                    var.data_cloud.data += summary
-                                                elif len(summary) == 1:  # yearly data
-                                                    # add data
-                                                    var.data_cloud.data.append(summary[0])
+                                                        plus_one_day = 0
+                                                        if isleap(year): plus_one_day = 1
 
-                                                    # add indices
-                                                    var.data_cloud.data_indices.append([year])
+                                                        for day in range(60 + plus_one_day, 366): data_indices.append([c, year, day])
+
+                                                        var.data_cloud.data += cdt
+                                                elif len(year_dt[0]) == 12:
+                                                    for c in clist:
+                                                        cdt = year_dt[c - 1]
+                                                        for month in range(1, 13): data_indices.append([c, year, month])
+                                                        var.data_cloud.data += cdt
+                                                elif len(year_dt[0]) == 1:
+                                                    for c in clist:
+                                                        data_indices.append([c, year])
+                                                        var.data_cloud.data.append(year_dt[c - 1])
+
             except:
                 print('(Error) Failed to read simulation output!')
                 succeed = False

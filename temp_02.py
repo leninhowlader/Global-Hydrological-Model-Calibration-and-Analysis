@@ -4,8 +4,8 @@ from utilities.grid import grid
 
 
 
-filename = 'ganges_upstream.txt'
-up_cells = grid.read_groupfile(filename)[0]
+config_filename = 'ganges_upstream.txt'
+up_cells = grid.read_groupfile(config_filename)[0]
 
 for i in range(len(up_cells)):
     up_cells[i] = grid.map_centroid_from_wghm_cell_number(up_cells[i])

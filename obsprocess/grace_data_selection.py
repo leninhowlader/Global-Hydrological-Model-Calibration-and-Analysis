@@ -32,27 +32,28 @@
 target_cells_only = True                    # a flag specifies if target cells are given
 grace_1deg_cells = []                       # container for the GRACE 1-degree cell centroid coordinates (see note 2.1)
 target_wghm_cells = []                      # container for WGHM cell numbers (see note 2.2)
-read_wghm_cells_from = 'upstream_ganges.txt' # filename from which WGHM cell numbers could be generated (see note 2.3)
+read_wghm_cells_from = 'ganges_upstream.txt' # config_filename from which WGHM cell numbers could be generated (see note 2.3)
 is_data_archived = True                     # a flag specifies if the data-files are archived into tar file
-data_files = ['/media/sf_mhasan/private/GRACE/GFZ_RL05a_DDK2.tar']# container for storing data-files (see note 2.4)
+data_files = ['/media/sf_mhasan/private/GRACE/ITSG2014_DDK3.tar']# container for storing data-files (see note 2.4)
 data_directories = []                       # container for storing data-directories (see note 2.5)
-start_year = 2003                           # specifies the bottom limit of allowable temporal range (see note 2.6)
-end_year = 2014                             # specifies the upper limit of the allowable temporal range (see note 2.6)
+start_year = 2002                           # specifies the bottom limit of allowable temporal range (see note 2.6)
+end_year = 2007                             # specifies the upper limit of the allowable temporal range (see note 2.6)
 skip_lines = 0                              # no. of header lines to be skipped
 null_value = 32767                          # null representation (see note 2.7)
-output_file = 'ganges_grace.txt'              # output filename
-calculate_group_average = True              # a flag determines if the group average to be calculated (see note 2.8)
+output_file = 'GRACE_ganges_ITSG2014DDK3_km3.csv'        # output config_filename
+flag_basin_level_output = True              # a flag determines if the group average to be calculated (see note 2.8)
 apply_correction_factor = True              # a flag determines whether correction factor to be applied (see note 2.9)
-correction_factor_datafile = '/media/sf_mhasan/private/GRACE/LND_1x1_scalingFactor_DDK2.txt' # correction factor datafile (see note 2.9)
-unit_conversion_factor = 0.001              # unit conversion multiplier
+correction_factor_datafile = '/media/sf_mhasan/private/GRACE/LND_1x1_scalingFactor_DDK3.txt' # correction factor datafile (see note 2.9)
+unit_conversion_factor = 10**-3             # unit conversion multiplier
 apply_mean_shift = True                     # flag determines if current mean to be shifted to the mean between start and end year
-cell_area_file = 'area_2646200.txt'         # filename containing cell areas (see note 2.10)
+cell_area_file = 'ganges_area.txt'          # config_filename containing cell areas (see note 2.10)
+flag_output_as_volume = True
 
 # 2. CONTROL VARIABLES - SPECIAL NOTES
 #
 # 2.1 grace_1deg_cells
 # centroid coordinates of a target GRACE 1-degree cells must be provided either as python-list,
-# e.g [85.5, -123.5] or as python-tupple, e.g. (85.5, -123.5). In either case, latitude of the centroid must be defined
+# e.g [85.5, -123.5] or as python-tupple, e.g. (85.5, -123.5). In either case, latitude of the centroid must be identified
 # first followed by the longitude.
 # This container is a two-dimensional container of the cell coordinates. Thus, each cell must be a member of any group.
 # That means, even if physical group does not exist, cells must be provided in single-member groups.
@@ -86,7 +87,7 @@ cell_area_file = 'area_2646200.txt'         # filename containing cell areas (se
 #
 # 2.4 data_files
 # The file-names in the list can be either absolute or relative from the home-directory of the program. Data-files contain
-# monthly data and the reference month and year information is read from the filename. Therefore, IT IS VERY IMPORTANT TO
+# monthly data and the reference month and year information is read from the config_filename. Therefore, IT IS VERY IMPORTANT TO
 # NOTE THAT FILENAMES MUST FOLLOW THE FOLLOWING FORMAT: some_name_[year]_[month].3character_extension. IF THE YEAR AND
 # MONTH INFORMATION CANNOT BE GENERATED FROM THE FILENAME, THE FILE WILL NOT BE READ IN.
 # example: data_files = [ 'data_file_2003_01.txt', 'data_file_2003_02.txt' ]
@@ -105,7 +106,7 @@ cell_area_file = 'area_2646200.txt'         # filename containing cell areas (se
 # 2.7 null_value
 # The default null value representation is 32767. ALL DIFFERENT DATA-FILES MUST HAVE SAME DEFAULT REPRESENTATIONS.
 #
-# 2.8 calculate_group_average
+# 2.8 flag_basin_level_output
 # If this flag is set TRUE, group averages will be calculated. In this case, cell coordinates will be omitted in the
 # output file and group number (positional number starting from 1) will be added.
 #
@@ -128,9 +129,9 @@ cell_area_file = 'area_2646200.txt'         # filename containing cell areas (se
 # IMPORT STATEMENTS
 import sys, tarfile, os
 sys.path.extend('..')
-from grid import grid
+from utilities.grid import grid
 from datetime import datetime
-from fileio import write_flat_file, read_flat_file
+from utilities.fileio import write_flat_file, read_flat_file
 
 # 3. FUNCTION TO READ THE ARCHIVED DATA-FILES
 def read_grace_tar_archive(filename, start_year=2003, end_year=2016, skip_lines=0, null_value=32767, target_cell=[]):
@@ -270,14 +271,18 @@ def read_correction_factors(correction_datafile, target_cells=[]):
 def main():
     global target_cells_only, target_wghm_cells, read_wghm_cells_from, grace_1deg_cells
     global is_data_archived, data_files, data_directories, start_year, end_year
-    global skip_lines, null_value, output_file, calculate_group_average
+    global skip_lines, null_value, output_file, flag_basin_level_output
     global apply_correction_factor, correction_factor_datafile
     global unit_conversion_factor, apply_mean_shift, cell_area_file
+    global flag_output_as_volume
 
-    print('Checking necessary inputs ..', end='')
+    succeed = False
+    areas = []
+    notes = []
+
+    print('Checking necessary inputs ....')
+    print('\t>> target cells ... '.ljust(50, ' '), end='', flush=True)
     if target_cells_only:
-        check_success = False
-
         if grace_1deg_cells:
             # check if grace cell list is readily available
             # clean ill-formated data if any
@@ -288,12 +293,12 @@ def main():
                         cgroup.pop(i)
 
             # check if the grace cell list is not empty after cleaning
-            if grace_1deg_cells: check_success = True
+            if grace_1deg_cells: succeed = True
 
         # if grace cell list is not provided, try to generate list of grace cells
         # either from wghm cell numbers or reading from the file where wghm cell
         # number could be found
-        if not check_success:
+        if not succeed:
             # if target wghm cell numbers are not provided, read cell numbers
             # from file, if file path is given
             if not target_wghm_cells and read_wghm_cells_from:
@@ -313,35 +318,27 @@ def main():
 
                 # read the cell-centroid (latitude, longitude) for each wghm 0.5-deg cell in each group and
                 # find the corresponding cell-centroids for grace 1.0-deg cell.
-                for grp in target_wghm_cells:
+                for basin in target_wghm_cells:
                     temp = []
-                    for cnum in grp:
+                    for cnum in basin:
                         centroid_lat, centroid_lng = grid.map_centroid_from_wghm_cell_number(cnum)
                         grace_row, grace_col = grid.find_row_column(centroid_lat, centroid_lng, 1.0)
                         centroid_lat, centroid_lng = grid.find_centroid(grace_row, grace_col, 1.0)
-                        if centroid_lat and centroid_lng:
-                            if (centroid_lat, centroid_lng) not in temp: temp.append((centroid_lat, centroid_lng))
-                    if temp: grace_1deg_cells.append(temp)
-
-
-        # delete duplicate GRACE cells in each group, if any
-        for cgroup in grace_1deg_cells:
-            for i in reversed(range(1, len(cgroup))):
-                for j in range(i):
-                    if cgroup[i] == cgroup[j]:
-                        cgroup.pop(i)
-                        break
-
-        if grace_1deg_cells: check_success = True
-
+                        if 90>=centroid_lat>=-90 and 180>=centroid_lng>=-180: temp.append((centroid_lat, centroid_lng))
+                    if len(temp) == len(basin): grace_1deg_cells.append(temp)
+                    else: break
+                else: succeed = True
         # if grace cell list is still empty, exit with an error message.
-        if not check_success:
-            message = '[Error]\n\ttarget cells flag has been set but no cell information could be generated!'
+        if not succeed:
+            message = '[Error]\n\t\ttarget cells flag has been set but inforamtion regarding cell number(s) could not be generated!'
             print(message)
             exit(os.EX_DATAERR)
+        else: print('[okay]')
+    else: print('[not required]')
 
 
     # if the data file list is empty, try to generate file list from directory list if provided
+    print('\t>> grace data-file/file list ...'.ljust(50, ' '), end='', flush=True)
     if not data_files:
         # if directory list is not empty, for each directory find file list (flist).  add files
         # in the data file list if data files are not archived (i.e. archived flag is False).
@@ -357,51 +354,66 @@ def main():
 
         # if data file list is still empty, exit with error
         if not data_files:
-            message = '[Error]\n\tno data file has been specified!'
+            message = '[Error]\n\t\tno data file has been specified!'
             print(message)
             exit(os.EX_NOINPUT)
+    print('[okay]')
+
 
     # when the correction flag is set ON, check if correction factor datafile is available
-    if apply_correction_factor and not correction_factor_datafile:
-        message = '[Error]\n\tdatafile for correction factors is required but not provided.'
-        print(message)
-        exit(os.EX_NOINPUT)
+    print('\t>> correction faction data-file ...'.ljust(50, ' '), end='', flush=True)
+    if apply_correction_factor:
+        if (not correction_factor_datafile) or (not os.path.exists(correction_factor_datafile)):
+            message = '[Error]\n\t\tdatafile for correction factors is required but not provided.'
+            print(message)
+            exit(os.EX_NOINPUT)
+        else: print('[okay]')
+    else: print('[not required]')
 
-    # if average calculation flag is ON and cell area file is given, check if area information is consistence
-    cell_area = []
-    if calculate_group_average and cell_area_file:
-        cell_area = grid.read_groupfile(cell_area_file, data_type='float')
+    # Cell area is required for Basin Level Output. Thus, if basin level output flag is set TRUE, check if cell areas
+    # can be generated using the cell area data-file or (if wghm cell numbers are available) using wghm cell number
+    print('\t>> cell area ...'.ljust(50, ' '), end='', flush=True)
+    if flag_basin_level_output or flag_output_as_volume:
+        succeed = False
+        if target_wghm_cells:
+            for basin in target_wghm_cells:
+                temp = []
+                for cnum in basin:
+                    row = grid.find_row_number(grid.map_centroid_from_wghm_cell_number(cnum)[0])
+                    temp.append(grid.find_wghm_cellarea(row))
+                areas.append(temp)
+            succeed = True
 
         message = ''
-        if target_wghm_cells:
-            if len(cell_area) != len(target_wghm_cells):
-                message = '[Error]\n\tnumber of groups in cell area file is inconsistent with the number of target cell groups.'
+        if not succeed and cell_area_file and os.path.exists(cell_area_file):
+            temp = grid.read_groupfile(cell_area_file, data_type='float')
+
+            if len(temp) != len(grace_1deg_cells):
+                message = '[Error]\n\t\tnumber of groups in cell area file is inconsistent with the number of target groups.'
             else:
-                for i in range(len(cell_area)):
-                    if len(cell_area[i]) != len(target_wghm_cells[i]):
-                        message = '[Error]\n\tnumber of cell does not match in area file.'
+                for i in range(len(temp)):
+                    if len(temp[i]) != len(grace_1deg_cells[i]):
+                        print(len(temp[i]), len(grace_1deg_cells[i]))
+                        message = '[Error]\n\t\tnumber of cell does not match in area file.'
                         break
-        else:
-            if len(cell_area) != len(grace_1deg_cells):
-                message = '[Error]\n\tnumber of groups in cell area file is inconsistent with the number of target groups.'
-            else:
-                for i in range(len(cell_area)):
-                    if len(cell_area[i]) != len(grace_1deg_cells[i]):
-                        print(len(cell_area[i]), len(grace_1deg_cells[i]))
-                        message = '[Error]\n\tnumber of cell does not match in area file.'
-                        break
-        if message:
-            print(message)
+                else:
+                    areas = temp
+                    succeed = True
+
+        if not succeed:
+            if message: print(message)
+            else: print('[not okay]')
             exit(os.EX_DATAERR)
+        else: print('[okay]')
+    else: print('[not required]')
 
     # check and correct other control variables
+    print('\t>> Others (start year, end year etc) ...'.ljust(50, ' '), end='', flush=True)
     if skip_lines < 0: skip_lines = 0
     if start_year == -1: start_year = 2003
     if end_year == -1: end_year = datetime.now().year
     if start_year > end_year: start_year = end_year
-    print('[success]')
-
-
+    print('[okay]')
 
     # if all required inputs are provided, start reading grace data.
 
@@ -423,7 +435,7 @@ def main():
     records = {}
     if is_data_archived:
         for filename in data_files:
-            print('\t>> reading data from file "%s"..' %filename, end='')
+            print('\t>> reading data from file "%s"..' %filename, end='', flush=True)
             headers, temp = read_grace_tar_archive(filename, start_year, end_year, skip_lines, null_value, clist_1D)
             if temp:
                 for r in temp:
@@ -432,7 +444,7 @@ def main():
             print('[success]')
     else:
         for filename in data_files:
-            print('\t>> reading data from file "%s"..' %filename, end='')
+            print('\t>> reading data from file "%s"..' %filename, end='', flush=True)
             headers, temp = read_grace_unzipped_file(filename, start_year, end_year, skip_lines, null_value, clist_1D)
             if temp:
                 for r in temp:
@@ -449,7 +461,7 @@ def main():
         print('\nPre-processing has started...')
         # applying correction factor if the correction flag is ON
         if apply_correction_factor:
-            print('\t>> applying correction factor..', end='')
+            print('\t>> applying correction factor..', end='', flush=True)
             correction_factors = read_correction_factors(correction_factor_datafile, clist_1D)
 
             if not correction_factors:
@@ -470,67 +482,70 @@ def main():
 
 
         # calculate group average
-        if calculate_group_average:
-            print('\t>> calculating group averages ..', end='')
-            data = {}
+        if flag_basin_level_output:
+            print('\t>> calculating basin statistic ..', end='', flush=True)
+            idfun = lambda x, i: i + 1
+        else:
+            print('\t>> reorganizing and preparing output ..', end='', flush=True)
+            idfun = lambda x, i: x[0]
 
-            if cell_area:
-                group_num = 1
+            reshape_cells = []
+            reshape_areas = []
+            for i in range(len(grace_1deg_cells)):
+                temp = {}
+                for j in range(len(grace_1deg_cells[i])):
+                    try: temp[grace_1deg_cells[i][j]].append(areas[i][j])
+                    except: temp[grace_1deg_cells[i][j]] = [areas[i][j]]
 
-                for i in range(len(grace_1deg_cells)):
-                    temp = {}
-                    tarea = 0
+                for key, value in temp.items():
+                    reshape_cells.append([key])
+                    reshape_areas.append([sum(value)])
 
-                    for j in range(len(grace_1deg_cells[i])):
-                        cell = grace_1deg_cells[i][j]
-                        ds = records[cell]
+            grace_1deg_cells = reshape_cells
+            areas = reshape_areas
 
-                        carea = cell_area[i][j]
-                        tarea += carea
 
-                        for d in ds:
-                            try: temp[(d[0], d[1])].append(d[2] * carea)
-                            except: temp[(d[0], d[1])] = [d[2] * carea]
+        data = {}
+        if flag_output_as_volume: fun = lambda x, y: sum(x)
+        else: fun = lambda x, y: sum(x)/y
 
-                    if temp and tarea:
-                        keys = list(temp.keys())
-                        keys.sort()
-                        for key in keys:
-                            if len(temp[key]) == len(grace_1deg_cells[i]):
-                                mean = sum(temp[key])/tarea
-                                try: data[group_num].append([key[0], key[1], mean])
-                                except: data[group_num] = [[key[0], key[1], mean]]
-                    group_num += 1
-            else:
-                group_num = 1
-                for cgroup in grace_1deg_cells:
-                    temp = {}
-                    for cell in cgroup:
-                        ds = records[cell]
-                        for d in ds:
-                            try: temp[(d[0], d[1])].append(d[2])
-                            except: temp[(d[0], d[1])] = [d[2]]
+        for i in range(len(grace_1deg_cells)):
+            bid = idfun(grace_1deg_cells[i], i)                 # basin ID
+            basin = grace_1deg_cells[i]
+            barea = 0                   # basin area
+            bdata = {}
 
-                    if temp:
-                        keys = list(temp.keys())
-                        keys.sort()
-                        for key in keys:
-                            if len(temp[key]) == len(cgroup):
-                                mean = sum(temp[key])/len(temp[key])
-                                try: data[group_num].append([key[0], key[1], mean])
-                                except: data[group_num] = [[key[0], key[1], mean]]
-                    group_num += 1
+            for j in range(len(basin)):
+                cell = basin[j]
+                cdata = records[cell]
+                carea = areas[i][j]
+                barea += carea
 
-            if data:
-                records = data
-                print('[success]')
-            else:
-                print('[Error]\n\t\taverage calculation was unsuccessful.')
-                exit(os.EX_DATAERR)
+                for d in cdata:
+                    try: bdata[(d[0], d[1])].append(d[2] * carea)
+                    except: bdata[(d[0], d[1])] = [d[2] * carea]
+
+            if bdata and barea > 0:
+                keys = list(bdata.keys())
+                keys.sort()
+
+                for key in keys:
+                    temp = bdata[key]
+                    if len(temp) == len(basin):
+                        bval = fun(temp, barea)
+                        try: data[bid].append([key[0], key[1], bval])
+                        except: data[bid] = [[key[0], key[1], bval]]
+
+        if data:
+            records = data
+            print('[success]')
+        else:
+            print('[Error]\n\t\taverage calculation was unsuccessful.')
+            exit(os.EX_DATAERR)
 
         # shift mean in anomaly data
         if apply_mean_shift:
-            print('\t>> shifting mean ..', end='')
+            print('\t>> shifting mean ..', end='', flush=True)
 
             for key in records.keys():
                 rs = records[key]
@@ -544,7 +559,7 @@ def main():
 
         #convert unit if require
         if records and unit_conversion_factor != 1.0:
-            print('\t>> unit conversion ..', end='')
+            print('\t>> unit conversion ..', end='', flush=True)
             for key in records.keys():
                 ds = records[key]
                 for d in ds: d[2] *= unit_conversion_factor
@@ -552,9 +567,9 @@ def main():
 
         #saving file
         if records and output_file:
-            print('\nSaving data into %s..' % output_file, end='')
+            print('\nSaving data into %s..' % output_file, end='', flush=True)
             header, data = [], []
-            if calculate_group_average:
+            if flag_basin_level_output:
                 headers = ['group_num', 'year', 'month', 'anomaly']
                 keys = list(records.keys())
                 keys.sort()
@@ -599,14 +614,14 @@ def main():
 
             if data and headers:
                 # write data into files
-                if write_flat_file(output_file, data, headers, separator=' '):
+                if write_flat_file(output_file, data, headers, separator=','):
                     print('[success]')
                 else:
-                    message = '[Error]\n\t\tdata could not be saved. Check weather the output filename is correct.'
+                    message = '[Error]\n\t\tdata could not be saved. Check weather the output config_filename is correct.'
                     print(message)
                     exit(os.EX_IOERR)
         else:
-            message = '(Error) Output filename was not provided.'
+            message = '(Error) Output config_filename was not provided.'
             print(message)
             exit(os.EX_CONFIG)
     else:
@@ -615,8 +630,8 @@ def main():
         exit(os.EX_CONFIG)
 
     # exit success
-    print('\nProgram is quiting normally.Thank you for using this program!')
+    print('\nProgram exits normally.Thank you for using this program!')
     exit(os.EX_OK)
 
-
-main()
+if __name__ == '__main__':
+    main()

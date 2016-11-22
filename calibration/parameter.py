@@ -85,7 +85,7 @@ class Parameter:
                                      'cell_num', 'cell nums', 'cell_nums', 'cell list', 'cell_list', 'cell number', 'cell_number']:
                             if value.lower().find(':') > 0:
                                 temp = value.split(':')
-                                if len(temp) >= 2 and temp[0].strip().lower() == 'filename':
+                                if len(temp) >= 2 and temp[0].strip().lower() == 'config_filename':
                                     filename = temp[1].strip()
                                     values = Parameter.values_from_file(filename)
                                     if values: param.set_cell_list(values)

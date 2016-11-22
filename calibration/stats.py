@@ -127,6 +127,8 @@ class stats:
         elif fun == 'max': return np.max(data)
         elif fun == 'q1': return np.percentile(data, 25)
         elif fun == 'q3': return  np.percentile(data, 75)
+        elif fun == 'sum': return np.sum(data)
+        elif fun == 'range': return np.max(data)-np.min(data)
         else: return np.nan
 
     @staticmethod
@@ -134,3 +136,36 @@ class stats:
         results = []
         for fun in functions: results.append(stats.statistics(data, fun))
         return results
+
+    @staticmethod
+    def row_statistics(data2dim, function='sum'):
+        data2dim = np.array(data2dim)
+        function = function.lower()
+
+        results = []
+        if function == 'sum': results = data2dim.sum(axis=1)
+        elif function == 'mean': results = data2dim.mean(axis=1)
+        elif function == 'min': results = data2dim.min(axis=1)
+        elif function == 'max': results = data2dim.max(axis=1)
+        else: return [np.nan] * data2dim.shape[0]
+
+        return results.tolist()
+
+    @staticmethod
+    def column_statistics(data2dim, function='sum'):
+        data2dim = np.array(data2dim)
+        function = function.lower()
+
+        results = []
+        if function == 'sum': results = data2dim.sum(axis=0)
+        elif function == 'mean': results = data2dim.mean(axis=0)
+        elif function == 'min': results = data2dim.min(axis=0)
+        elif function == 'max': results = data2dim.max(axis=0)
+        else: return [np.nan] * data2dim.shape[0]
+
+        return results.tolist()
+
+    @staticmethod
+    def ratio(d1, d2): # ratio of d1 to d2
+        d1, d2 = np.array(d1), np.array(d2)
+        return (d1/d2).tolist()

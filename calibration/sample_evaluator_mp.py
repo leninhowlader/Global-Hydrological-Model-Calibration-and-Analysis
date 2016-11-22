@@ -169,7 +169,7 @@ def main(argv):
     # rank = 0
 
     if len(argv) != 2:
-        if rank == 0: print_on_screen('Usages:\n%s <configuration filename>' %os.path.split(argv[0])[-1])
+        if rank == 0: print_on_screen('Usages:\n%s <configuration config_filename>' %os.path.split(argv[0])[-1])
         exit(os.EX_NOINPUT)
 
     # read configuration file

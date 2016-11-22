@@ -10,8 +10,8 @@ import numpy as np
 from datetime import datetime
 
 
-filename = 'ganges_configuration.txt'
-config = Configuration.read_configuration_file(filename)
+config_filename = 'ganges_configuration.txt'
+config = Configuration.read_configuration_file(config_filename)
 tmp = config.is_okay()
 tmp = WaterGAP.is_okay()
 

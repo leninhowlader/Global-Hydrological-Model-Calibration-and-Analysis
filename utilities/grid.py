@@ -44,7 +44,7 @@ class grid:
 
         if base_resolution != 0.5: row = grid.transform_row_number(row, base_resolution, 0.5)
 
-        if grid.wghm_cellareas and 0<=row<=259: return grid.wghm_cellareas[row]
+        if grid.wghm_cellareas and 0<=row<=359: return grid.wghm_cellareas[row]
         else: return None
 
     @staticmethod

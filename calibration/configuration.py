@@ -117,18 +117,18 @@ class Configuration:
                     for i in range(len(temp)): temp[i] = temp[i].strip()
                     if len(temp) == 2:
                         key, value = temp[0], temp[1]
-                        if key in ['prediction_summary_filename', 'prediction summary filename',  'prediction_summary',
+                        if key in ['prediction_summary_filename', 'prediction summary config_filename',  'prediction_summary',
                                    'prediction summary']:
                             config.prediction_summary_filename = value
-                        elif key in ['monthly_summary_filename', 'monthly summary filename',  'month_summary',
+                        elif key in ['monthly_summary_filename', 'monthly summary config_filename',  'month_summary',
                                    'monthly_summary', 'month summary', 'monthly summary']:
                             config.monthly_prediction_summary_filename = value
-                        elif key in ['yearly_summary_filename', 'yearly summary filename', 'yearly_summary', 'yearly summary',
+                        elif key in ['yearly_summary_filename', 'yearly summary config_filename', 'yearly_summary', 'yearly summary',
                                    'year_summary', 'year summary']: config.yearly_prediction_summary_filename = value
                         elif key in ['output_model_efficiency', 'output model efficiency', 'output_efficiency',
                                      'output efficiency']: config.prediction_efficiency_filename = value
                         elif key in ['input_parameter_list_filename', 'input_parameter_list', 'parameter_list',
-                                     'input parameter list filename', 'input parameter list', 'parameter list']:
+                                     'input parameter list config_filename', 'input parameter list', 'parameter list']:
                             config.input_file_for_parameters = value
                         elif key in ['sample_list_file', 'sample list file', 'sample file', 'sample_file']:
                             config.sample_file = value
@@ -156,7 +156,7 @@ class Configuration:
                         key, value = temp[0], temp[1]
                         if key in ['executable_name', 'executable name', 'executable']:
                             config.set_executable_name(value)
-                        elif key in ['monthly_summary_filename', 'monthly summary filename', 'month_summary',
+                        elif key in ['monthly_summary_filename', 'monthly summary config_filename', 'month_summary',
                                      'monthly_summary', 'month summary', 'monthly summary']:
                             config.monthly_prediction_summary_filename = value
                         elif key in ['system_arguments', 'system arguments', 'arguments']:

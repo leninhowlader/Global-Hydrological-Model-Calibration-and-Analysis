@@ -7,13 +7,13 @@ from utilities.grid import grid
 basin_extent_filename = ''#''extent_papa_etal.dat'
 data_directory = '/media/sf_mhasan/private/new_data_from_fabrice_papa/Surface_Volumes'
 upstream_filename = 'ganges_upstream.txt'
-cell_area_filename = 'ganges_area.txt'
-output_datafile = 'papa_etal_2015_mm_basin.csv'
+cell_area_filename = ''# 'ganges_area.txt'
+output_datafile = 'papa_etal_2015_km3.csv'
 output_subbasin_filename = 'sub_basin_ganges.txt'
 output_shapefile = 'papa_etal_2015.shp'
 calculate_basin_total = True
 basin_id = 1
-unit_conversion_factor = 10**6
+unit_conversion_factor = 1
 
 def read_data(data_directory):
     data = {}  # structure: {(yr, mon): [data], ..}
@@ -71,7 +71,7 @@ def main():
         print('[not okay]\n\tWGHM upstream file was not provided. [Input Error]')
         exit(-102)
     elif not output_datafile:
-        print('[not okay]\n\tOutput filename was not provided. [Input Error]')
+        print('[not okay]\n\tOutput config_filename was not provided. [Input Error]')
         exit(-103)
     print('[okay]')
 
@@ -80,7 +80,7 @@ def main():
     print('Reading data (Papa et al 2015)..'.ljust(50, ' '), end='', flush=True)
     upc = read_upstream_file(upstream_filename)
     if not upc:
-        print('[not okay]\n\tWGHM upstream cannot be read. Please check the filename. [Data Error]')
+        print('[not okay]\n\tWGHM upstream cannot be read. Please check the config_filename. [Data Error]')
         exit(-201)
 
     if len(upc) > 1: upc = upc[0]

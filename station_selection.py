@@ -104,7 +104,7 @@ def main():
     #     print(message)
     #     exit(os.EX_NOINPUT)
     elif not print_on_screen and not output_file:
-        message = '(Error) Output filename is required but not given.'
+        message = '(Error) Output config_filename is required but not given.'
         print(message)
         exit(os.EX_NOINPUT)
     else:

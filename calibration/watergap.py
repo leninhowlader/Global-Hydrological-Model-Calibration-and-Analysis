@@ -66,12 +66,16 @@ class WaterGAP:
     start_year = 1901
     end_year = 2100
     output_endian_type = FileEndian.little_endian
+    ngc = 66896
 
     json_paramset = None
     dir_info = None
     __temp_param_filename = ''
     __temp_output_dir = ''
     __temp_dir_filename = ''
+
+    @staticmethod
+    def get_grid_cell_count(): return WaterGAP.ngc
 
     @staticmethod
     def is_okay():
@@ -162,21 +166,24 @@ class WaterGAP:
 
                         if key in ['home_directory', 'home directory']: WaterGAP.home_directory = value
                         elif key in ['parameter_file', 'parameter_filename', 'parameter file',
-                                     'parameter filename']: WaterGAP.json_parameter_file = value
+                                     'parameter config_filename']: WaterGAP.json_parameter_file = value
                         elif key in ['start_year', 'start year']:
                             try: WaterGAP.start_year = int(value)
                             except: pass
                         elif key in ['end_year', 'end year']:
                             try: WaterGAP.end_year = int(value)
                             except: pass
-                        elif key in ['datadir_filename', 'directory_file', 'directory_filename', 'datadir filename',
-                                     'directory file', 'directory filename', 'data_directory_file', 'data directory file']:
+                        elif key in ['datadir_filename', 'directory_file', 'directory_filename', 'datadir config_filename',
+                                     'directory file', 'directory config_filename', 'data_directory_file', 'data directory file']:
                             WaterGAP.directory_filename = value
                         elif key in ['output_endian_type', 'output endian type', 'endian_type', 'endian type']:
                             if value == '1': WaterGAP.output_endian_type = FileEndian.little_endian
                             else: WaterGAP.output_endian_type = FileEndian.big_endian
                         elif key in ['executable', 'model_executable', 'model', 'model executable', 'executable_name',
                                      'executable name']: WaterGAP.executable = value
+                        elif key in ['grid_cell_count', 'grid cell count', 'ng', 'ngc']:
+                            try: WaterGAP.ngc = int(value)
+                            except: pass
         except: succeed = False
 
         return succeed
@@ -225,7 +232,7 @@ class WaterGAP:
 
     @staticmethod
     def read_predictions(sim_vars, output_directory_name=''):
-        # update the output filename in sim-variables
+        # update the output config_filename in sim-variables
         if not output_directory_name: output_directory_name = WaterGAP.dir_info.output_directory
 
         output_directory_name = os.path.join(WaterGAP.home_directory, output_directory_name)

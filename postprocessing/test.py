@@ -6,15 +6,15 @@ from utilities.fileio import *
 from calibration.variable import DerivedVariable
 
 
-filename = 'ganges_configuration.txt'
-config = Configuration.read_configuration_file(filename)
+config_filename = 'ganges_configuration_km3_test.txt'
+config = Configuration.read_configuration_file(config_filename)
 if not (config.is_okay() and WaterGAP.is_okay()):
     print('not succeed')
     exit(1001)
 
 simvars = config.sim_variables
 succeed = WaterGAP.update_directory_info('OUTPUT', 'DATA.DIR')
-# succeed = WaterGAP.read_predictions(simvars)
+succeed = WaterGAP.read_predictions(simvars)
 
 # if succeed:
 #     funs = ['mean', 'std', 'min', 'max', 'q1', 'median', 'q3']
@@ -43,18 +43,17 @@ succeed = WaterGAP.update_directory_info('OUTPUT', 'DATA.DIR')
 
 simvars = config.sim_variables
 obsvars = config.obs_variables
-# for i in range(len(config.derived_variables)):
-#     v = config.derived_variables[i]
-#     v.derive_data(simvars=simvars, obsvars=obsvars)
-#     filename = 'output/'+ v.varname + '_00001.csv'
-#     config.derived_variables[i].data_cloud.print_data(filename)
+for i in range(len(config.sim_variables)):
+    v = config.sim_variables[i]
+    config_filename = 'output/test_' + v.varname + '_00001.csv'
+    v.data_cloud.print_data(config_filename)
 
-for v in simvars:
-    # filename = 'output/' + v.varname + '_00001.csv'
-    # v.data_cloud.print_data(filename)
-    print(len(v.cell_weights[0]))
+# for v in simvars:
+#     # config_filename = 'output/' + v.varname + '_00001.csv'
+#     # v.data_cloud.print_data(config_filename)
+#     print(len(v.cell_weights[0]))
 
-# filename = 'test_0001.csv'
+# config_filename = 'test_0001.csv'
 # var = simvars[0]
-# succeed = var.data_cloud.print_data(filename)
+# succeed = var.data_cloud.print_data(config_filename)
 print(succeed)

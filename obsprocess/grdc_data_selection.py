@@ -31,7 +31,7 @@ station_file = 'STATIONS.DAT'                   # path of the file from where st
 grdc_data_directory = '../grdc_data'            # data directory name
 start_year = 2003                               # year from which data gathering starts
 end_year = 2009                                 # until which year data will be gathered
-output_file = 'grdc_2646200.txt'                # output filename
+output_file = 'grdc_2646200.txt'                # output config_filename
 
 # 2. CONTROL VARIABLES: NOTES
 # 2.1 station_file
@@ -90,7 +90,7 @@ def main():
         print(message)
         exit(os.EX_NOINPUT)
     elif not output_file:
-        message = 'Output filename required but not given. Check control variable block.'
+        message = 'Output config_filename required but not given. Check control variable block.'
         print(message)
         exit(os.EX_NOINPUT)
     else:
