@@ -28,10 +28,10 @@
 
 # 1. CONTROL VARIABLES: DEFINITION
 station_file = 'STATIONS.DAT'                   # path of the file from where stations will be selected (see note 2.1)
-grdc_data_directory = '../grdc_data'            # data directory name
+grdc_data_directory = '../../grdc_data'            # data directory name
 start_year = 2003                               # year from which data gathering starts
 end_year = 2009                                 # until which year data will be gathered
-output_file = 'grdc_2646200.txt'                # output config_filename
+output_file = 'brahmaputra_discharge.txt'                # output config_filename
 
 # 2. CONTROL VARIABLES: NOTES
 # 2.1 station_file
@@ -42,10 +42,11 @@ output_file = 'grdc_2646200.txt'                # output config_filename
 
 
 #---------------------------:) DO NOT CHANGE ANYTHING BELOW IF YOU ARE NOT CONFIDENT :)----------------------------------#
+import os, sys
+sys.path.append('..')
 from datetime import datetime
-import os
-from fileio import read_flat_file, write_flat_file
-from grid import grid
+from utilities.fileio import read_flat_file, write_flat_file
+from utilities.grid import grid
 
 # method of finding stations along with their coordinates
 def find_stations_from_file(station_file):

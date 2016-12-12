@@ -6,14 +6,15 @@ from utilities.grid import grid
 
 basin_extent_filename = ''#''extent_papa_etal.dat'
 data_directory = '/media/sf_mhasan/private/new_data_from_fabrice_papa/Surface_Volumes'
-upstream_filename = 'ganges_upstream.txt'
+upstream_filename = 'brahmaputra_upstream.txt'
 cell_area_filename = ''# 'ganges_area.txt'
-output_datafile = 'papa_etal_2015_km3.csv'
-output_subbasin_filename = 'sub_basin_ganges.txt'
+output_datafile = 'brahmaputra_sws_km3_papa_etal_2015.csv'
+output_subbasin_filename = 'sub_basin_brahmaputra.txt'
 output_shapefile = 'papa_etal_2015.shp'
 calculate_basin_total = True
 basin_id = 1
 unit_conversion_factor = 1
+grid_selection_method = 1
 
 def read_data(data_directory):
     data = {}  # structure: {(yr, mon): [data], ..}
@@ -59,6 +60,7 @@ def read_basin_extent(filename):
 def main():
     global basin_extent_filename, data_directory, upstream_filename, calculate_basin_total, basin_id
     global output_datafile, output_subbasin_filename, cell_area_filename, unit_conversion_factor
+    global grid_selection_method
 
     msgs = []   # messages
 
@@ -126,7 +128,12 @@ def main():
     slc = {}  # selected cells = {centroids: [corresponding papa_etal_2015 cells], ...}
     for centroid in centroid_upc:
         lat, lng = centroid[0], centroid[1]
-        peripheral_points = [(lat, lng), (lat, lng-0.25), (lat+0.25, lng-0.25), (lat+0.25, lng)]
+        if grid_selection_method == 1:
+            peripheral_points = [(lat-0.25, lng-0.25), (lat, lng-0.25), (lat+0.25, lng-0.25), (lat+0.25, lng),
+                                 (lat+0.25, lng+0.25), (lat, lng+0.25), (lat-0.25, lng+0.25), (lat-0.25, lng),
+                                 (lat, lng)]
+        else: peripheral_points = [(lat, lng), (lat, lng-0.25), (lat+0.25, lng-0.25), (lat+0.25, lng)]
+
 
         for pf in peripheral_points:
             if pf not in papa_etal_extent: break
@@ -140,8 +147,11 @@ def main():
 
     # step-04: reconstruct data for selected cells using Papa et al. 2015 dataset
     print('Reconstruction of Papa et al. 2015 data..'.ljust(50, ' '), end='', flush=True)
-    wts = [1.0, 1.0, 1.0, 1.0]  # weights or share of 0.25 deg peripheral cells in 0.5 deg wghm cell
-                                                        # note that the central 0.25 deg cell should has complete participation
+    if grid_selection_method == 1:
+        # weights or share of 0.25 deg peripheral cells in 0.5 deg wghm cell
+        # note that the central 0.25 deg cell should has complete participation
+        wts = [0.25, 0.5, 0.25, 0.5, 0.25, 0.5, 0.25, 0.5, 1.0]
+    else: wts = [1.0, 1.0, 1.0, 1.0]
     sws_data = {}       # sws_data (= surface water storage data): {timestamp: {cell: sws, ..}, ...}
 
     for t, t_data in data.items(): # python-2x: data.items(); python-3x: data.iteritems()

@@ -64,11 +64,13 @@ class Configuration:
     def get_objective_count(self):
         count = 0
 
-        sim_varnames = []
+        sim_varnames, derived_vars = [], []
         for v in self.sim_variables: sim_varnames.append(v.varname)
+        for v in self.derived_variables: derived_vars.append(v.varname)
 
         for v in self.obs_variables:
             if v.counter_variable in sim_varnames: count += 1
+            if v.counter_variable in derived_vars: count += 1
 
         return count
 

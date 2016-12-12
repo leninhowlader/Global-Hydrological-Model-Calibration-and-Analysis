@@ -18,9 +18,10 @@ def find_stations_from_file(station_file):
 
     return stations
 
-station_file = 'STATIONS.DAT'
+station_file = 'STATIONS_brahmaputra.DAT'
 stations = find_stations_from_file(station_file)
-output_filename = 'ganges_basin.shp'
+output_filename = 'brahmaputra_basin.shp'
+direction_file_flag = False
 
 
 
@@ -66,10 +67,10 @@ try:
 
         basin_id += 1
     s_b.save(output_filename)
+    succeed = True
     #s_a.save('direction.shp')
 except: succeed = False
 
-succeed = True
 # write projection files
 if succeed:
     try:
@@ -82,6 +83,7 @@ if succeed:
         f.close()
     except: pass
 
+if direction_file_flag:
     output_filename = 'direction'
     try:
         output_filename += '.prj'
