@@ -271,12 +271,12 @@ class DataCloud:
 
         return groups
 
-    def print_data(self, filename, append=True):
+    def print_data(self, filename, append=True, separator=','):
         succeed = False
         d = []
         for i in range(self.data_length()):
             d.append(self.data_indices[i]+[self.data[i]])
-        if d: succeed = write_flat_file(filename, d, separator=',', append=append)
+        if d: succeed = write_flat_file(filename, d, separator=separator, append=append)
         return succeed
 
 class Variable:
@@ -542,7 +542,7 @@ class SimVariable(Variable):
                                 if value.find(':') > 0:
                                     temp = value.split(':')
                                     for i in range(len(temp)): temp[i] = temp[i].strip()
-                                    if len(temp) ==2 and temp[0].lower() == 'config_filename':
+                                    if len(temp) ==2 and temp[0].lower() == 'filename':
                                         filename, temp_str = temp[1], ''
 
                                         fs = None

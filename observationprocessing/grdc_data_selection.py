@@ -16,7 +16,7 @@
 # (ii) in python, variables are not typed; that is, any variable can take any valid value of any type. therefore, read
 # the control variable notes carefully before modifying value of any control variable
 # (iii) do not change the variable names before equality sign ('=')
-# (iv) python defines instruction-levels based on indentation of statements. thus, it is important that the definition
+# (iv) python defines instruction-levels based on indentation of statements. thus, it is important that the var_definition
 # of all control variables must start at the first column of new lines
 # (v) python is case sensitive, 'True' is valid boolean only and only with a capital 'T'; so as 'False' with capital 'F'
 # (vi) the very first line of the script is required to run this script in linux. here is the line again if in case
