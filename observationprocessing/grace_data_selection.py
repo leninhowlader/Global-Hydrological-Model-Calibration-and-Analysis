@@ -86,17 +86,17 @@ flag_output_as_volume = True
 #    [23, 24, 25], [235], [2345, 2346], [6] ....
 #
 # 2.4 data_files
-# The file-names in the list can be either absolute or relative from the home-directory of the program. Data-files contain
+# The file-names in the list can be either absolute or relative from the home-output_directory of the program. Data-files contain
 # monthly data and the reference month and year information is read from the config_filename. Therefore, IT IS VERY IMPORTANT TO
 # NOTE THAT FILENAMES MUST FOLLOW THE FOLLOWING FORMAT: some_name_[year]_[month].3character_extension. IF THE YEAR AND
 # MONTH INFORMATION CANNOT BE GENERATED FROM THE FILENAME, THE FILE WILL NOT BE READ IN.
 # example: data_files = [ 'data_file_2003_01.txt', 'data_file_2003_02.txt' ]
 #
 # 2.5 data_directories
-# In case of many data-files, files can be stored in directories and the directory-addresses can be proving in this
+# In case of many data-files, files can be stored in directories and the output_directory-addresses can be proving in this
 # list container. This list becomes useful only if the data file list is found empty. If the archive flag is set on,
-# only the .tar files will be considered and added to the data file list; otherwise, all files in the target directory
-# will be added. The directory-paths can be absolute or relative to the home directory of this program.
+# only the .tar files will be considered and added to the data file list; otherwise, all files in the target output_directory
+# will be added. The output_directory-paths can be absolute or relative to the home output_directory of this program.
 # example: data_directories = [ '../GRACE/AIUB', '../GRACE/GFZ' ]
 #
 # 2.6 start_year and end_year
@@ -337,10 +337,10 @@ def main():
     else: print('[not required]')
 
 
-    # if the data file list is empty, try to generate file list from directory list if provided
+    # if the data file list is empty, try to generate file list from output_directory list if provided
     print('\t>> grace data-file/file list ...'.ljust(50, ' '), end='', flush=True)
     if not data_files:
-        # if directory list is not empty, for each directory find file list (flist).  add files
+        # if output_directory list is not empty, for each output_directory find file list (flist).  add files
         # in the data file list if data files are not archived (i.e. archived flag is False).
         # otherwise, check each file by its name to find if the file is a tar archive and add
         # only the archive files in the data file list

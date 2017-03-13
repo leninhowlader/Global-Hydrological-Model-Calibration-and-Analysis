@@ -67,7 +67,7 @@ def main():
     # step-01: check inputs
     print('Checking input ...'.ljust(50, ' '), end='', flush=True)
     if not data_directory:
-        print('[not okay]\n\tData directory was not provided. [Input Error]')
+        print('[not okay]\n\tData output_directory was not provided. [Input Error]')
         exit(-101)
     elif not upstream_filename:
         print('[not okay]\n\tWGHM upstream file was not provided. [Input Error]')
@@ -90,7 +90,7 @@ def main():
     # read papa_etal data from data directory
     data = read_data(data_directory)
     if not data:
-        print('[not okay]\n\tData could not be read. Please check if the directory is empty. [Data Error]')
+        print('[not okay]\n\tData could not be read. Please check if the output_directory is empty. [Data Error]')
         exit(-202)
     print('[done]')
 

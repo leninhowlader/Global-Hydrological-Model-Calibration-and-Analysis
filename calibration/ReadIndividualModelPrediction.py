@@ -24,12 +24,84 @@ WaterGAP.read_model_settings(lines)
 
 
 var_definition = """
-@
-var_name = Evapotranspiration
+#@
+var_name = Soil_ET_G4B3
+data_file = G_AET_[YEAR].12.UNF0
+value_type = monthly
+target_grid_cells = filename:upstreams_G4B3.txt
+cell_weights = filename:areas_G4B3.txt
+zone flag = True
+zone stat = sum
+compute anomalies = False
+conversion factor = 1
+#@@
+#@
+var_name = Land_ET_G4B3
+data_file = G_LAND_AET_[YEAR].12.UNF0
+value_type = monthly
+target_grid_cells = filename:upstreams_G4B3.txt
+cell_weights = filename:areas_G4B3.txt
+zone flag = True
+zone stat = sum
+compute anomalies = False
+conversion factor = 1
+#@@
+#@
+var_name = Total_AET_G4B3
 data_file = G_CELL_AET_[YEAR].12.UNF0
 value_type = monthly
-target_grid_cells = filename:upstream_BG.txt
-cell_weights = filename:area_BG.txt
+target_grid_cells = filename:upstreams_G4B3.txt
+cell_weights = filename:areas_G4B3.txt
+zone flag = True
+zone stat = sum
+compute anomalies = False
+conversion factor = 1
+#@@
+#@
+var_name = Precipitation_G4B3
+data_file = G_PRECIPITATION_[YEAR].12.UNF0
+value_type = monthly
+target_grid_cells = filename:upstreams_G4B3.txt
+cell_weights = filename:areas_G4B3.txt
+zone flag = True
+zone stat = sum
+compute anomalies = False
+conversion factor = 1
+#@@
+#@
+var_name = Discharge_G4B3
+data_file = G_RIVER_AVAIL_[YEAR].12.UNF0
+value_type = monthly
+target_grid_cells = [40771, 41090, 41406, 42893, 42897, 42317, 41724, 43452]
+zone flag = False
+compute anomalies = False
+#@@
+#@
+var_name = Total_Storage_G4B3
+data_file = G_TOTAL_STORAGES_mm_[year].12.UNF0
+value_type = monthly
+target_grid_cells = filename:upstreams_G4B3.txt
+cell_weights = filename:areas_G4B3.txt
+zone flag = True
+zone stat = sum
+compute anomalies = False
+conversion factor = 1
+#@@
+@
+var_name = NetUse_GW_G4B3
+data_file = G_NETUSE_GW_HISTAREA_m3_[YEAR].12.UNF0
+value_type = monthly
+target_grid_cells = filename:upstreams_G4B3.txt
+zone flag = True
+zone stat = sum
+compute anomalies = False
+conversion factor = 1
+@@
+@
+var_name = NetUse_SW_G4B3
+data_file = G_NETUSE_SW_HISTAREA_m3_[YEAR].12.UNF0
+value_type = monthly
+target_grid_cells = filename:upstreams_G4B3.txt
 zone flag = True
 zone stat = sum
 compute anomalies = False

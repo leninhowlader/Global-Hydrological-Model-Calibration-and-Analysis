@@ -819,7 +819,7 @@ class SimVariable(Variable):
 
                                                         summary = WGapOutput.summarize(year_dt, basin=basin, weights=weights)
 
-                                                        group_ndx += j
+                                                        group_ndx = j + 1
                                                         data_indices = var.data_cloud.data_indices
                                                         if len(summary) == 365:  # that is data is comming from a daily output file (.365 format)
                                                             # add indices

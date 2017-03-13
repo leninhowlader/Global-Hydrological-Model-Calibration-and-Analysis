@@ -23,7 +23,7 @@ def main():
         if dlist[i].find('_2002') < 0: dlist.pop(i)
     for sd in dlist:
         sd = os.path.join(directory,sd)
-        print('reading data from directory ' + sd + '...')
+        print('reading data from output_directory ' + sd + '...')
         flist = [f for f in os.listdir(sd) if os.path.isfile(os.path.join(sd, f))]
         flist.sort()
         for f in flist:

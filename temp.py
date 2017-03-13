@@ -18,9 +18,11 @@ def find_stations_from_file(station_file):
 
     return stations
 
-station_file = 'STATIONS_brahmaputra.DAT'
+station_file = 'STATIONS_G4B3.DAT'
 stations = find_stations_from_file(station_file)
-output_filename = 'brahmaputra_basin.shp'
+# for s in stations: print(s)
+# if True: exit()
+output_filename = 'basin_G4B3.shp'
 direction_file_flag = False
 
 

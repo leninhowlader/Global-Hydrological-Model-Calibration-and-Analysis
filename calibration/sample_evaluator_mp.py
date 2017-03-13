@@ -104,7 +104,7 @@ def process_parameter_sample(config, iter_no):
     if not WaterGAP.update_parameter_file(config.parameters, filename): return False
     arguments['p'] = filename
 
-    # create output directory and directory file
+    # create output output_directory and output_directory file
     output_dir = 'output_' + pfix
     dir_filename = 'data_' + pfix + '.dir'
     if not WaterGAP.update_directory_info(output_dir, dir_filename): return False

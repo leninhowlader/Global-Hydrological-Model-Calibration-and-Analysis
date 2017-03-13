@@ -37,6 +37,11 @@ class ObjectiveFunction(Enum):
     percentage_bias = 6
     ratio_of_rmse_and_obs_stdv = 7
     nash_sutcliffe_efficiency = 8
+    kling_gupta_efficiency = 9
+    scaled_kling_gupta_efficiency = 10
+    pearson_correlation_coefficient = 11
+    KGE_alpha = 12
+    KGE_beta = 13
 
     @staticmethod
     def find_function(func):
@@ -52,6 +57,13 @@ class ObjectiveFunction(Enum):
         elif func in ['percentage error', 'percentage bias', 'pb', 'pbias']: return ObjectiveFunction.percentage_bias
         elif func in ['rmse-obs. std. dev. ratio', 'rmse-observed std. dev. ratio', 'rsr']: return ObjectiveFunction.ratio_of_rmse_and_obs_stdv
         elif func in ['nash-sutcliffe efficiency', 'nash sutcliffe efficiency', 'nse']: return ObjectiveFunction.nash_sutcliffe_efficiency
+        elif func in ['kling-gupta efficiency', 'kling gupta efficiency', 'kling_gupta_efficiency', 'kge']: return  ObjectiveFunction.kling_gupta_efficiency
+        elif func in ['scaled kling-gupta efficiency', 'scaled kling gupta efficiency', 'scaled_kling_gupta_efficiency', 'skge', 'kges', 'kge-scaled', 'kge_scaled']:
+            return ObjectiveFunction.scaled_kling_gupta_efficiency
+        elif func in ['correlation coefficient', 'correlation_coefficient', 'pearson correlation coefficient', 'pearson_correlation_coefficient', 'r']:
+            return ObjectiveFunction.pearson_correlation_coefficient
+        elif func in ['kge-alpha', 'kge_alpha', 'kge alpha', 'alpha']: return ObjectiveFunction.KGE_alpha
+        elif func in ['kge-beta', 'kge_beta', 'kge beta', 'beta']: return ObjectiveFunction.KGE_beta
         else: return ObjectiveFunction.not_specified
 
 class DataNormalization(Enum):

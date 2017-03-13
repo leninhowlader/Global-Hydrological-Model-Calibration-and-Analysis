@@ -87,7 +87,7 @@ def main():
 
     # check if other required data is provided or not
     if not grdc_data_directory or not os.path.exists(grdc_data_directory):
-        message = 'Data directory is required but not provided. Check control variables.'
+        message = 'Data output_directory is required but not provided. Check control variables.'
         print(message)
         exit(os.EX_NOINPUT)
     elif not output_file:
@@ -136,7 +136,7 @@ def main():
                         station_data += data
 
         if not station_data:
-            message = '(Error) No valid data retrieved from following data-directory: %s'%grdc_data_directory
+            message = '(Error) No valid data retrieved from following data-output_directory: %s'%grdc_data_directory
             print(message)
             exit(os.EX_DATAERR)
         else:

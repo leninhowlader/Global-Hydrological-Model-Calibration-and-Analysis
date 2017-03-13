@@ -173,7 +173,7 @@ class Configuration:
                             config.set_paramvalue_filename(value)
                         elif key in ['save_function_values', 'save function values', 'save_function_value', 'save function value']:
                             config.set_model_efficiency_filename(value)
-                        elif key in ['output_filename']:
+                        elif key in ['prediction_filename']:
                             config.set_calibration_output_filename(value)
                         elif key in ['parallel_evaluations', 'parallel_evaluation', 'parallel evaluations', 'parallel evaluation', 'parallel', 'parallelization']:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']: config.set_parallel_evaluation_flag(True)

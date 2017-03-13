@@ -34,6 +34,7 @@ class stats:
         except: return np.nan
 
 
+
     @staticmethod
     def coefficient_of_determination(sim, obs):
         obs_mean = np.mean(obs)
@@ -82,7 +83,44 @@ class stats:
         return rmse/np.std(obs)
 
     @staticmethod
-    def objective_function(fun, sim, obs, normalize=DataNormalization.none):
+    def pearson_correlation_coefficient(sim, obs):
+        sim_mean, obs_mean = np.mean(sim), np.mean(obs)
+        cov = np.sum((sim-sim_mean)*(obs-obs_mean))
+        ss_sim = np.sum((sim-sim_mean)**2)
+        ss_obs = np.sum((obs-obs_mean)**2)
+
+        return cov/(np.sqrt(ss_sim)*np.sqrt(ss_obs))
+
+    @staticmethod
+    def KGE_alpha(sim, obs): return np.std(sim)/np.std(obs)
+
+    @staticmethod
+    def KGE_beta(sim, obs): return np.mean(sim)/np.mean(obs)
+
+    @staticmethod
+    def kling_gupta_efficiency(sim, obs):
+        sim_mean, obs_mean = np.mean(sim), np.mean(obs)
+        sim_stdv, obs_stdv = np.std(sim), np.std(obs)
+
+        r = stats.pearson_correlation_coefficient(sim, obs)
+        alpha = sim_stdv/obs_stdv
+        beta = sim_mean/obs_mean
+
+        return np.sqrt((r-1)**2 + (alpha-1)**2 + (beta-1)**2)
+
+    @staticmethod
+    def scaled_kling_gupta_efficiency(sim, obs, scale_r, scale_alpha, scale_beta):
+        sim_mean, obs_mean = np.mean(sim), np.mean(obs)
+        sim_stdv, obs_stdv = np.std(sim), np.std(obs)
+
+        r = stats.pearson_correlation_coefficient(sim, obs)
+        alpha = sim_stdv / obs_stdv
+        beta = sim_mean / obs_mean
+
+        return np.sqrt((scale_r * (r - 1)) ** 2 + (scale_alpha * (alpha - 1)) ** 2 + (scale_beta * (beta - 1)) ** 2)
+
+    @staticmethod
+    def objective_function(fun, sim, obs, normalize=DataNormalization.none, scale_r=1, scale_alpha=1, scale_beta=1):
         sim, obs = np.array(sim), np.array(obs)
         if normalize != DataNormalization.none and fun in [ObjectiveFunction.root_mean_square_error,
                    ObjectiveFunction.mean_absolute_error, ObjectiveFunction.mean_square_error]:
@@ -97,6 +135,11 @@ class stats:
         elif fun == ObjectiveFunction.percentage_bias: return stats.percentage_bias(sim, obs)
         elif fun == ObjectiveFunction.ratio_of_rmse_and_obs_stdv: return  stats.rmse_stdv_ratio(sim, obs)
         elif fun == ObjectiveFunction.nash_sutcliffe_efficiency: return stats.nash_sutcliffe_efficiency(sim, obs)
+        elif fun == ObjectiveFunction.kling_gupta_efficiency: return stats.kling_gupta_efficiency(sim, obs)
+        elif fun == ObjectiveFunction.scaled_kling_gupta_efficiency: return stats.scaled_kling_gupta_efficiency(sim, obs, scale_r, scale_alpha, scale_beta)
+        elif fun == ObjectiveFunction.pearson_correlation_coefficient: return stats.pearson_correlation_coefficient(sim, obs)
+        elif fun == ObjectiveFunction.KGE_alpha: return stats.KGE_alpha(sim, obs)
+        elif fun == ObjectiveFunction.KGE_beta: return stats.KGE_beta(sim, obs)
         else: return np.nan
 
     @staticmethod

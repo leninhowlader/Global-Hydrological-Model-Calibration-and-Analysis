@@ -164,7 +164,7 @@ class WaterGAP:
                     if len(temp) == 2:
                         key, value = temp[0].strip().lower(), temp[1].strip()
 
-                        if key in ['home_directory', 'home directory']: WaterGAP.home_directory = value
+                        if key in ['home_directory', 'home output_directory']: WaterGAP.home_directory = value
                         elif key in ['parameter_file', 'parameter_filename', 'parameter file',
                                      'parameter config_filename']: WaterGAP.json_parameter_file = value
                         elif key in ['start_year', 'start year']:
@@ -174,7 +174,7 @@ class WaterGAP:
                             try: WaterGAP.end_year = int(value)
                             except: pass
                         elif key in ['datadir_filename', 'directory_file', 'directory_filename', 'datadir config_filename',
-                                     'directory file', 'directory config_filename', 'data_directory_file', 'data directory file']:
+                                     'output_directory file', 'output_directory config_filename', 'data_directory_file', 'data output_directory file']:
                             WaterGAP.directory_filename = value
                         elif key in ['output_endian_type', 'output endian type', 'endian_type', 'endian type']:
                             if value == '1': WaterGAP.output_endian_type = FileEndian.little_endian
