@@ -73,7 +73,7 @@ class Parameter:
                     for i in range(len(temp)): temp[i] = temp[i].strip()
                     if len(temp) == 2:
                         key, value = temp[0], temp[1]
-                        if key in ['param_name', 'param name', 'name', 'parameter name']:
+                        if key in ['param_name', 'param name', 'name', 'parameter name', 'parameter_name']:
                             param.set_parameter_name(value)
                         elif key in ['upper_bound', 'ubound', 'upper bound']:
                             try: param.set_upper_bount(float(value))
@@ -85,7 +85,7 @@ class Parameter:
                                      'cell_num', 'cell nums', 'cell_nums', 'cell list', 'cell_list', 'cell number', 'cell_number']:
                             if value.lower().find(':') > 0:
                                 temp = value.split(':')
-                                if len(temp) >= 2 and temp[0].strip().lower() == 'filename':
+                                if len(temp) >= 2 and temp[0].strip().lower() == 'filename_data':
                                     filename = temp[1].strip()
                                     values = Parameter.values_from_file(filename)
                                     if values: param.set_cell_list(values)

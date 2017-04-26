@@ -87,7 +87,7 @@ def main():
 
     # check if other required data is provided or not
     if not grdc_data_directory or not os.path.exists(grdc_data_directory):
-        message = 'Data output_directory is required but not provided. Check control variables.'
+        message = 'Data directory is required but not provided. Check control variables.'
         print(message)
         exit(os.EX_NOINPUT)
     elif not output_file:

@@ -22,7 +22,7 @@
 station_datafile = ''#''STATIONS_ALL.DAT'                           # datafile for all stations
 target_station_coordinates = [(25.25, 87.75), (25.25, 89.75)]   # target station coordinates (see note 2.1)
 print_on_screen = False                                         # if the output is to be shown on screen (see note 2.2)
-output_file = 'STATIONS.DAT'                                    # output filename
+output_file = 'STATIONS.DAT'                                    # output filename_data
 
 # 2. CONTROL VARIABLE: NOTES
 # 2.1: target_station_coordinates

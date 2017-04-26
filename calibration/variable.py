@@ -297,6 +297,9 @@ class ObsVariable(Variable):
         self.counter_variable = ''
         self.function = ObjectiveFunction.not_specified
 
+    def get_function_name(self):
+        return ObjectiveFunction.get_function_name(self.function)
+
     def is_okay(self):
         if not Variable.is_okay(self) or not self.counter_variable or self.function == ObjectiveFunction.not_specified: return False
         else: return True
@@ -365,7 +368,7 @@ class ObsVariable(Variable):
                                 var.data_source.block_size = size
                             elif key in ['chunk_format', 'chunk format', 'block_format', 'block format']:
                                 var.data_source.block_format = value
-                            elif key in ['counter_simvar', 'counter_var', 'counter_obsvar', 'counter simvar', 'counter var', 'counter obsvar']:
+                            elif key in ['counter_simvar', 'counter_var', 'counter simvar', 'counter var', 'counter obsvar', 'counter variable', 'counter_variable']:
                                 var.counter_variable = value
                             elif key in ['function', 'evaluation function', 'objective function', 'evaluation_function', 'objective_function']:
                                 var.function = ObjectiveFunction.find_function(value)
@@ -405,7 +408,7 @@ class ObsVariable(Variable):
                                 column_nums.append(ds.data_column_num)
                             else:
                                 for i in range(len(headers)):
-                                    if headers[i].lower() == ds.data_column_name.lower():
+                                    if headers[i].strip().lower() == ds.data_column_name.lower():
                                         ds.data_column_num = i
                                         column_nums.append(ds.data_column_num)
                                         break
@@ -413,24 +416,24 @@ class ObsVariable(Variable):
                             if ds.data_index_column_nums:
                                 for num in ds.data_index_column_nums: column_nums.append(num-1)
                             elif ds.data_index_column_names:
-                                for name in ds.data_index_column_names: column_names.append(name)
+                                for name in ds.data_index_column_names: column_names.append(name.strip())
 
                             if column_names:
                                 for name in column_names:
                                     for i in range(len(headers)):
-                                        header = headers[i]
+                                        header = headers[i].strip()
                                         if name.lower() == header.lower():
                                             column_nums.append(i)
                                             break
                                 ds.data_index_column_nums = column_nums[1:]
-
-                            for i in reversed(range(len(dt[0]))):
-                                if i not in column_nums:
-                                    for d in dt: d.pop(i)
-                                    if i < ds.data_column_num: ds.data_column_num -= 1
-                                    if ds.data_index_column_nums:
-                                        for j in range(len(ds.data_index_column_nums)):
-                                            if i < ds.data_index_column_nums[j]: ds.data_index_column_nums[j] -= 1
+                            # print(column_nums)
+                            # for i in reversed(range(len(dt[0]))):
+                            #     if i not in column_nums:
+                            #         for d in dt: d.pop(i)
+                            #         if i < ds.data_column_num: ds.data_column_num -= 1
+                            #         if ds.data_index_column_nums:
+                            #             for j in range(len(ds.data_index_column_nums)):
+                            #                 if i < ds.data_index_column_nums[j]: ds.data_index_column_nums[j] -= 1
                         elif ds.file_type == FileType.binary:
                             print('(Caution) This option has not been implemented!')
                     else:
@@ -448,13 +451,16 @@ class ObsVariable(Variable):
                         if (var.data_source.file_type == ds.file_type and var.data_source.filename == ds.filename and
                             (var.data_source.data_column_name == ds.data_column_name or
                             var.data_source.data_column_num == ds.data_column_num + 1)):
-                            cnum = ds.data_column_num
+                            cnum, ndx_cnums = ds.data_column_num, ds.data_index_column_nums
                             var.data_source.data_column_num = cnum
                             var.data_source.data_index_column_nums = ds.data_index_column_nums
                             dt = data[i]
                             for d in dt:
-                                var.data_cloud.data.append(d.pop(cnum))
-                                if d: var.data_cloud.data_indices.append(d)
+                                var.data_cloud.data.append(d[cnum])
+                                if ndx_cnums:
+                                    ndces = []
+                                    for n in ndx_cnums: ndces.append(d[n])
+                                    var.data_cloud.data_indices.append(ndces)
                             var.data_obtained = True
             except: succeed = False
 
@@ -504,7 +510,7 @@ class SimVariable(Variable):
                             key, value = temp[0], temp[1]
                             if key in ['var_name', 'varname', 'var name', 'variable_name', 'variable name']: var.varname = value
                             elif key in ['data_file', 'data file', 'data config_filename']: var.data_source.filename = value
-                            elif key in ['value_type', 'value type', 'data_type', 'data type']:
+                            elif key in ['value_type', 'value type', 'data_type', 'data type', 'prediction_type', 'prediction_type']:
                                 value = value.lower()
                                 if value in ['monthly', 'month']: var.data_source.prediction_type = PredictionType.monthly
                                 elif value in ['yearly', 'annual', 'year']: var.data_source.prediction_type = PredictionType.yearly

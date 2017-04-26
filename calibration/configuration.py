@@ -167,13 +167,13 @@ class Configuration:
                             config.set_system_arguments(value)
                         elif key in ['maximum_iteration', 'maximum iteration', 'max iter', 'max_iter']:
                             config.set_max_iterations(value)
-                        elif key in ['save_simulation_output', 'save simulation output']:
+                        elif key in ['save_simulation_output', 'save simulation output', 'prediction_dumpfile', 'prediction dumpfile']:
                             config.set_prediction_output_filename(value)
-                        elif key in ['save_param_values', 'save param values', 'save_param_value', 'save param value']:
+                        elif key in ['save_param_values', 'save param values', 'save_param_value', 'save param value', 'parameter_dumpfile', 'parameter dumpfile']:
                             config.set_paramvalue_filename(value)
-                        elif key in ['save_function_values', 'save function values', 'save_function_value', 'save function value']:
+                        elif key in ['save_function_values', 'save function values', 'save_function_value', 'save function value', 'funvalue_dumpfile', 'dunvalue dumpfile']:
                             config.set_model_efficiency_filename(value)
-                        elif key in ['prediction_filename']:
+                        elif key in ['output_filename']:
                             config.set_calibration_output_filename(value)
                         elif key in ['parallel_evaluations', 'parallel_evaluation', 'parallel evaluations', 'parallel evaluation', 'parallel', 'parallelization']:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']: config.set_parallel_evaluation_flag(True)

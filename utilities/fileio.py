@@ -27,7 +27,7 @@ def read_flat_file(filename, separator=' ', header=False, skiplines=0):
                 temp = line.strip().split(separator)
                 for i in range(len(temp)):
                     temp[i] = temp[i].strip().strip('"').strip('\'')
-                    headers.append(temp[i])
+                    if temp[i]: headers.append(temp[i])
 
         # step-03: read data
         for line in obs_file.readlines():

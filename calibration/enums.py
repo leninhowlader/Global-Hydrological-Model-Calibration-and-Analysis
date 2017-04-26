@@ -42,6 +42,8 @@ class ObjectiveFunction(Enum):
     pearson_correlation_coefficient = 11
     KGE_alpha = 12
     KGE_beta = 13
+    KGE_dAlpha = 14
+    KGE_dBeta = 15
 
     @staticmethod
     def find_function(func):
@@ -64,7 +66,29 @@ class ObjectiveFunction(Enum):
             return ObjectiveFunction.pearson_correlation_coefficient
         elif func in ['kge-alpha', 'kge_alpha', 'kge alpha', 'alpha']: return ObjectiveFunction.KGE_alpha
         elif func in ['kge-beta', 'kge_beta', 'kge beta', 'beta']: return ObjectiveFunction.KGE_beta
+        elif func in ['kge-dalpha', 'kge_dalpha', 'kge dalpha', 'dalpha']: return ObjectiveFunction.KGE_dAlpha
+        elif func in ['kge-dbeta', 'kge_dbeta', 'kge dbeta', 'dbeta']: return ObjectiveFunction.KGE_dBeta
         else: return ObjectiveFunction.not_specified
+
+    @staticmethod
+    def get_function_name(func):
+        if func == ObjectiveFunction.mean_square_error: return 'mse'
+        elif func == ObjectiveFunction.root_mean_square_error: return 'rmse'
+        elif func == ObjectiveFunction.coefficient_of_determination: return 'r2'
+        elif func == ObjectiveFunction.mean_absolute_percentage_error: return 'mape'
+        elif func == ObjectiveFunction.index_of_agreement: return 'ioa'
+        elif func == ObjectiveFunction.mean_absolute_error: return 'mae'
+        elif func == ObjectiveFunction.percentage_bias: return 'pbias'
+        elif func == ObjectiveFunction.ratio_of_rmse_and_obs_stdv: return 'rsr'
+        elif func == ObjectiveFunction.nash_sutcliffe_efficiency: return 'nse'
+        elif func == ObjectiveFunction.kling_gupta_efficiency: return 'kge'
+        elif func == ObjectiveFunction.scaled_kling_gupta_efficiency: return 'skge'
+        elif func == ObjectiveFunction.pearson_correlation_coefficient: return 'r'
+        elif func == ObjectiveFunction.KGE_alpha: return 'kge-alpha'
+        elif func == ObjectiveFunction.KGE_beta: return 'kge-beta'
+        elif func == ObjectiveFunction.KGE_dAlpha: return 'kge-dAlpha'
+        elif func == ObjectiveFunction.KGE_dBeta: return 'kge-dBeta'
+        else: return 'n/a'
 
 class DataNormalization(Enum):
     none = 0

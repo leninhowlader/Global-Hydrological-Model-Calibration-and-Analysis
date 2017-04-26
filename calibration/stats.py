@@ -95,7 +95,13 @@ class stats:
     def KGE_alpha(sim, obs): return np.std(sim)/np.std(obs)
 
     @staticmethod
+    def KGE_dAlpha(sim, obs): return abs(np.std(sim) - np.std(obs))
+
+    @staticmethod
     def KGE_beta(sim, obs): return np.mean(sim)/np.mean(obs)
+
+    @staticmethod
+    def KGE_dBeta(sim, obs): return abs(np.mean(sim)-np.mean(obs))
 
     @staticmethod
     def kling_gupta_efficiency(sim, obs):
@@ -103,10 +109,14 @@ class stats:
         sim_stdv, obs_stdv = np.std(sim), np.std(obs)
 
         r = stats.pearson_correlation_coefficient(sim, obs)
-        alpha = sim_stdv/obs_stdv
-        beta = sim_mean/obs_mean
 
-        return np.sqrt((r-1)**2 + (alpha-1)**2 + (beta-1)**2)
+        if round(obs_stdv, 8) > 0.0: alpha = sim_stdv/obs_stdv
+        else: alpha = 1.0
+
+        if round(obs_mean, 8) > 0.0: beta = sim_mean/obs_mean
+        else: beta = 1.0
+
+        return 1- np.sqrt((r-1)**2 + (alpha-1)**2 + (beta-1)**2)
 
     @staticmethod
     def scaled_kling_gupta_efficiency(sim, obs, scale_r, scale_alpha, scale_beta):
@@ -117,7 +127,7 @@ class stats:
         alpha = sim_stdv / obs_stdv
         beta = sim_mean / obs_mean
 
-        return np.sqrt((scale_r * (r - 1)) ** 2 + (scale_alpha * (alpha - 1)) ** 2 + (scale_beta * (beta - 1)) ** 2)
+        return 1- np.sqrt((scale_r * (r - 1)) ** 2 + (scale_alpha * (alpha - 1)) ** 2 + (scale_beta * (beta - 1)) ** 2)
 
     @staticmethod
     def objective_function(fun, sim, obs, normalize=DataNormalization.none, scale_r=1, scale_alpha=1, scale_beta=1):
@@ -140,6 +150,8 @@ class stats:
         elif fun == ObjectiveFunction.pearson_correlation_coefficient: return stats.pearson_correlation_coefficient(sim, obs)
         elif fun == ObjectiveFunction.KGE_alpha: return stats.KGE_alpha(sim, obs)
         elif fun == ObjectiveFunction.KGE_beta: return stats.KGE_beta(sim, obs)
+        elif fun == ObjectiveFunction.KGE_dAlpha: return stats.KGE_dAlpha(sim, obs)
+        elif fun == ObjectiveFunction.KGE_dBeta: return stats.KGE_dBeta(sim, obs)
         else: return np.nan
 
     @staticmethod

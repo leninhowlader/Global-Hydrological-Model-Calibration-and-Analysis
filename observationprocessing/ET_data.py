@@ -1,7 +1,7 @@
-upstream_filename = 'upstreams_G4B3.txt'
+upstream_filename = 'ganges_hardinge_bridge_2646200_upstream.txt'
 station_filename = ''
 data_filename = '/home/mhasan/sf_mhasan/private/NetCDF/LandFluxEVAL.merged.89-05.monthly.all.nc'
-output_filename = 'Obs_ET_Mueller_G4B3.csv'
+output_filename = 'ganges_hardinge_bridge_2646200_ET_Mueller2013.csv'
 
 from netCDF4 import Dataset
 import numpy as np, sys
