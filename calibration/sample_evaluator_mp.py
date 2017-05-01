@@ -113,7 +113,7 @@ def process_parameter_sample(config, iter_no):
     # execute model with new parameters
     log_file = os.path.join(WaterGAP.home_directory, 'log', 'run' + pfix + '.log')
     if not WaterGAP.execute_model(arguments, log_file=log_file):
-        WaterGAP.remove_files()
+        WaterGAP.remove_files(arguments)
         return False
 
     # read model output

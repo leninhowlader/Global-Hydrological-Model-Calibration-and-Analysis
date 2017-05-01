@@ -223,11 +223,14 @@ class WaterGAP:
         return succeed
 
     @staticmethod
-    def remove_files(abspath_paramfile, abspath_datadirfile, abspath_output_directory):
+    def remove_files(arguments={}):
         try:
-            shutil.rmtree(abspath_output_directory)
-            os.remove(abspath_paramfile)
-            os.remove(abspath_datadirfile)
+            parameter_file = os.path.join(WaterGAP.home_directory, 'INPUT', arguments['p'])
+            dir_file = os.path.join(WaterGAP.home_directory, arguments['d'])
+            output_dir = os.path.join(WaterGAP.home_directory, dir_file[:-4])
+            shutil.rmtree(output_dir)
+            os.remove(parameter_file)
+            os.remove(dir_file)
             return True
         except: return False
 
