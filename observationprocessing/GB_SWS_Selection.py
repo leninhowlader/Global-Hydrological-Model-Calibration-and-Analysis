@@ -47,7 +47,7 @@ def find_extent(data):
 
 def read_upstream_file(filename): return grid.read_groupfile(filename)
 
-def read_upstream_area(filename): return grid.read_groupfile(filename, data_type='float')
+def read_upstream_area(filename): return grid.read_groupfile(filename, data_type=float)
 
 def read_basin_extent(filename):
     h, d = read_flat_file(filename, separator=',', header=True)

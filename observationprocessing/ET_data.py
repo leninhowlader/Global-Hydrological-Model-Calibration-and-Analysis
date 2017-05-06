@@ -1,7 +1,7 @@
-upstream_filename = 'ganges_hardinge_bridge_2646200_upstream.txt'
+upstream_filename = 'input/ganges_upstreams_hardinge_bridge.txt'
 station_filename = ''
 data_filename = '/home/mhasan/sf_mhasan/private/NetCDF/LandFluxEVAL.merged.89-05.monthly.all.nc'
-output_filename = 'ganges_hardinge_bridge_2646200_ET_Mueller2013.csv'
+output_filename = 'output/ganges_hardinge_bridge_ET_Mueller2013.csv'
 
 from netCDF4 import Dataset
 import numpy as np, sys
@@ -94,7 +94,7 @@ def main():
     basin_count = 0
 
     if upstream_filename:
-        temp = grid.read_groupfile(upstream_filename, data_type='int')
+        temp = grid.read_groupfile(upstream_filename, data_type=int)
         for cell_group in temp:
             cells = []
             for cell in cell_group:
@@ -113,7 +113,7 @@ def main():
         basin_count = len(stations)
         cells = None
 
-    # step-03: find area of each 0.5 deg cells and find the corresponding 1.0 def of each 0.5 deg cell
+    # step-03: find area of each 0.5 deg cells and find the corresponding 1.0 def? of each 0.5 deg cell
     basins_1deg = []
     barea_0p5deg = []
 

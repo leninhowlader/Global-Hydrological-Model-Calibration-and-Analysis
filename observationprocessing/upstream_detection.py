@@ -31,8 +31,8 @@
 
 # 1. CONTROL VARIABLES: DEFINITION AND VALUES
 flow_direction_file = ''# 'flow-direction.asc'      # flow-direction file
-stations = [(25.25, 89.75)]#, (26.25, 91.75), (27.25, 92.75)]                                       # geo-coordinates of the stations (see note 2.1)
-station_file = 'STATIONS.DAT'                       # name of the station file from where stations can be read in (see note 2.2)
+stations = []#, (26.25, 91.75), (27.25, 92.75)]                                       # geo-coordinates of the stations (see note 2.1)
+station_file = 'input/STATIONS_BRH.DAT'                       # name of the station file from where stations can be read in (see note 2.2)
 make_1deg_group = False                             # a flag determines if the result cells would be grouped (see note 2.3)
 output_as_wghm_cellnum = True                       # a flag determines if the output cell will be represented as wghm cell number (see note 2.4)
 wghm_cell_number_mapping_datafile = ''              # 'wghm_grid.csv' # cell number mapping file (see note 2.4)
@@ -40,8 +40,8 @@ output_cell_area = True                             # a flag determines if the a
 area_mapping_datafile = ''#''GAREA.UNF0'            # datafile for mapping wghm cell area (see note 2.5)
 show_output_on_screen = False                       # a flag determines if the results will be printed on screen or in file(s) (see note 2.6)
 create_station_wise_output_file = False
-output_file_upstream = 'upstreams_brahmaputra_bahadurbad.txt'               # output file for upstream cells (see note 2.6)
-output_file_area = 'areas_brahmaputra_bahadurbad.txt'                       # output file for cell area (see note 2.6)
+output_file_upstream = 'output/ganges_upstreams_hardinge_bridge.txt'               # output file for upstream cells (see note 2.6)
+output_file_area = 'output/ganges_areas_hardinge_bridge.txt'                       # output file for cell area (see note 2.6)
 
 # 2. CONTROL VARIABLE: NOTES
 # 2.1 stations

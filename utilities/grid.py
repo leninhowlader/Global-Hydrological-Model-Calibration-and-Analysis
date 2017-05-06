@@ -236,7 +236,7 @@ class grid:
 
     #read cell groups from a flat file
     @staticmethod
-    def read_groupfile(filename, data_type='int'):
+    def read_groupfile(filename, data_type=int):
         records = []    #array of arrays (list of groups)
 
         f = None
@@ -250,7 +250,7 @@ class grid:
                     if temp[i]:
                         group_items = temp[i].split(',')
 
-                        if data_type == 'int':
+                        if data_type == int:
                             for j in reversed(range(len(group_items))):
                                 try: group_items[j] = int(group_items[j])
                                 except: group_items.pop(j)

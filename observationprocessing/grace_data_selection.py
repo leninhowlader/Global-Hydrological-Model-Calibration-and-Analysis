@@ -32,7 +32,7 @@
 target_cells_only = True                    # a flag specifies if target cells are given
 grace_1deg_cells = []                       # container for the GRACE 1-degree cell centroid coordinates (see note 2.1)
 target_wghm_cells = []                      # container for WGHM cell numbers (see note 2.2)
-read_wghm_cells_from = 'brahmaputra_bahadurbad_2646100_upstream.txt' # config_filename from which WGHM cell numbers could be generated (see note 2.3)
+read_wghm_cells_from = 'input/ganges_upstreams_hardinge_bridge.txt' # config_filename from which WGHM cell numbers could be generated (see note 2.3)
 is_data_archived = True                     # a flag specifies if the data-files are archived into tar file
 data_files = ['/media/sf_mhasan/private/GRACE/EGSIEM_DDK2.tar']# container for storing data-files (see note 2.4)
 data_directories = []                       # container for storing data-directories (see note 2.5)
@@ -40,7 +40,7 @@ start_year = 2002                           # specifies the bottom limit of allo
 end_year = 2014                             # specifies the upper limit of the allowable temporal range (see note 2.6)
 skip_lines = 0                              # no. of header lines to be skipped
 null_value = 32767                          # null representation (see note 2.7)
-output_file = 'brahmaputra_bahadurbad_2646100_EGSIEMDDK2_km3_2.csv'        # output config_filename
+output_file = 'output/ganges_GRACE_EGSIEMDDK2_km3_hardinge_bridge.csv'        # output config_filename
 flag_basin_level_output = True              # a flag determines if the group average to be calculated (see note 2.8)
 apply_correction_factor = True              # a flag determines whether correction factor to be applied (see note 2.9)
 correction_factor_datafile = '/media/sf_mhasan/private/GRACE/LND_1x1_scalingFactor_DDK2.txt' # correction factor datafile (see note 2.9)
@@ -386,7 +386,7 @@ def main():
 
         message = ''
         if not succeed and cell_area_file and os.path.exists(cell_area_file):
-            temp = grid.read_groupfile(cell_area_file, data_type='float')
+            temp = grid.read_groupfile(cell_area_file, data_type=float)
 
             if len(temp) != len(grace_1deg_cells):
                 message = '[Error]\n\t\tnumber of groups in cell area file is inconsistent with the number of target groups.'

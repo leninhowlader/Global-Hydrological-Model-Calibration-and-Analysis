@@ -123,15 +123,15 @@ class SeasonalStatistics(stats):
 
         if succeed:
             data = np.c_[np.array(data_cloud.data_indices)[:, [ndx_year, ndx_month]], np.array(data_cloud.data)]
-            stat_names = ['mean', 'std_dev', 'min', 'max', 'range']
+            stat_names = ['mean', 'mode', 'std_dev', 'min', 'max', 'range']
 
             month_names = ['0th', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
             for month in range(1, 13):
                 ndx = np.where(data[:, 1] == month)
                 d = data[:, 2][ndx]
 
-                avg, std_dev, mn, mx = np.mean(d), np.std(d), np.min(d), np.max(d)
-                results[month_names[month]] = (avg, std_dev, mn, mx, mx-mn)
+                avg, mode, std_dev, mn, mx = np.mean(d), np.percentile(d, 50), np.std(d), np.min(d), np.max(d)
+                results[month_names[month]] = (avg, mode, std_dev, mn, mx, mx-mn)
 
         return stat_names, results
 

@@ -20,6 +20,7 @@ class Configuration:
         self.yearly_prediction_summary_filename = 'prediction_summary_yearly.dat'
         self.prediction_summary_filename = 'prediction_summary.dat'
         self.prediction_efficiency_filename = 'prediction_efficiency.dat'
+        self.summary_statistics_filename = 'summary_statistics.csv'
 
         # variables for calibration-mode
         self.__executable_name = ''
@@ -92,7 +93,7 @@ class Configuration:
                     if len(temp) == 2:
                         key, value = temp[0], temp[1]
                         if key == 'begin':
-                            if value == 'sa-settings': Configuration.read_settings(lines, config)
+                            if value == 'sa-settings': Configuration.read_sensitivity_settings(lines, config)
                             elif value == 'settings': Configuration.read_calibration_settings(lines, config)
                             elif value == 'parameter' and config.get_mode() == 'calibration':
                                 param_list = Parameter.read_parameters(lines)
@@ -106,7 +107,7 @@ class Configuration:
         return config
 
     @staticmethod
-    def read_settings(lines, config):
+    def read_sensitivity_settings(lines, config):
         config.set_mode('sensitivity')
         while lines:
             line = lines.pop(0).strip()
@@ -119,16 +120,18 @@ class Configuration:
                     for i in range(len(temp)): temp[i] = temp[i].strip()
                     if len(temp) == 2:
                         key, value = temp[0], temp[1]
-                        if key in ['prediction_summary_filename', 'prediction summary config_filename',  'prediction_summary',
-                                   'prediction summary']:
-                            config.prediction_summary_filename = value
-                        elif key in ['monthly_summary_filename', 'monthly summary config_filename',  'month_summary',
-                                   'monthly_summary', 'month summary', 'monthly summary']:
-                            config.monthly_prediction_summary_filename = value
-                        elif key in ['yearly_summary_filename', 'yearly summary config_filename', 'yearly_summary', 'yearly summary',
-                                   'year_summary', 'year summary']: config.yearly_prediction_summary_filename = value
+                        if key in ['summary_statistics_filename', 'summary_statistics', 'stat_summary', 'summary statistics filename',
+                                     'summary statistics', 'stat summary']:
+                            config.summary_statistics_filename = value
+                        # elif key in ['prediction_summary_filename', 'prediction summary config_filename',  'prediction_summary', 'prediction summary']:
+                        #     config.prediction_summary_filename = value
+                        # elif key in ['monthly_summary_filename', 'monthly summary config_filename',  'month_summary',
+                        #            'monthly_summary', 'month summary', 'monthly summary']:
+                        #     config.monthly_prediction_summary_filename = value
+                        # elif key in ['yearly_summary_filename', 'yearly summary config_filename', 'yearly_summary', 'yearly summary',
+                        #            'year_summary', 'year summary']: config.yearly_prediction_summary_filename = value
                         elif key in ['output_model_efficiency', 'output model efficiency', 'output_efficiency',
-                                     'output efficiency']: config.prediction_efficiency_filename = value
+                                     'output efficiency', 'prediction_efficiency_filename']: config.prediction_efficiency_filename = value
                         elif key in ['input_parameter_list_filename', 'input_parameter_list', 'parameter_list',
                                      'input parameter list config_filename', 'input parameter list', 'parameter list']:
                             config.input_file_for_parameters = value
