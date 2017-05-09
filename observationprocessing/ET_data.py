@@ -1,7 +1,7 @@
-upstream_filename = 'input/ganges_upstreams_hardinge_bridge.txt'
+upstream_filename = 'input/brahmaputra_upstreams_bahadurabad.txt'
 station_filename = ''
-data_filename = '/home/mhasan/sf_mhasan/private/NetCDF/LandFluxEVAL.merged.89-05.monthly.all.nc'
-output_filename = 'output/ganges_hardinge_bridge_ET_Mueller2013.csv'
+data_filename = '/home/mhasan/sf_mhasan/private/ET_Mueller2013/LandFluxEVAL.merged.89-05.monthly.all.nc'
+output_filename = 'output/brahmaputra_bahadurabad_ET_Mueller2013_median_mm_daily.csv'
 
 from netCDF4 import Dataset
 import numpy as np, sys
@@ -166,7 +166,7 @@ def main():
     lats = nc_fid.variables['lat'][:]
     lons = nc_fid.variables['lon'][:]
 
-    et_mean = nc_fid.variables['ET_mean'][:]
+    et_mean = nc_fid.variables['ET_median'][:]
 
     nc_fid.close()
 

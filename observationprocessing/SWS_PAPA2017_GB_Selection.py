@@ -5,15 +5,10 @@ from utilities.station import Station
 from utilities.grid import grid
 from utilities.upstream import Upstream
 
-filename_data = '/media/sf_mhasan/private/temp/new_papa_dataset/surface_water_volume_change_global_1993_2007_from_aster_GB.dat'
-filename_grid_intersect = '/media/sf_mhasan/private/temp/new_papa_dataset/EAG_WGHMG_INTERSECT.CSV'
-filename_station = 'STATIONS.DAT'
-filename_output = '/media/sf_mhasan/private/temp/new_papa_dataset/brahmaputra_sws_2017_aster.csv'
-
-station_file_text = """
-2646200 88.75 24.25 -99 -99 -99
-2651100 89.75 25.25 -99 -99 -99
-"""
+filename_data = '/media/sf_mhasan/private/SWS_PAPA_2017/surface_water_volume_change_global_1993_2007_from_aster_GB.dat'
+filename_grid_intersect = 'data/EAG_WGHMG_INTERSECT.DAT'
+filename_station = 'input/STATIONS_GAN.DAT'
+filename_output = 'output/ganges_hardinge_bridge_sws_papa2017_aster_km3.csv'
 
 data_area_frc = {}  # {wcnum: {ecnum: af, ecnum: af, ...}, ...}
 data_sws = {}       # {ecnum: [m1d, m2d, ...], ..}

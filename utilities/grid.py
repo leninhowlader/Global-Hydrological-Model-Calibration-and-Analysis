@@ -241,24 +241,25 @@ class grid:
 
         f = None
         try:
+            line_txt = ''
             f = open(filename, 'r')
-            for line in f.readlines():
-                temp = line.split(']')
+            for line in f.readlines(): line_txt += line
+            temp = line_txt.split(']')
 
-                for i in range(len(temp)):
-                    temp[i] = temp[i].strip().strip(',').strip().strip('[')
-                    if temp[i]:
-                        group_items = temp[i].split(',')
+            for i in range(len(temp)):
+                temp[i] = temp[i].strip().strip(',').strip().strip('[')
+                if temp[i]:
+                    group_items = temp[i].split(',')
 
-                        if data_type == int:
-                            for j in reversed(range(len(group_items))):
-                                try: group_items[j] = int(group_items[j])
-                                except: group_items.pop(j)
-                        else:
-                            for j in reversed(range(len(group_items))):
-                                try: group_items[j] = float(group_items[j])
-                                except: group_items.pop(j)
-                        if group_items: records.append(group_items)
+                    if data_type == int:
+                        for j in reversed(range(len(group_items))):
+                            try: group_items[j] = int(group_items[j])
+                            except: group_items.pop(j)
+                    else:
+                        for j in reversed(range(len(group_items))):
+                            try: group_items[j] = float(group_items[j])
+                            except: group_items.pop(j)
+                    if group_items: records.append(group_items)
         except: return []
         finally:
             try: f.close()

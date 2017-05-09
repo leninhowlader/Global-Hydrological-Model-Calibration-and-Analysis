@@ -85,7 +85,7 @@ class Parameter:
                                      'cell_num', 'cell nums', 'cell_nums', 'cell list', 'cell_list', 'cell number', 'cell_number']:
                             if value.lower().find(':') > 0:
                                 temp = value.split(':')
-                                if len(temp) >= 2 and temp[0].strip().lower() == 'filename_data':
+                                if len(temp) >= 2 and temp[0].strip().lower() == 'filename':
                                     filename = temp[1].strip()
                                     values = Parameter.values_from_file(filename)
                                     if values: param.set_cell_list(values)
@@ -110,14 +110,22 @@ class Parameter:
 
         f = None
         try:
+            line_txt = ''
             f = open(filename, 'r')
-            for line in f.readlines():
-                temp = line.split(',')
-                for i in reversed(range(len(temp))):
-                    try: temp[i] = fun(temp[i].replace('[', '').replace(']', '').strip())
-                    except: temp.pop(i)
-                if temp: values += temp
-        except: return values
+            for line in f.readlines(): line_txt += line
+            temp = line_txt.split(']')
+
+            for i in range(len(temp)):
+                temp[i] = temp[i].strip().strip(',').strip().strip('[')
+                if temp[i]:
+                    group_items = temp[i].split(',')
+
+                    for j in reversed(range(len(group_items))):
+                        try: group_items[j] = fun(group_items[j])
+                        except: group_items.pop(j)
+
+                    if group_items: values.append(group_items)
+        except: return []
         finally:
             try: f.close()
             except: pass

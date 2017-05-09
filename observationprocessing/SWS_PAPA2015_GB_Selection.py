@@ -5,12 +5,12 @@ from utilities.grid import grid
 
 
 basin_extent_filename = ''#''extent_papa_etal.dat'
-data_directory = '/media/sf_mhasan/private/new_data_from_fabrice_papa/Surface_Volumes'
-upstream_filename = 'brahmaputra_upstream.txt'
+data_directory = '/media/sf_mhasan/private/SWS_PAPA_2015/Surface_Volumes'
+upstream_filename = 'input/ganges_upstreams_hardinge_bridge.txt'
 cell_area_filename = ''# 'ganges_area.txt'
-output_datafile = 'brahmaputra_sws_km3_papa_etal_2015.csv'
-output_subbasin_filename = 'sub_basin_brahmaputra.txt'
-output_shapefile = 'papa_etal_2015.shp'
+output_datafile = 'output/ganges_hardinge_bridge_sws_papa2015_km3.csv'
+output_subbasin_filename = '' # 'sub_basin_brahmaputra.txt'
+# output_shapefile = 'papa_etal_2015.shp'
 calculate_basin_total = True
 basin_id = 1
 unit_conversion_factor = 1
@@ -82,7 +82,7 @@ def main():
     print('Reading data (Papa et al 2015)..'.ljust(50, ' '), end='', flush=True)
     upc = read_upstream_file(upstream_filename)
     if not upc:
-        print('[not okay]\n\tWGHM upstream cannot be read. Please check the config_filename. [Data Error]')
+        print('[not okay]\n\tWGHM upstream cannot be read. Please check if the upstream filename is okay. [Data Error]')
         exit(-201)
 
     if len(upc) > 1: upc = upc[0]
@@ -249,4 +249,4 @@ def main():
 
     print('\nThe program is being terminated with success.\nThank you for using this program.')
 
-main()
+if __name__ == '__main__': main()

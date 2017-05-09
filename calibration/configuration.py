@@ -95,7 +95,7 @@ class Configuration:
                         if key == 'begin':
                             if value == 'sa-settings': Configuration.read_sensitivity_settings(lines, config)
                             elif value == 'settings': Configuration.read_calibration_settings(lines, config)
-                            elif value == 'parameter' and config.get_mode() == 'calibration':
+                            elif value == 'parameter' and len(config.parameters) == 0: # config.get_mode() == 'calibration':
                                 param_list = Parameter.read_parameters(lines)
                                 if param_list: config.parameters = param_list
                             elif value == 'obs-variable': config.obs_variables = ObsVariable.read_variables(lines)
@@ -209,8 +209,9 @@ class Configuration:
 
             if not self.samples: return False
 
-            if not self.input_file_for_parameters: return False
-            else: self.parameters = Parameter.read_parameter_list(self.input_file_for_parameters, header=True)
+            if self.input_file_for_parameters: self.parameters = Parameter.read_parameter_list(self.input_file_for_parameters, header=True)
+
+            if not self.parameters: return False
 
         if not self.parameters: return False
         if self.get_executable_name(): WaterGAP.executable = self.get_executable_name()
