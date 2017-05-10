@@ -10,32 +10,34 @@ class Parameter:
         self.lower_bound = lbound
         self.upper_bound = ubound
         self.parameter_value = -9999
+        self.logarithmic_scale = False
 
-        self.__cell_list = []
-        self.__single_value_flag = True
-        self.__cell_specific_values = []
-        self.__precision_level = 4
+        self.cell_list = []
+        self.single_value_flag = True
+        self.cell_specific_values = []
+        self.precision_level = 4
 
     def set_parameter_name(self, param_name): self.parameter_name = param_name
     def set_lower_bound(self, bound): self.lower_bound = bound
     def set_upper_bount(self, bound): self.upper_bound = bound
-    def set_parameter_value(self, value): self.parameter_value = round(value, self.__precision_level)
+    def set_parameter_value(self, value): self.parameter_value = round(value, self.precision_level)
     def get_parameter_name(self): return self.parameter_name
     def get_lower_bound(self): return self.lower_bound
     def get_upper_bound(self): return self.upper_bound
-    def get_parameter_value(self): return round(self.parameter_value, self.__precision_level)
-
-    def set_cell_list(self, cell_list): self.__cell_list = cell_list
-    def set_single_value_flag(self, flag): self.__single_value_flag = flag
-    def set_cell_specific_values(self, values): self.__cell_specific_values = values
-    def set_precision_level(self, level): self.__precision_level = level
-    def get_cell_list(self): return self.__cell_list
-    def get_single_value_flag(self): return self.__single_value_flag
-    def get_cell_specific_values(self): return self.__cell_specific_values
-    def get_precision_level(self): return self.__precision_level
+    def get_parameter_value(self):
+        if not self.logarithmic_scale: return round(self.parameter_value, self.precision_level)
+        else: return round(10**self.parameter_value, self.precision_level)
+    def set_cell_list(self, cell_list): self.cell_list = cell_list
+    def set_single_value_flag(self, flag): self.single_value_flag = flag
+    def set_cell_specific_values(self, values): self.cell_specific_values = values
+    def set_precision_level(self, level): self.precision_level = level
+    def get_cell_list(self): return self.cell_list
+    def get_single_value_flag(self): return self.single_value_flag
+    def get_cell_specific_values(self): return self.cell_specific_values
+    def get_precision_level(self): return self.precision_level
 
     def has_multiple_cells(self):
-        if self.__cell_list: return True
+        if self.cell_list: return True
         else: return False
 
 
@@ -102,6 +104,10 @@ class Parameter:
                                      'parameter precision', 'parameter_precision']:
                             try: param.set_precision_level(int(value))
                             except: param.set_precision_level(4)
+                        elif key in ['logarithmic_scale', 'logarithmic scale', 'log_scale', 'log scale']:
+                            value = value.lower()
+                            if value in ['y', 'yes', 'true', 't', '1']: param.logarithmic_scale = True
+                            else: param.logarithmic_scale = False
         return []
 
     @staticmethod

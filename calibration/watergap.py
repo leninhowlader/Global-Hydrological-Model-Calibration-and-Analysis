@@ -71,9 +71,6 @@ class WaterGAP:
 
     json_paramset = None
     dir_info = None
-    __temp_param_filename = ''
-    __temp_output_dir = ''
-    __temp_dir_filename = ''
 
     @staticmethod
     def get_grid_cell_count(): return WaterGAP.ngc
@@ -110,23 +107,24 @@ class WaterGAP:
                     try:
                         key = param.parameter_name
                         value = param_set[key]
+                        param_value = param.get_parameter_value()
                         if type(value) is list:
                             if param.has_multiple_cells() and param.get_single_value_flag():
                                 clist = param.get_cell_list()
-                                for c in clist: value[c-1] = param.parameter_value
+                                for c in clist: value[c-1] = param_value
                             else:
-                                for i in range(len(value)): value[i] = param.parameter_value
-                        else: param_set[key] = param.parameter_value
+                                for i in range(len(value)): value[i] = param_value
+                        else: param_set[key] = param_value
                     except:
                         succeed = False
                         break
 
                 if succeed:
-                    WaterGAP.__temp_param_filename = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.input_directory, filename)
+                    filename = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.input_directory, filename)
 
                     f = None
                     try:
-                        f = open(WaterGAP.__temp_param_filename, 'w')
+                        f = open(filename, 'w')
                         json.dump(param_set, f)
                     except: succeed = False
                     finally:
@@ -213,11 +211,11 @@ class WaterGAP:
                 dinfo = deepcopy(WaterGAP.dir_info)
                 dinfo.output_directory = output_dir
 
-                WaterGAP.__temp_dir_filename = os.path.join(WaterGAP.home_directory, directory_filename)
-                WaterGAP.__temp_output_dir = os.path.join(WaterGAP.home_directory, output_dir)
+                directory_filename = os.path.join(WaterGAP.home_directory, directory_filename)
+                output_dir = os.path.join(WaterGAP.home_directory, output_dir)
 
-                if not os.path.exists(WaterGAP.__temp_output_dir): os.mkdir(WaterGAP.__temp_output_dir, 0o777)
-                if not dinfo.create_directory_file(WaterGAP.__temp_dir_filename): succeed = False
+                if not os.path.exists(output_dir): os.mkdir(output_dir, 0o777)
+                if not dinfo.create_directory_file(directory_filename): succeed = False
             else: succeed = False
 
         return succeed
@@ -225,7 +223,7 @@ class WaterGAP:
     @staticmethod
     def remove_files(arguments={}):
         try:
-            parameter_file = os.path.join(WaterGAP.home_directory, 'INPUT', arguments['p'])
+            parameter_file = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.input_directory, arguments['p'])
             dir_file = os.path.join(WaterGAP.home_directory, arguments['d'])
             output_dir = os.path.join(WaterGAP.home_directory, dir_file[:-4])
             shutil.rmtree(output_dir)

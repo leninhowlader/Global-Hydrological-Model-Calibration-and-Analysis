@@ -37,9 +37,9 @@ class SeasonalStatistics(stats):
 
             years = []
             peaks = []
-            pperiods = []       # peak months
+            peakmons = []       # peak months
             bottoms = []
-            bperiods = []       # bottom months
+            btmmons = []       # bottom months
             amplitudes = []
             means = []
             std_devs = []
@@ -49,16 +49,16 @@ class SeasonalStatistics(stats):
                 if len(d) >= 8:
                     mx, mn = max(d), min(d)
                     peaks.append(mx)
-                    pperiods.append(dt[:, 1][ndx][np.where(d == mx)][0])
+                    peakmons.append(dt[:, 1][ndx][np.where(d == mx)][0])
                     bottoms.append(mn)
-                    bperiods.append(dt[:, 1][ndx][np.where(d == mn)][0])
+                    btmmons.append(dt[:, 1][ndx][np.where(d == mn)][0])
                     amplitudes.append(mx-mn)
                     means.append(np.mean(d))
                     std_devs.append(np.std(d))
                     years.append(year)
 
-            if years and peaks and pperiods and bottoms and bperiods and amplitudes:
-                return np.column_stack((years, means, std_devs, peaks, pperiods, bottoms, bperiods, amplitudes))
+            if years and peaks and peakmons and bottoms and btmmons and amplitudes:
+                return np.column_stack((years, means, std_devs, peaks, peakmons, bottoms, btmmons, amplitudes))
 
         return None
 
@@ -70,16 +70,17 @@ class SeasonalStatistics(stats):
             d = data[:,i]
 
             avg = np.mean(d)
-            per50 = np.percentile(d, 50)
-            per75 = np.percentile(d, 75)
-            per80 = np.percentile(d, 80)
+            per10 = np.percentile(d, 10)
+            q1 = np.percentile(d, 25)
+            median = np.percentile(d, 50)
+            q3 = np.percentile(d, 75)
             per90 = np.percentile(d, 90)
             std_dev = np.std(d)
             mn = np.min(d)
             mx = np.max(d)
             rng = mx - mn
 
-            results.append((avg, per50, per75, per80, per90, std_dev, mn, mx, rng))
+            results.append((avg, per10, q1, median, q3, per90, std_dev, mn, mx, rng))
 
         return results
 
@@ -104,7 +105,7 @@ class SeasonalStatistics(stats):
 
                 if temp_results:
                     results = OrderedDict()
-                    stat_names = ['Mean', 'Mode', '3QR', '80 Percentile', '90 Percentile', 'Std. deviation', 'Min', 'Max', 'Range']
+                    stat_names = ['Mean', '10th Percentile', '1st Quartile', 'Median', '3rd Quartile', '90th Percentile', 'Std. deviation', 'Min', 'Max', 'Range']
                     dic_indices = ['Yearly Mean', 'Yearly Std. Dev', 'Year Peak', 'Peak Month', 'Year Bottom', 'Bottom Month', 'Amplitude']
                     if len(temp_results) == len(dic_indices):
                         for i in range(len(temp_results)): results[dic_indices[i]] = temp_results[i]
@@ -123,15 +124,15 @@ class SeasonalStatistics(stats):
 
         if succeed:
             data = np.c_[np.array(data_cloud.data_indices)[:, [ndx_year, ndx_month]], np.array(data_cloud.data)]
-            stat_names = ['mean', 'mode', 'std_dev', 'min', 'max', 'range']
+            stat_names = ['mean', 'median', 'std_dev', 'min', 'max', 'range']
 
             month_names = ['0th', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
             for month in range(1, 13):
                 ndx = np.where(data[:, 1] == month)
                 d = data[:, 2][ndx]
 
-                avg, mode, std_dev, mn, mx = np.mean(d), np.percentile(d, 50), np.std(d), np.min(d), np.max(d)
-                results[month_names[month]] = (avg, mode, std_dev, mn, mx, mx-mn)
+                avg, median, std_dev, mn, mx = np.mean(d), np.percentile(d, 50), np.std(d), np.min(d), np.max(d)
+                results[month_names[month]] = (avg, median, std_dev, mn, mx, mx-mn)
 
         return stat_names, results
 
