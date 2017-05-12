@@ -247,16 +247,15 @@ class WaterGAP:
         return SimVariable.data_collection(sim_vars, WaterGAP.start_year, WaterGAP.end_year)
 
     @staticmethod
-    def prediction_efficiency(sim_vars, obs_vars):
-        results = OrderedDict({})
+    def prediction_efficiency(sim_vars, obs_vars, iter_no=-1):
+        results = []
         for obs_var in obs_vars:
             for sim_var in sim_vars:
                 if (obs_var.counter_variable == sim_var.varname):
                     sim, obs = DataCloud.cloud_coupling(sim_var.data_cloud, obs_var.data_cloud)
                     if sim and obs:
-                        eff_name = '%s~%s(%s)'%(obs_var.varname, sim_var.varname, obs_var.get_function_name())
-                        r = stats.objective_function(obs_var.function, sim, obs)
-                        results[eff_name] = r
+                        s, r = stats.all_efficiencies(sim, obs)
+                        results.append([iter_no, obs_var.varname, sim_var.varname] + r)
                     break
         return results
 

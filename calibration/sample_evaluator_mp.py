@@ -5,7 +5,7 @@ __author__ = 'mhasan'
 import os, sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.variable import SimVariable, ObsVariable
+from calibration.variable import SimVariable, ObsVariable, DerivedVariable
 from calibration.predstat import SeasonalStatistics
 from calibration.watergap import WaterGAP
 from utilities.fileio import *
@@ -71,10 +71,12 @@ def process_parameter_sample(config, iter_no):
         return False
 
     # read model output
-    sim_vars, obs_vars = deepcopy(config.sim_variables), config.obs_variables
+    sim_vars, der_vars, obs_vars = deepcopy(config.sim_variables), deepcopy(config.derived_variables), config.obs_variables
     if not WaterGAP.read_predictions(sim_vars):
         WaterGAP.remove_files()
         return False
+
+    for var in der_vars: var.derive_data(simvars=sim_vars, obsvars=obs_vars)
 
     # step-x.x: calculate prediction summaries
     # ------- begin of step-x.x -------
@@ -82,7 +84,7 @@ def process_parameter_sample(config, iter_no):
     lines, separator = [], ','
     if config.prediction_statistics:
         filename = config.summary_statistics_filename
-        for var in config.sim_variables:
+        for var in sim_vars+der_vars:
             var_name = 'sim_%s'%var.varname.lower()
             data = [iter_no, var_name]
             snames, results = SeasonalStatistics.seasonal_summary(var.data_cloud)
@@ -123,11 +125,10 @@ def process_parameter_sample(config, iter_no):
     # step-x.x: calculate efficiencies
     # ----- begin of step-x.x -------
     for var in sim_vars: var.compute_anomalies()
-    efficiencies = WaterGAP.prediction_efficiency(sim_vars, obs_vars)
+    results = WaterGAP.prediction_efficiency(sim_vars=sim_vars+der_vars, obs_vars=obs_vars, iter_no=iter_no)
 
     lines = []
-    for key in efficiencies.keys():
-        lines.append(separator.join(map(str, [iter_no, key, efficiencies[key]])))
+    for d in results: lines.append(separator.join(map(str, d)))
     if lines: print_on_file(lines, config.prediction_efficiency_filename, '__PREDEFF.LOCK', sleep_time=0.1)
     # ------ end of step-x.x --------
 
@@ -153,7 +154,7 @@ def main(argv):
     filename = argv[1]
     config = Configuration.read_configuration_file(filename)
     if not (config.is_okay() and WaterGAP.is_okay()):
-        if rank == 0: print_on_screen('(Error) Configuration file could not be read successfully. Check %s.' % filename)
+        if rank == 0: print_on_screen('Error!! Configuration file could not be read successfully. Check configuration file: %s.' % filename)
         exit(os.EX_DATAERR)
 
     # step-x.x: calculate (seasonal) summary statistics from the observables
@@ -167,18 +168,19 @@ def main(argv):
                    'avg_yr_btom', '10p_yr_btom', 'qr1_yr_btom', 'mdn_yr_btom', 'qr3_yr_btom', '90p_yr_btom', 'std_yr_btom', 'min_yr_btom', 'max_yr_btom', 'rng_yr_btom',
                    'avg_yr_bmon', '10p_yr_bmon', 'qr1_yr_bmon', 'mdn_yr_bmon', 'qr3_yr_bmon', '90p_yr_bmon', 'std_yr_bmon', 'min_yr_bmon', 'max_yr_bmon', 'rng_yr_bmon',
                    'avg_yr_ampt', '10p_yr_ampt', 'qr1_yr_ampt', 'mdn_yr_ampt', 'qr3_yr_ampt', '90p_yr_ampt', 'std_yr_ampt', 'min_yr_ampt', 'max_yr_ampt', 'rng_yr_ampt',
-                   'jan_mean', 'jan_stddev', 'jan_min', 'jan_max', 'jan_range', 'feb_mean', 'feb_stddev', 'feb_min', 'feb_max', 'feb_range',
-                   'mar_mean', 'mar_stddev', 'mar_min', 'mar_max', 'mar_range', 'apr_mean', 'apr_stddev', 'apr_min', 'apr_max', 'apr_range',
-                   'may_mean', 'may_stddev', 'may_min', 'may_max', 'may_range', 'jun_mean', 'jun_stddev', 'jun_min', 'jun_max', 'jun_range',
-                   'jul_mean', 'jul_stddev', 'jul_min', 'jul_max', 'jul_range', 'aug_mean', 'aug_stddev', 'aug_min', 'aug_max', 'aug_range',
-                   'sep_mean', 'sep_stddev', 'sep_min', 'sep_max', 'sep_range', 'oct_mean', 'oct_stddev', 'oct_min', 'oct_max', 'oct_range',
-                   'nov_mean', 'nov_stddev', 'nov_min', 'nov_max', 'nov_range', 'dec_mean', 'dec_stddev', 'dec_min', 'dec_max', 'dec_range']
+                   'jan_mean', 'jan_median', 'jan_std', 'jan_min', 'jan_max', 'jan_range', 'feb_mean', 'feb_median', 'feb_std', 'feb_min', 'feb_max', 'feb_range',
+                   'mar_mean', 'mar_median', 'mar_std', 'mar_min', 'mar_max', 'mar_range', 'apr_mean', 'apr_median', 'apr_std', 'apr_min', 'apr_max', 'apr_range',
+                   'may_mean', 'may_median', 'may_std', 'may_min', 'may_max', 'may_range', 'jun_mean', 'jun_median', 'jun_std', 'jun_min', 'jun_max', 'jun_range',
+                   'jul_mean', 'jul_median', 'jul_std', 'jul_min', 'jul_max', 'jul_range', 'aug_mean', 'aug_median', 'aug_std', 'aug_min', 'aug_max', 'aug_range',
+                   'sep_mean', 'sep_median', 'sep_std', 'sep_min', 'sep_max', 'sep_range', 'oct_mean', 'oct_median', 'oct_std', 'oct_min', 'oct_max', 'oct_range',
+                   'nov_mean', 'nov_median', 'nov_std', 'nov_min', 'nov_max', 'nov_range', 'dec_mean', 'dec_median', 'dec_std', 'dec_min', 'dec_max', 'dec_range']
+
         lines = [','.join(headers)]
         print_on_file(lines, filename, '_STAT_SUMMARY.LOCK', sleep_time=0.2)
 
         lines = []
         for var in config.obs_variables:
-            var_name = 'obs_%s' % var.varname.lower()
+            var_name = var.varname
             data = [-1, var_name]
             snames, result = SeasonalStatistics.seasonal_summary(var.data_cloud)
             if result:

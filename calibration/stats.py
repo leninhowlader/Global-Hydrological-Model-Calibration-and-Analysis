@@ -33,7 +33,8 @@ class stats:
         try: return np.sqrt(np.mean((obs - sim) ** 2))
         except: return np.nan
 
-
+    @staticmethod
+    def sum_squared_error(sim, obs): return np.sum((obs-sim)**2)
 
     @staticmethod
     def coefficient_of_determination(sim, obs):
@@ -153,6 +154,30 @@ class stats:
         elif fun == ObjectiveFunction.KGE_dAlpha: return stats.KGE_dAlpha(sim, obs)
         elif fun == ObjectiveFunction.KGE_dBeta: return stats.KGE_dBeta(sim, obs)
         else: return np.nan
+
+    @staticmethod
+    def all_efficiencies(sim, obs):
+        sse, mse, rmse, mae, mape, pbias, rsr, r, r2, ioa, nse, kge = None, None, None, None, None, None, None, None, None, None, None, None
+        statistic_names = ['sse', 'mse' 'rmse', 'mae', 'mape', 'pbias', 'rsr', 'r', 'r2', 'ioa', 'nse', 'kge']
+
+        try:
+            sim, obs = np.array(sim), np.array(obs)
+
+            sse = stats.sum_squared_error(sim=sim, obs=obs)
+            mse = stats.mean_square_error(sim=sim, obs=obs)
+            rmse = stats.root_mean_square_error(sim=sim, obs=obs)
+            mae = stats.mean_absolute_error(sim=sim, obs=obs)
+            mape = stats.mean_absolute_percentage_error(sim=sim, obs=obs)
+            pbias = stats.percentage_bias(sim=sim, obs=obs)
+            rsr = stats.rmse_stdv_ratio(sim=sim, obs=obs)
+            r = stats.pearson_correlation_coefficient(sim=sim, obs=obs)
+            r2 = stats.coefficient_of_determination(sim=sim, obs=obs)
+            ioa = stats.index_of_agreement(sim=sim, obs=obs)
+            nse = stats.nash_sutcliffe_efficiency(sim=sim, obs=obs)
+            kge = stats.kling_gupta_efficiency(sim=sim, obs=obs)
+        except: pass
+
+        return statistic_names, [sse, mse, rmse, mae, mape, pbias, rsr, r, r2, ioa, nse, kge]
 
     @staticmethod
     def normalize(sim, obs, normalize=DataNormalization.none):

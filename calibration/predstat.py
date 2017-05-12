@@ -5,6 +5,7 @@ from calibration.variable import DataCloud
 from calibration.stats import stats
 from collections import OrderedDict
 
+
 class SeasonalStatistics(stats):
     @staticmethod
     def test():
@@ -35,6 +36,8 @@ class SeasonalStatistics(stats):
         if succeed:
             dt = data[:, [year_column, month_column, value_column]]
 
+            months = ['0th', 1, 2, 3, 4, 5, 6, -5, -4, -3, -2, -1, 0]
+
             years = []
             peaks = []
             peakmons = []       # peak months
@@ -45,17 +48,36 @@ class SeasonalStatistics(stats):
             std_devs = []
             for year in np.unique(dt[:, 0]):
                 ndx = np.where(dt[:, 0] == year)
-                d = dt[:, 2][ndx]
-                if len(d) >= 8:
-                    mx, mn = max(d), min(d)
+                ds = dt[:, :][ndx]  #ds = data slice
+                if len(ds) >= 8:
+                    d = ds[:, 2]
+                    m = ds[:, 1]
+                    mx = max(d)
                     peaks.append(mx)
-                    peakmons.append(dt[:, 1][ndx][np.where(d == mx)][0])
-                    bottoms.append(mn)
-                    btmmons.append(dt[:, 1][ndx][np.where(d == mn)][0])
-                    amplitudes.append(mx-mn)
+                    mx_mon = m[np.where(d==mx)][0]
+                    peakmons.append(mx_mon)
+                    ndx = np.ma.where(m<=mx_mon)
+                    not_ndx = np.ma.where(m <= mx_mon)
+                    mn1, mn2 = np.min(d[ndx]), np.min(d[not_ndx])
+                    mn1_mon, mn2_mon = int(m[np.where(d==mn1)][0]), int(m[np.where(d==mn2)][0])
+                    bottoms.extend([mn1, mn2])
+                    btmmons.extend([months[mn1_mon], months[mn2_mon]])
                     means.append(np.mean(d))
                     std_devs.append(np.std(d))
                     years.append(year)
+
+            if years and len(bottoms) == len(years)*2:
+                bottoms.pop(-1)
+                btmmons.pop(-1)
+                for i in range(len(bottoms)-1,0,-2):
+                    if bottoms[i-1] < bottoms[i]:
+                        bottoms.pop(i)
+                        btmmons.pop(i)
+                    else:
+                        bottoms.pop(i-1)
+                        btmmons.pop(i-1)
+
+                for i in range(len(bottoms)): amplitudes.append(peaks[i]-bottoms[i])
 
             if years and peaks and peakmons and bottoms and btmmons and amplitudes:
                 return np.column_stack((years, means, std_devs, peaks, peakmons, bottoms, btmmons, amplitudes))

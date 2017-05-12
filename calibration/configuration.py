@@ -1,6 +1,6 @@
 __author__ = 'mhasan'
 
-import sys
+import sys, os
 sys.path.append('..')
 from calibration.variable import ObsVariable, SimVariable, DerivedVariable
 from calibration.watergap import WaterGAP
@@ -211,10 +211,14 @@ class Configuration:
 
             if self.input_file_for_parameters: self.parameters = Parameter.read_parameter_list(self.input_file_for_parameters, header=True)
 
-            if not self.parameters: return False
-
         if not self.parameters: return False
-        if self.get_executable_name(): WaterGAP.executable = self.get_executable_name()
-        else: return False
+
+        if not WaterGAP.executable:
+            executable_name = self.get_executable_name()
+            if WaterGAP.home_directory:
+                if executable_name.find(WaterGAP.home_directory) == -1: executable_name = os.path.join(WaterGAP.home_directory, executable_name)
+            WaterGAP.executable = executable_name
+
+        if not WaterGAP.executable: return False
 
         return True
