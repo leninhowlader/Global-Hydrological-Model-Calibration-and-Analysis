@@ -139,26 +139,31 @@ def process_parameter_sample(config, iter_no):
     return True
 
 def main(argv):
-    # ------------------------------------------------------------------------------------------------------------------
+    # __________________________________________________________________________________________________________________
     # step-01: initialize MPI
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
+    # comm = MPI.COMM_WORLD
+    # rank = comm.Get_rank()
+
+    iter_no = -9999
+    while True:
+        iter_no = read_iter_number()    # starts from zero
+        if iter_no >= 0: break
 
     # check program arguments
     # this program needs one argument as the address of configuration file
     if len(argv) != 2:
-        if rank == 0: print_on_screen('Usages:\n%s <configuration config_filename>' %os.path.split(argv[0])[-1])
+        if iter_no == 0: print_on_screen('Usages:\n%s <configuration config_filename>' %os.path.split(argv[0])[-1])
         exit(os.EX_NOINPUT)
 
     # read the configuration file and check if required information is provided into the file
     filename = argv[1]
     config = Configuration.read_configuration_file(filename)
     if not (config.is_okay() and WaterGAP.is_okay()):
-        if rank == 0: print_on_screen('Error!! Configuration file could not be read successfully. Check configuration file: %s.' % filename)
+        if iter_no == 0: print_on_screen('Error!! Configuration file could not be read successfully. Check configuration file: %s.' % filename)
         exit(os.EX_DATAERR)
 
     # step-x.x: calculate (seasonal) summary statistics from the observables
-    if rank == 0:
+    if iter_no == 0:
         filename = config.summary_statistics_filename
         headers = ['iter_num', 'variable',
                    'avg_yr_mean', '10p_yr_mean', 'qr1_yr_mean', 'mdn_yr_mean', 'qr3_yr_mean', '90p_yr_mean', 'std_yr_mean', 'min_yr_mean', 'max_yr_mean', 'rng_yr_mean',
@@ -196,24 +201,27 @@ def main(argv):
 
 
     # continue iterating following steps until the last sample is being processed
-    if rank == 0: print_on_screen('Sample processing [begin]')
+    if iter_no == 0: print_on_screen('Sample processing [begin]')
+
+    iter_limit = len(config.samples)
+    iter_limit = 5
+
     while True:
+        # process current sample
+        print_on_screen('\tProcessing of sample no. %d has been started.' % iter_no)
+        temp_bool = process_parameter_sample(config, iter_no)
+
+        # break the sample processing if iter no is more than the sample size
+        if iter_no >= iter_limit: break
+
         # read current iteration number
-        iter_no = -9999
         while True:
             iter_no = read_iter_number()    # starts from zero
             if iter_no >= 0: break
 
-        # break the sample processing if iter no is more than the sample size
-        if iter_no >= len(config.samples): break
-
-        # process current sample
-        print_on_screen('\tProcessing of sample no. %d has been started.' %iter_no)
-        # temp_bool = process_parameter_sample(config, iter_no)
-
-    if rank == 0:
-        if rank == 0: print_on_screen('Sample processing [end]')
+    if iter_no == iter_limit:
+        print_on_screen('Sample processing [end]')
         print_on_screen('The process has been successfully completed.')
-        exit(os.EX_OK)
+    exit(os.EX_OK)
 
 main(sys.argv)

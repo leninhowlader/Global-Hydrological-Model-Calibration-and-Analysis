@@ -111,6 +111,12 @@ class WaterGAP:
                         if type(value) is list:
                             if param.has_multiple_cells() and param.get_single_value_flag():
                                 clist = param.get_cell_list()
+                                if clist:
+                                    temp = []
+                                    for c in clist:
+                                        if type(c) is list: temp+= c
+                                        else: temp.append(c)
+                                    clist = temp
                                 for c in clist: value[c-1] = param_value
                             else:
                                 for i in range(len(value)): value[i] = param_value
