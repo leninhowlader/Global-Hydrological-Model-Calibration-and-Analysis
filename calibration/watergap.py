@@ -209,19 +209,18 @@ class WaterGAP:
     @staticmethod
     def update_directory_info(output_dir, directory_filename):
         succeed = True
-        if not (WaterGAP.dir_info and WaterGAP.directory_filename): succeed = False
+        if not (WaterGAP.dir_info or WaterGAP.directory_filename): succeed = False
         else:
             if not WaterGAP.dir_info: WaterGAP.dir_info = DirInfo.read_directory_file(WaterGAP.directory_filename)
 
             if WaterGAP.dir_info:
-                dinfo = deepcopy(WaterGAP.dir_info)
-                dinfo.output_directory = output_dir
+                WaterGAP.dir_info.output_directory = output_dir
 
                 directory_filename = os.path.join(WaterGAP.home_directory, directory_filename)
                 output_dir = os.path.join(WaterGAP.home_directory, output_dir)
 
                 if not os.path.exists(output_dir): os.mkdir(output_dir, 0o777)
-                if not dinfo.create_directory_file(directory_filename): succeed = False
+                if not WaterGAP.dir_info.create_directory_file(directory_filename): succeed = False
             else: succeed = False
 
         return succeed
