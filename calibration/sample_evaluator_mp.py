@@ -1,15 +1,15 @@
-#!/usr/bin/python3
+#!/usr/local/Python-2.7.3/bin/python
 
 __author__ = 'mhasan'
 
 import os, sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.variable import SimVariable, ObsVariable, DerivedVariable
+# from calibration.variable import SimVariable, ObsVariable, DerivedVariable
 from calibration.predstat import SeasonalStatistics
 from calibration.watergap import WaterGAP
 from utilities.fileio import *
-from mpi4py import MPI
+# from mpi4py import MPI
 from copy import deepcopy
 
 def read_iter_number():
