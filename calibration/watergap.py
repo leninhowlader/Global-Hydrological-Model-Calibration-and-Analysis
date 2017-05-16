@@ -230,8 +230,7 @@ class WaterGAP:
         try:
             parameter_file = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.input_directory, arguments['p'])
             dir_file = os.path.join(WaterGAP.home_directory, arguments['d'])
-            output_dir = os.path.join(WaterGAP.home_directory, dir_file[:-4])
-            shutil.rmtree(output_dir)
+            shutil.rmtree(dir_file[:-4])
             os.remove(parameter_file)
             os.remove(dir_file)
             return True
