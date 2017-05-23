@@ -1,13 +1,13 @@
 import sys, os
 sys.path.append('..')
-from utilities.fileio import read_flat_file, write_flat_file
 from utilities.grid import grid
+from utilities.fileio import read_flat_file, write_flat_file
 from datetime import datetime
-
 
 
 directory  = '/media/sf_mhasan/private/GRACE_DAILY/'
 output_filename = 'grace_daily'
+
 
 def generate_cell_id(longitude, latitude):
     row, col = grid.find_row_column(latitude, longitude, degree_resolution=1.0)

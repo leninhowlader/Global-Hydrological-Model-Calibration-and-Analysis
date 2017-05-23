@@ -158,7 +158,7 @@ class stats:
     @staticmethod
     def all_efficiencies(sim, obs):
         sse, mse, rmse, mae, mape, pbias, rsr, r, r2, ioa, nse, kge = None, None, None, None, None, None, None, None, None, None, None, None
-        statistic_names = ['sse', 'mse' 'rmse', 'mae', 'mape', 'pbias', 'rsr', 'r', 'r2', 'ioa', 'nse', 'kge']
+        statistic_names = ['sse', 'mse', 'rmse', 'mae', 'mape', 'pbias', 'rsr', 'r', 'r2', 'ioa', 'nse', 'kge']
 
         try:
             sim, obs = np.array(sim), np.array(obs)
