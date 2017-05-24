@@ -2,10 +2,10 @@ import sys, shapefile as shp
 sys.path.append('..')
 from utilities.fileio import read_flat_file
 
-grid_data_filename = '/media/sf_mhasan/private/temp/equal_area_grid/cell_lat_lon_width'
+grid_data_filename = '/media/sf_mhasan/private/month_data/equal_area_grid/cell_lat_lon_width'
 grid_data = None
-output_grid_shapefile = '/media/sf_mhasan/private/temp/equal_area_grid/papa_grid_GB_new.shp'
-GB_dataset_filename = '/media/sf_mhasan/private/temp/equal_area_grid/surface_water_volume_change_global_1993_2007_from_aster_GB.dat'
+output_grid_shapefile = '/media/sf_mhasan/private/month_data/equal_area_grid/papa_grid_GB_new.shp'
+GB_dataset_filename = '/media/sf_mhasan/private/month_data/equal_area_grid/surface_water_volume_change_global_1993_2007_from_aster_GB.dat'
 GB_Cell_list = None
 
 def find_GB_Cell_list(basins=[21, 34]):

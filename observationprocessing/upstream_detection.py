@@ -106,8 +106,8 @@ if output_cell_area and area_mapping_datafile: grid.wghm_cellarea_file = area_ma
 # method of reading flow-direction data
 # def read_flow_data():
 #     global flow_direction_data, flow_direction_file
-#     headers, temp = read_flat_file(flow_direction_file, skiplines=6)
-#     if temp: flow_direction_data = temp
+#     headers, month_data = read_flat_file(flow_direction_file, skiplines=6)
+#     if month_data: flow_direction_data = month_data
 #     else:
 #         message = 'Flow direction data could not be retrieved. Either "%s" does not exists or has bad-format.'%flow_direction_file
 #         print(message)
@@ -159,8 +159,8 @@ if output_cell_area and area_mapping_datafile: grid.wghm_cellarea_file = area_ma
 #         direction = directions[i]
 #         if is_upstream(row, col, direction):
 #             list_out.append((row, col))
-#             temp = get_upstream_cells(row, col)
-#             if temp: list_out = list_out + temp
+#             month_data = get_upstream_cells(row, col)
+#             if month_data: list_out = list_out + month_data
 #
 #     return list_out
 

@@ -590,14 +590,14 @@ def main():
                 #
                 # if not check_success:
                 #     for cgroup in grace_1deg_cells:
-                #         temp = []
+                #         month_data = []
                 #
                 #         for cell in cgroup:
                 #             row, col = grid.find_row_column(cell[0], cell[1], degree_resolution=0.5)
                 #             cnum = grid.map_wghm_cell_number(row, col, base_resolution=0.5)
-                #             temp.append(cnum)
+                #             month_data.append(cnum)
                 #
-                #         if len(temp) == len(cgroup): target_wghm_cells.append(temp)
+                #         if len(month_data) == len(cgroup): target_wghm_cells.append(month_data)
                 #         else:
                 #             print('[Error]\n\t\tWGHM cell number could not be generated.')
                 #             exit(os.EX_DATAERR)

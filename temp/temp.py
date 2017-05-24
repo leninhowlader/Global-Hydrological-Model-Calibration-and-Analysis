@@ -66,7 +66,7 @@ print(list(results[0]))
 
 print(ps.seasonal_behaviour_summary(dt))
 
-# filename = '/media/sf_mhasan/private/temp/peaks_and_depressions.csv'
+# filename = '/media/sf_mhasan/private/month_data/peaks_and_depressions.csv'
 # ps.save_numpy_data(filename, dt, delimiter=',',fmt=('%d','%s','%d','%s','%d','%s'))
 #np.savetxt(filename, dt, header=('year,peak,peak_moonth,bottom,bottom_month,amplitude'), delimiter=',', fmt=('%d','%s','%d','%s','%d','%s'), comments='')
 

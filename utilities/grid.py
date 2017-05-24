@@ -293,7 +293,7 @@ class grid:
             try: temp[centroid[0]].append(centroid[1])
             except: temp[centroid[0]] = [centroid[1]]
 
-        for k, v in temp.items(): # python2x: temp.items() python3x: temp.items()
+        for k, v in temp.items(): # python2x: month_data.items() python3x: month_data.items()
             mn, mx = min(v), max(v)
             vl = [(k-d, mn-d), (k+d, mn-d), (k-d, mx+d), (k+d, mx+d)]
             for v in vl:
@@ -304,7 +304,7 @@ class grid:
             try: temp[centroid[1]].append(centroid[0])
             except: temp[centroid[1]] = [centroid[0]]
 
-        for k, v in temp.items(): # python2x: temp.items() python3x: temp.items()
+        for k, v in temp.items(): # python2x: month_data.items() python3x: month_data.items()
             mn, mx = min(v), max(v)
             vl = [(mn-d, k-d), (mn-d, k+d), (mx+d, k-d), (mx+d, k+d)]
             for v in vl:
@@ -503,7 +503,7 @@ class grid:
                 for item in sub_groups[i]:
                     if item-d not in temp: temp.append(item-d)
                     if item+d not in temp: temp.append(item+d)
-                # temp.sort()
+                # month_data.sort()
                 sub_groups[i] = temp
 
             # assign sub-groups to latitude dictionary

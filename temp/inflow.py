@@ -192,7 +192,7 @@ def main():
                     #if 1: break
                     # write output into a shape file
                     month = m + 1
-                    filename = '/media/sf_mhasan/private/temp/inflow_map/inflow_%d_%s.shp' % (year, str(month).rjust(2, '0'))
+                    filename = '/media/sf_mhasan/private/month_data/inflow_map/inflow_%d_%s.shp' % (year, str(month).rjust(2, '0'))
                     create_inflow_shapefile(filename, inflows)
                     break
             else: break

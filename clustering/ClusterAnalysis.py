@@ -12,7 +12,7 @@ filename_GLakeFrc = '../wgap_home/INPUT/G_GLOLAK.UNF0'
 filename_GWetLandFrc = '../wgap_home/INPUT/G_GLOWET.UNF0'
 filename_LLakeFrc = '../wgap_home/INPUT/G_LOCLAK.UNF0'
 filename_LWetLandFrc = '../wgap_home/INPUT/G_LOCWET.UNF0'
-output_filename = '/media/sf_mhasan/private/temp/wghm_grid3.shp'
+output_filename = '/media/sf_mhasan/private/month_data/wghm_grid3.shp'
 
 
 def main():

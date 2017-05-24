@@ -4,7 +4,7 @@ sys.path.append('..')
 from utilities.fileio import read_flat_file, write_flat_file
 from utilities.grid import grid
 
-filename = '/media/sf_mhasan/private/temp/ET_STD_WGAP_OUTPUT/Landcover/LCT_Brahmaputra.csv'
+filename = '/media/sf_mhasan/private/month_data/ET_STD_WGAP_OUTPUT/Landcover/LCT_Brahmaputra.csv'
 
 headers, data = read_flat_file(filename, separator=',', header=True)
 
