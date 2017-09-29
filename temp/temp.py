@@ -1,10 +1,34 @@
-import sys, numpy as np, os
+import sys, numpy as np, os, struct
 sys.path.append('..')
 from calibration.predstat import SeasonalStatistics as ps
 from utilities.fileio import read_flat_file
 from calibration.configuration import Configuration
 
+import csv
 
+temp = None
+try:
+    f = open('GAREA.UNF0', 'rb')
+    bsize, bformat = 4 * 360, '>' + 'f' * 360
+    block = f.read(bsize)
+    temp = struct.unpack(bformat, block)
+except:
+    succeed = False
+
+print(temp)
+if 1: exit()
+
+f = open('../utilities/data/flow-direction.asc', 'r')
+
+reader = csv.reader(f, delimiter=' ', lineterminator='\r\n')
+dir(reader)
+#data = list(reader)[6:]
+#for i in range(len(data)): data[i] = list(map(int, data[i]))
+data = [list(map(int, rec[:720])) for rec in list(reader)[6:]]
+print(len(data))
+print(data[:3])
+
+if 1: exit()
 filename = 'brahmaputra_bahadurbad_2646100_configuration.txt'
 
 config = Configuration.read_configuration_file(filename)

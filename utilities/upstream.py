@@ -47,7 +47,7 @@ class Upstream:
 
         return Upstream.flow_direction_data[row][col]
 
-    # method of finding if a give cell is a upstream cell for another reference cell;
+    # method of finding if a given cell is a upstream cell for another reference cell;
     # the reference cell is referred as direction from the given cell
     @staticmethod
     def is_upstream(row, col, direction):

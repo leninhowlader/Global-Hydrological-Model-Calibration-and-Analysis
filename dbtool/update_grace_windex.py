@@ -15,7 +15,7 @@ import psycopg2
 server = '139.17.99.27'
 database = 'cedim_rfra'
 usr = 'mhasan'
-pwd = ''
+pwd = '$mhasan$'
 schema = 'tmp'
 
 
@@ -165,77 +165,93 @@ def update_main_dbtable():
 
     return True
 
-def insert_into_temporary_dbtable():
+def insert_into_temporary_dbtable(filename=''):
     global datadir, schema, temporary_db_table, data_column_name
     succeed = True
 
     rcount = 0
-    flist = [f for f in os.listdir(datadir) if os.path.isfile(os.path.join(datadir, f))]
-    for f in flist:
-        print('\treading file %s' %f)
-        filename = os.path.join(datadir, f)
-        headers, d = read_flat_file(filename, separator=',', header=False)
+    headers, d = read_flat_file(os.path.join(datadir, filename), separator=',', header=False)
 
-        if d and len(d) == 180:
-            for r in d:
-                if len(r) != 360:
-                    succeed = False
-                    break
-        if succeed:
-            con = None
-            try:
-                con = psycopg2.connect(host=server, database=database, user=usr, password=pwd)
-                cur = con.cursor()
+    if d and len(d) == 180:
+        for r in d:
+            if len(r) != 360:
+                succeed = False
+                break
+    if succeed:
+        con = None
+        try:
+            con = psycopg2.connect(host=server, database=database, user=usr, password=pwd)
+            cur = con.cursor()
 
-                yr, mon, day = int(f[-12:][:4]), int(f[-8:][:2]), int(f[-6:][:2])
-                sql_str = 'INSERT INTO %s.%s (cid, date, %s) VALUES ' % (schema, temporary_db_table, data_column_name)
-                sql_str += ','.join(["(%d,'%d-%d-%d',%f)" % (i*360+j, yr, mon, day, d[i][j]) for i in range(180) for j in range(360) if d[i][j]==d[i][j]]) + ';'
+            yr, mon, day = int(filename[-12:][:4]), int(filename[-8:][:2]), int(filename[-6:][:2])
+            sql_str = 'INSERT INTO %s.%s (cid, date, %s) VALUES ' % (schema, temporary_db_table, data_column_name)
+            sql_str += ','.join(["(%d,'%d-%d-%d',%f)" % (i*360+j, yr, mon, day, d[i][j]) for i in range(180) for j in range(360) if d[i][j]==d[i][j]]) + ';'
 
-                cur.execute(sql_str)
-                rcount += cur.rowcount
-                con.commit()
-                try: con.close()
-                except: pass
+            cur.execute(sql_str)
+            rcount += cur.rowcount
+            con.commit()
+            try: con.close()
             except: pass
+        except: pass
 
     return rcount
 
 def main():
     global flag_create_new_column
 
+    # insert a new column in the main data-table, if required
     if flag_create_new_column:
         print('inserting new column into the main data table ...', end='', flush=True)
         succeed = create_new_column()
         if succeed: print('[done]')
         else: print('[failed]')
 
+    # create a temporary data table into the database
     print('creating temporary table in database ...', end='', flush=True)
     succeed = create_temporary_db_table()
     if succeed: print('[done]')
-    else: print('[failed]')
+    else:
+        print('[failed]')
+        exit(os.EX_DATAERR)
 
-    print('inserting new data into the temporary data table ...')
-    rowcount = insert_into_temporary_dbtable()
-    if rowcount > 0: print('[done]')
-    else: print('[failed]')
+    flist = [f for f in os.listdir(datadir) if os.path.isfile(os.path.join(datadir, f))]
+    for f in flist:
+        print('reading data file: %s' % f)
+        # read data from data file and insert data into temporary data table
+        print('\tinserting new data into the temporary data table ...', end='', flush=True)
+        rowcount = insert_into_temporary_dbtable(filename=f)
+        if rowcount > 0: print('[done]')
+        else: print('[failed]')
 
-    print('updating the main data table...', end='', flush=True)
-    if rowcount > 0:
-        succeed = update_main_dbtable()
+        # update main data table using data in the temporary table
+        print('\tupdating the main data table...', end='', flush=True)
+        if rowcount > 0:
+            succeed = update_main_dbtable()
+            if succeed: print('[done]')
+            else: print('[failed]')
+
+        # clear temporary table
+        print('\tcleaning temporary data table ...', end='', flush=True)
+        succeed = clear_temporary_db_table()
         if succeed: print('[done]')
         else: print('[failed]')
 
+
+    # drop temporary table from database
     print('droping the temporary data table ...', end='', flush=True)
     succeed = drop_temporary_db_table()
     if succeed: print('[done]')
     else: print('[failed]')
 
-    print(succeed)
+    if not succeed:
+        print('Program failed')
+        exit(os.EX_SOFTWARE)
+    else: print('Program ends successfully')
+
+    exit(os.EX_OK)
 
 def test():
     print('this must work ...', end='', flush=False)
     print('[okay]')
 
-    print('finished')
-
-if __name__ == '__main__': test()
+if __name__ == '__main__': main()

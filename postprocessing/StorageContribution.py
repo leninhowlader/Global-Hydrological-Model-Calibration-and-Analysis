@@ -11,9 +11,9 @@ from utilities.grid import grid
 #temporarily
 from calibration.variable import SimVariable
 
-config_filename = 'ganges_configuration_km3.txt'
-total_storage_variable_name = 'TOTAL_STORAGE'
-filename_postfix = 'ganges_optimum'
+config_filename = 'input/configuration_GAN.txt'
+total_storage_variable_name = 'TotalStorageGAN_km3'
+filename_postfix = 'ganges_'
 
 def main():
     global config_filename, total_storage_variable_name, filename_postfix
