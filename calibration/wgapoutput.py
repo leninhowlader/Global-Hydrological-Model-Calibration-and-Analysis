@@ -6,6 +6,7 @@ from utilities.fileio import read_binary_file
 class WGapOutput:
     @staticmethod
     def read_unf(filename, file_endian=FileEndian.big_endian, ncol=0):
+        if not os.path.exists(filename): return []
 
         unf_type = -1
         try: unf_type = int(filename[-1])

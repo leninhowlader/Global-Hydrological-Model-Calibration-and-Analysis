@@ -223,7 +223,7 @@ def main():
     if upstream_cells:
 
         # EXTRA PRECAUTION
-        # delete duplicate upstream sells
+        # delete_ndx duplicate upstream sells
         for i in range(len(upstream_cells)):
             for j in reversed(range(1, len(upstream_cells[i]))):
                 for k in range(j):

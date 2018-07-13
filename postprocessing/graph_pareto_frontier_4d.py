@@ -1,121 +1,94 @@
-import sys
-sys.path.append('..')
-
 import numpy as np
-from postprocessing.ParetoFront import ParetoDominance
-from utilities.fileio import write_flat_file
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.mplot3d import Axes3D         # required for 3D plotting
 
 
-def index_num(x, y): return ((x+y-2)*(x+y-1)+2*x)/2
+# method of best point selection (respecting euclidian distance from utopia)
+def best_point_ed(ds):
+    ed = []
+    for i in range(ds.shape[0]):
+        ed.append(np.sum((1-ds[i,:])**2))
+
+    if not ed: return []
+    else:
+        ndx = ed.index(min(ed))
+        return np.ndarray.tolist(ds[ndx])
 
 
-i = 15
-calid = 'B1C' + str(i).rjust(2, '0')
+# step 1: get data
+calid = 'B1C15'
 f = '/media/sf_Experiments/%s_pareto_front.csv'%calid.lower()
+d = np.loadtxt(f, delimiter=',')        # read data from file
 
-d = np.loadtxt(f, delimiter=',')
-d = d[~np.isnan(d).any(axis=1)]
-d = d[d[:,4]<=0.6,:]
+# step-2: exclude data points outside preferred limits
+d = d[~np.isnan(d).any(axis=1)]         # remove rows having any nan value
+fx = d[:, 1:]                           # crop objective columns
+fx = 1-fx                               # additional step: 1-KGE was used as objective function during calibration.
+                                        # thus, it is necessary to convert the objective values back to KGE values
 
-fx = 1-d[:,1:]
+lmt = 0.6                               # set minimum efficiency limit i.e., min f(x)
+for i in range(fx.shape[1]):            # exclude data below the minimum limit
+    fx = fx[fx[:,i]>=lmt,:]
 
-fig = plt.figure()
+# step-3: initialize and draw figure
+fig = plt.figure(figsize=(7,7))
 ax = fig.add_subplot(111, projection='3d')
+plt.subplots_adjust(left=0, bottom=0.05, right=0.95, top=.85, wspace=None, hspace=None)
 fig.set_facecolor('white')
+title = '(k) PF for Q, ET, SWS, TWSV'
+plt.suptitle(title, fontsize=22, style='italic')
 
-
+# split data into four dimensions
 x = fx[:,0]
 y = fx[:,1]
 z = fx[:,2]
-c = fx[:,3]
+c = fx[:,3]                             # the fourth dimension will be shown as color map
 
-p = ax.scatter(x, y, z, c=c, cmap=plt.get_cmap('Greens'), edgecolors='face')
-cbar = plt.colorbar(p, ticks=np.arange(.5,1.0,0.1), pad=0.0, fraction=0.05, aspect=12)
+# plot the scatter diagram
+# p = ax.plot_trisurf(x, y, z, linewidth=0, antialiased=True, edgecolor='blue', color='yellow')
+p = ax.scatter(x, y, z, c=c, cmap=plt.get_cmap('Greys'), edgecolors='face', s=40)
+
+
+# set axes limits
+ax.set_ylim(1.01, min(y))
+ax.set_xlim(1.01, min(x))
+ax.set_zlim(1.01, min(z))
+
+# set axes ticks
+ax.xaxis.set_ticks(np.arange(lmt, 1.0, 0.1))
+ax.yaxis.set_ticks(np.arange(lmt, 1.0, 0.1))
+ax.zaxis.set_ticks(np.arange(lmt, 1.0, 0.1))
+ax.tick_params(axis='both', which='major', labelsize=20)
+
+# add axes labels
+ax.set_ylabel('KGE for ET', fontsize=20)
+ax.set_xlabel('KGE for Q', fontsize=20)
+ax.set_zlabel('KGE for SWS', fontsize=20)
+
+ax.xaxis.labelpad = 20
+ax.yaxis.labelpad = 20
+ax.zaxis.labelpad = 20
+
+# draw the colour bar
+cbar = plt.colorbar(p, ticks=np.arange(lmt,1.0,0.1), pad=0, fraction=0.05, aspect=12)
 cbar.outline.set_linewidth(0.8)
-# cbar.
-# print(cbar.ax.get_yticks())
-# cbar.ax.get_yaxis().set_ticks(np.arange(0.0,1.0,0.1))
-cbar.ax.get_yaxis().labelpad = 15
-cbar.ax.set_ylabel('KGE (TWSV)', rotation=270)
+cbar.ax.get_yaxis().labelpad = 18
+# cbar.ax.get_yaxis().set_ticks_position = 'right'
+cbar.ax.get_yaxis().tick_left()
 
-#cbar.ax.set_yticks(np.arange(0.6,1.0,0.1), minor=False)
-# ax.plot_surface(x, y, z)
+for a in dir(cbar.ax.get_yaxis()): print(a)
+cbar.ax.tick_params(axis='both', which='major', labelsize=20, pad=10)
+cbar.ax.set_ylabel('KGE for TWSV', rotation=270, fontsize=20)
 
-ax.set_ylabel('KGE (ET)')
-ax.set_xlabel('KGE (Q)')
-ax.set_zlabel('KGE (SWS)')
-ax.set_ylim(1.01, 0.65)
-ax.set_xlim(1.01, 0.65)
-ax.set_zlim(1.01, 0.65)
-ax.xaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-ax.yaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-ax.zaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-ax.scatter(1, 1, 1, marker='D', edgecolor='face', c='r')
-ax.scatter(0.887335016,	0.924236304, 0.841865925, marker='+', edgecolor='face', c='r', s=250)
 
-ax.view_init(25,230)
+# add the optimal (utopia) point and the chosen best point
+ax.scatter(1, 1, 1, marker='o', edgecolor='face', c='r', zorder=1, s=150)
+p1, p2, p3, p4 = best_point_ed(fx)
+ax.scatter(p1, p2, p3, marker='+', edgecolor='face', c='r', s=500, zorder=-1, linewidths=4)
+
+# show or save the graph
+ax.view_init(30,-110)                    # adjust viewing angle
+f = '/media/sf_Experiments/%s_pareto_frontier.png' % calid
+fig.savefig(f)
 plt.show()
-
-def plot_4d(labels=[]):
-
-    return 0
-
-# ax.view_init(20,230)
-# plt.show()
-
-# fxc = (d[:,1:]//0.025)+1
-# ndx1 = index_num(fxc[:,0], fxc[:,3])
-# ndx2 = index_num(fxc[:,1], fxc[:,2])
-#
-#
-#
-# d1 = d[:,2]
-# d2 = d[:,3]
-# #plt.plot(d1, d2, 'ro')
-# #plt.show()
-#
-# fig, ((ax1, ax2, ax3)) = plt.subplots(1, 3)
-# fig.subplots_adjust(left=0.2, wspace=0.6)
-# fig.set_size_inches(40,20)
-#
-# d = 1-d
-#
-#
-# ax.plot(d[:,1], d[:,2], 'r.')
-# #ax1.set_title('ylabels not aligned')
-# ax1.set_ylabel('KGE (Q)')
-# ax1.set_xlabel('KGE (ET)')
-# ax1.set_ylim(0.65, 1.01)
-# ax1.set_xlim(0.65, 1.01)
-# ax1.xaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-# ax1.yaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-#
-# ax3.plot(d[:,1], d[:,3], 'r.')
-# #ax3.set_title('ylabels not aligned')
-# ax3.set_ylabel('KGE (Q)')
-# ax3.set_xlabel('KGE (SWS)')
-# ax3.set_ylim(0.65, 1.01)
-# ax3.set_xlim(0.65, 1.01)
-# ax3.xaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-# ax3.yaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-#
-# labelx = -0.3  # axes coords
-#
-# ax2.plot(d[:,2], d[:,3], 'r.')
-# #ax2.set_title('ylabels not aligned')
-# ax2.set_ylabel('KGE (Q)')
-# ax2.set_xlabel('KGE (SWS)')
-# ax2.set_ylim(0.65, 1.01)
-# ax2.set_xlim(0.65, 1.01)
-# ax2.xaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-# ax2.yaxis.set_ticks(np.arange(.7, 1.0, 0.1))
-#
-# # ax4.plot(np.random.rand(10))
-# # ax4.set_ylabel('aligned 2')
-# # ax4.yaxis.set_label_coords(labelx, 0.5)
-#
-# plt.show()
+# plt.close(fig)

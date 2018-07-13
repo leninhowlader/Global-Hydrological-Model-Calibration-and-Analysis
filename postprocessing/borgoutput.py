@@ -5,10 +5,10 @@ from utilities.fileio import read_flat_file
 
 class BorgOutput:
     @staticmethod
-    def read_borg_output(filename):
+    def read_borg_output(filename, separator=' '):
         result_set = []
 
-        h, result_set = read_flat_file(filename, separator=' ', header=False)
+        h, result_set = read_flat_file(filename, separator=separator, header=False)
 
         return result_set
 

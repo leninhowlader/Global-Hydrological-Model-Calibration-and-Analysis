@@ -1,10 +1,11 @@
+#!/usr/bin/python3
+
 flowdirection_filename = 'flow-direction.asc'
 wghm_areafile = 'GAREA.UNF0'
 reference_cell_longitude = 88.75
 reference_cell_latitude = 24.25
 print_cell_list = True
-use_centroids_during_printing = True
-output = ''
+output_filename = ''
 
 
 import os, csv, struct
@@ -20,14 +21,12 @@ class Upstream:
     @staticmethod
     def read_flowdirection_dataset():
         succeed = True
-
         try:
             f = open(Upstream.flow_direction_file, 'r')
             reader = csv.reader(f, delimiter=' ')
             Upstream.data_flowdirection = [list(map(int, rec[:720])) for rec in list(reader)[6:]]
             if len(Upstream.data_flowdirection) != 360: succeed = False
         except: succeed = False
-
         return succeed
 
     @staticmethod
@@ -56,7 +55,6 @@ class Upstream:
     @staticmethod
     def find_upstream_cells(refc_row, refc_col):
         upstream_cells = []
-
         neighbours = Upstream.find_immediate_neighbours(refc_row, refc_col)
         for i in range(len(neighbours)):
             refc_row = neighbours[i][0]
@@ -66,13 +64,11 @@ class Upstream:
                 upstream_cells.append((refc_row, refc_col))
                 temp = Upstream.find_upstream_cells(refc_row, refc_col)
                 if temp: upstream_cells = upstream_cells + temp
-
         return upstream_cells
 
     @staticmethod
     def is_ready():
         if not Upstream.data_flowdirection: Upstream.read_flowdirection_dataset()
-
         if not Upstream.data_flowdirection: return False
         else: return True
 
@@ -86,7 +82,6 @@ class Grid:
     @staticmethod
     def read_0p5_latitude_cell_area():
         succeed = True
-
         try:
             f = open(Grid.area_filename, 'rb')
             bsize, bformat = 4*360, '>' + 'f'*360
@@ -94,7 +89,6 @@ class Grid:
             temp = struct.unpack(bformat, block)
             if temp and len(temp) == 360: Grid.areas_0p5_cells = list(temp)
         except: succeed = False
-
         return succeed
 
     @staticmethod
@@ -134,30 +128,81 @@ class Grid:
         else: return True
 
 def main():
+    # step-01: get global parameters and transfer to class variables (if necessary)
     global flowdirection_filename, wghm_areafile, reference_cell_longitude, reference_cell_latitude
-
-
+    global print_cell_list, output_filename
     if flowdirection_filename: Upstream.set_flow_direction_filename(flowdirection_filename)
     if wghm_areafile: Grid.set_area_filename(wghm_areafile)
 
-    proceed = False
-    if Upstream.is_ready() and Grid.is_okay(): proceed = True
+    # step-02: check input
+    succeed = False
+    if -90<=reference_cell_latitude<=90 and -180<=reference_cell_longitude<=180: succeed = True
+    if succeed:
+        if Upstream.is_ready() and Grid.is_okay(): succeed = True
+    if not succeed:
+        print('The program can not find upstream. Please check input parameters.')
+        exit(os.EX_NOINPUT)
 
-    if proceed:
+    # step-03: generate upstream and find area of each upstream cell
+    centroids, carea = [], []
+    basin_area = 0
+    if succeed:
+        # find the row and col num for the reference geo-location
         row, col = Grid.find_row_column(reference_cell_latitude, reference_cell_longitude)
-        upstream_cells = [(row, col)] + Upstream.find_upstream_cells(row, col)
+        # find upstream cells
+        upstream_cells = Upstream.find_upstream_cells(row, col)
+        # add the first cell into the upstream list
+        upstream_cells = [(row, col)] + upstream_cells
 
+        # find cell area for each upstream cell
+        carea = [Grid.find_area(cell[0]) for cell in upstream_cells]
+        # calculate total basin area
+        basin_area = sum(carea)
 
-        total_area = sum([Grid.find_area(cell[0]) for cell in upstream_cells])
-
-        print(total_area)
-
+        # find geo-centroid of each upstream cells
         centroids = [Grid.find_centroid(c[0], c[1]) for c in upstream_cells]
-        lines = ['%0.2f\t%0.2f'%(c[0],c[1]) for c in centroids]
-        for l in lines: print(l)
+
+        if not (centroids and carea and len(centroids) == len(carea)): succeed = False
 
 
-    exit(os.EX_OK)
+    # step-04: prepare for output
+    lines = []
+    if succeed:
+        lines.append('Summary Report:')
+        lines.append('\tstarting point: LAT %f\tLON %f' % (reference_cell_latitude, reference_cell_longitude))
+        lines.append('\ttotal number of grid cells: %d' % len(centroids))
+        lines.append('\ttotal area: %0.5f' % basin_area)
+
+        # extent of the basin
+        min_lat, max_lat = min([c[0] for c in centroids]) + 0.25, max([c[0] for c in centroids]) + 0.25
+        min_lon, max_lon = min([c[1] for c in centroids]) + 0.25, max([c[1] for c in centroids]) + 0.25
+        lines.append('\tbasin extent: TL-(Lat %0.2f Lon %0.2f) BL-(%0.2f %0.2f) BR-(%0.2f %0.2f) TR-(%0.2f %0.2f)' %
+                     (max_lat, min_lon, min_lat, min_lon, min_lat, max_lon, max_lat, max_lon))
+
+        lines.append('\nArea of Each Cell:\n%s%s%s' % ('Latitude'.ljust(12), 'Longitude'.ljust(12), 'Area (km sq)'.rjust(12)))
+        if print_cell_list:
+            for i in range(len(centroids)):
+                lines.append(('%0.2f'%centroids[i][0]).ljust(12) + ('%0.2f'%centroids[i][1]).ljust(12) + ('%0.3f'%carea[i]).rjust(12))
+
+        if not lines: succeed = False
+
+    # step-04: print result either in file or in screen
+    if succeed:
+        if output_filename:
+            try:
+                f = open(output_filename, 'w')
+                for line in lines: f.write(line + '\n')
+                f.close()
+            except: succeed = False
+        else:
+            for line in lines: print(line)
+
+    if succeed:
+        print('Program ends successfully.')
+        exit(os.EX_OK)
+    else:
+        print('Program failed!!')
+        exit(os.EX_DATAERR)
 
 
 if __name__ == '__main__': main()

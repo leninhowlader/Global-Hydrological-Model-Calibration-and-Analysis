@@ -1,20 +1,51 @@
 import sys
 sys.path.append('..')
-from calibration.configuration import Configuration
-from calibration.watergap import WaterGAP
+import numpy as np
+from postprocessing.ParetoFront import ParetoDominance
+from utilities.fileio import write_flat_file
 
-succeed = False
-config_file = 'brahmaputra_bahadurbad_2646100_configuration.txt'
-config = Configuration.read_configuration_file(config_file)
-if config.is_okay() and WaterGAP.is_okay(): succeed = True
 
-pval = [0.9578, 0.8616, 18.9246, 5, 0.9727, 0.0174, 3, 0.9242]
-if len(pval) != len(config.parameters): succeed = False
-else:
-    for i in range(len(config.parameters)): config.parameters[i].set_parameter_value(pval[i])
 
-if succeed:
-    parameter_filename = 'parameters_calib_vi.json'
-    succeed = WaterGAP.update_parameter_file(config.parameters, parameter_filename)
 
-print(succeed)
+#
+i = 6
+calid = 'B1C' + str(i).rjust(2, '0')
+f = '/media/sf_Experiments/FINAL_CALIBRATION/Brahmaputra Results/%s/funcval.csv'%calid
+#
+# # f = 'output/pareto_front.csv'
+d = np.loadtxt(f, delimiter=',')
+d = d[~np.isnan(d).any(axis=1)]
+fx = d[:,1:]
+#
+epsilon = [0.025] * fx.shape[1]
+# pareto_front = []
+#
+pareto_front, ndces = ParetoDominance.ParetoFront(fx, epsilons=epsilon, funname='paretodominance')
+# ids = d[ndces,0:1]
+
+# print(pareto_front)
+# if 1: exit()
+# results = np.append(ids, pareto_front, axis=1)
+# write_flat_file('/media/sf_Experiments/%s_pareto_front_epsilon_box.csv'%calid.lower(), results, separator=',', append=False)
+#
+#
+# funname = 'pareto dominance'
+# pareto_front, ndces = ParetoDominance.ParetoFront(fx, epsilons=epsilon, funname=funname)
+# ids = d[ndces,0:1]
+# results = np.append(ids, pareto_front, axis=1)
+# write_flat_file('/media/sf_Experiments/%s_pareto_front.csv'%calid.lower(), results, separator=',', append=False)
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
+import numpy as np
+
+
+x = pareto_front[:,0]
+y = pareto_front[:,1]
+# print(x)
+plt.scatter(x, y, edgecolor='face', marker='+', c='r')
+
+
+plt.show()
