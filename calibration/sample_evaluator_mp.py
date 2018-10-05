@@ -1,16 +1,17 @@
-#!/usr/local/Python-2.7.3/bin/python
+#!/usr/bin/python3
 
 __author__ = 'mhasan'
 
 import os, sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-# from calibration.variable import SimVariable, ObsVariable, DerivedVariable
+from calibration.variable import SimVariable, ObsVariable, DerivedVariable
 from calibration.predstat import SeasonalStatistics
 from calibration.watergap import WaterGAP
 from utilities.fileio import *
 # from mpi4py import MPI
 from copy import deepcopy
+from collections import OrderedDict
 
 def read_iter_number():
     iter_no = 0
@@ -42,7 +43,7 @@ def read_iter_number():
     return iter_no
 
 def process_parameter_sample(config, iter_no):
-    arguments = {}
+    arguments = OrderedDict()
 
     # collect parameter values from sample
     params = config.samples[iter_no]
@@ -65,7 +66,7 @@ def process_parameter_sample(config, iter_no):
     arguments['d'] = dir_filename
 
     # execute model with new parameters
-    log_file = os.path.join(WaterGAP.home_directory, 'log', 'run' + pfix + '.log')
+    log_file = '/dev/null' # os.path.join(WaterGAP.home_directory, 'log', 'run' + pfix + '.log')
     if not WaterGAP.execute_model(arguments, log_file=log_file):
         WaterGAP.remove_files(arguments)
         return False
@@ -73,7 +74,7 @@ def process_parameter_sample(config, iter_no):
     # read model output
     sim_vars, der_vars, obs_vars = deepcopy(config.sim_variables), deepcopy(config.derived_variables), config.obs_variables
     if not WaterGAP.read_predictions(sim_vars):
-        WaterGAP.remove_files()
+        WaterGAP.remove_files(arguments)
         return False
 
     for var in der_vars: var.derive_data(simvars=sim_vars, obsvars=obs_vars)
@@ -87,14 +88,19 @@ def process_parameter_sample(config, iter_no):
         for var in sim_vars+der_vars:
             var_name = 'sim_%s'%var.varname.lower()
             data = [iter_no, var_name]
-            snames, results = SeasonalStatistics.seasonal_summary(var.data_cloud)
-            if results:
-                for key in results.keys(): data += list(results[key])
+            try:
+                snames, results = SeasonalStatistics.seasonal_summary(var.data_cloud)
+                if results:
+                    for key in results.keys(): data += list(results[key])
+            except:
+                data += [None] * 10 * 7 # 10 statistics of 7 seasonal behaviors
 
-            snames, results = SeasonalStatistics.monthly_summary(var.data_cloud)
-            if results:
-                for key in results.keys(): data += list(results[key])
-
+            try:
+                snames, results = SeasonalStatistics.monthly_summary(var.data_cloud)
+                if results:
+                    for key in results.keys(): data += list(results[key])
+            except:
+                data += [None] * 6 * 12     # 6 statistics of 12 monthly behaviors
             lines.append(separator.join(str(x) for x in data))
 
         if lines: print_on_file(lines, filename, '_STAT_SUMMARY.LOCK', sleep_time=0.2)
@@ -125,15 +131,19 @@ def process_parameter_sample(config, iter_no):
     # step-x.x: calculate efficiencies
     # ----- begin of step-x.x -------
     for var in sim_vars: var.compute_anomalies()
-    results = WaterGAP.prediction_efficiency(sim_vars=sim_vars+der_vars, obs_vars=obs_vars, iter_no=iter_no)
-
+    try:
+        results = WaterGAP.prediction_efficiency(sim_vars=sim_vars+der_vars, obs_vars=obs_vars, iter_no=iter_no)
+    except:
+        results = []
+        for var in obs_vars+der_vars:
+            results += [iter_no, var.varname, var.counter_variable] + [None] * 12   # 12 statistics (i.e. error or efficiency)
     lines = []
     for d in results: lines.append(separator.join(map(str, d)))
     if lines: print_on_file(lines, config.prediction_efficiency_filename, '__PREDEFF.LOCK', sleep_time=0.1)
     # ------ end of step-x.x --------
 
     # remove files
-    WaterGAP.remove_files()
+    WaterGAP.remove_files(arguments)
 
     # return increment_done_count()
     return True
@@ -204,15 +214,14 @@ def main(argv):
     if iter_no == 0: print_on_screen('Sample processing [begin]')
 
     iter_limit = len(config.samples)
-    iter_limit = 5
 
-    while True:
+    while iter_no < iter_limit:
         # process current sample
         print_on_screen('\tProcessing of sample no. %d has been started.' % iter_no)
         temp_bool = process_parameter_sample(config, iter_no)
 
         # break the sample processing if iter no is more than the sample size
-        if iter_no >= iter_limit: break
+        # if iter_no >= iter_limit: break
 
         # read current iteration number
         while True:
@@ -224,4 +233,4 @@ def main(argv):
         print_on_screen('The process has been successfully completed.')
     exit(os.EX_OK)
 
-main(sys.argv)
+if __name__ == '__main__': main(sys.argv)

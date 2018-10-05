@@ -1,10 +1,13 @@
 upstream_filename = 'input/brahmaputra_upstreams_bahadurabad.txt'
 station_filename = ''
-data_filename = '/home/mhasan/sf_mhasan/private/ET_Mueller2013/LandFluxEVAL.merged.89-05.monthly.all.nc'
-output_filename = 'output/brahmaputra_bahadurabad_ET_Mueller2013_median_mm_daily.csv'
+data_filename = 'F:/mhasan/private/ET_Mueller2013/LandFluxEVAL.merged.89-05.monthly.all.nc'
+output_filename = 'output/brahmaputra_bahadurabad_ET_Mueller2013_iqr_mm_daily.csv'
+# stat name should be one of the followings:
+# 'ET_mean', 'ET_median', 'ET_IQR', 'ET_25', 'ET_75', 'ET_min', 'ET_max', 'ET_sd'
+stat_name = 'ET_IQR'
 
 from netCDF4 import Dataset
-import numpy as np, sys
+import numpy as np, sys, os
 sys.path.append('..')
 from utilities.upstream import Upstream
 from utilities.station import Station
@@ -80,7 +83,7 @@ def ncdump(nc_fid, verb=True):
 
 
 def main():
-    global station_filename, upstream_filename, data_filename, output_filename
+    global station_filename, upstream_filename, data_filename, output_filename, stat_name
 
     # step-01: input check
     print('checking input ...', end='', flush=True)
@@ -166,7 +169,7 @@ def main():
     lats = nc_fid.variables['lat'][:]
     lons = nc_fid.variables['lon'][:]
 
-    et_mean = nc_fid.variables['ET_median'][:]
+    et_stat = nc_fid.variables[stat_name][:]
 
     nc_fid.close()
 
@@ -181,7 +184,7 @@ def main():
             afraction = area_contrib[j]         # afraction = area fraction
             ndx_lat = np.where(lats==cell[0])
             ndx_long = np.where(lons==cell[1])
-            d = et_mean[:, ndx_lat[0], ndx_long[0]] * afraction
+            d = et_stat[:, ndx_lat[0], ndx_long[0]] * afraction
             try:
                 et_data = np.vstack((et_data, d.data.flatten()))
             except:

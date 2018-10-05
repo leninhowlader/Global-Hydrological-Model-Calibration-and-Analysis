@@ -54,11 +54,12 @@ class WGapOutput:
     def summarize(data, basin=[], weights=[]):
         if basin and weights and len(weights) != len(basin): return []
 
-        data = np.array(data)
+        data = np.array(data, dtype=np.float64)
 
         if basin:
             basin = np.array(basin)-1
             data = data[basin]
+            data = np.nan_to_num(data)
 
         if weights:
             weights = np.array(weights)

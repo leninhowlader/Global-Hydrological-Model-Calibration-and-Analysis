@@ -201,6 +201,7 @@ class WaterGAP:
         for key in arguments.keys(): arg_str += ' -' + key.lower() + ' ' + arguments[key]
         command_str = os.path.join(WaterGAP.home_directory, WaterGAP.executable) + arg_str
         if log_file: command_str += '> ' + log_file
+
         try: call(command_str, shell=True)
         except: succeed = False
 
