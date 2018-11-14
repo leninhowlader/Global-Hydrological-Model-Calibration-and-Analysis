@@ -7,9 +7,10 @@ from utilities.upstream import Upstream
 
 # filename_data = 'f:/mhasan/private/SWS_PAPA_2017/surface_water_volume_change_global_1993_2007_from_aster_GB.dat'
 filename_data = 'f:/mhasan/private/SWS_PAPA_2017/surface_water_volume_change_global_1993_2007_from_hymap_GB.dat'
-filename_grid_intersect = 'data/EAG_WGHMG_INTERSECT.DAT'
-filename_station = 'input/STATIONS_GAN.DAT'
-filename_output = 'output/ganges_hardinge_bridge_sws_papa2017_hymap_km3_new.csv'
+filename_grid_intersect = 'data/PAPA_GRID_INTERSECTION_WITH_WGHM_GRID_SALAMEH_BASIN_EXT.txt'
+filename_station = ''
+basin_cell_filename = 'input/ganges_salameh2017_upstream.txt'
+filename_output = 'output/ganges_salameh_2017_their_basin_extent_sws_km3_hymap.csv'
 
 data_area_frc = {}  # {wcnum: {ecnum: af, ecnum: af, ...}, ...}
 data_sws = {}       # {ecnum: [m1d, m2d, ...], ..}
@@ -24,7 +25,10 @@ def read_area_fraction_dataset():
 
     header, data = read_flat_file(filename_grid_intersect, separator=',', header=True)
 
-    ndx_wcn, ndx_ecn, ndx_af = 4, 3, 7  # ndx_wcn = index for wghm cell num; ndx_ecn = index for EAG cell num, ndx_af = index for area fraction
+    ndx_wcn, ndx_ecn, ndx_af = 3, 6, 10  # ndx_wcn = index for wghm cell num;
+                                        # ndx_ecn = index for EAG cell num,
+                                        # ndx_af = index for area fraction
+    # FID, longitude, latitude, cell_num, cell_area, gpcp_cid, CID, BASIN, AREA, ntsctarea, area_frc
 
     for d in data:
         try: data_area_frc[d[ndx_wcn]][d[ndx_ecn]] = d[ndx_af]
@@ -88,7 +92,7 @@ def save_basin_total(basin_id, basin_totals):
 def main():
     succeed = True
 
-    global data_area_frc, data_sws
+    global data_area_frc, data_sws, basin_cell_filename
 
     # read area fraction dataset
     print('reading grids-intersection area fraction data ... ', end='', flush=True)
@@ -108,7 +112,8 @@ def main():
 
     # read basin cells from station file
     print('reading basin cells of targeted stations ...', end='', flush=True)
-    basins = read_basin_cells()
+    # basins = read_basin_cells()
+    basins = grid.read_groupfile(basin_cell_filename, data_type=int)
     if basins: print('[done]')
     else:
         print('[failed]')

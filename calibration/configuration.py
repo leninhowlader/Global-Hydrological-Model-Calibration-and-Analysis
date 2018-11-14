@@ -184,20 +184,43 @@ class Configuration:
         return False
 
     def is_okay(self):
-        if self.sim_variables and len(self.sim_variables) == 0: return False
+        '''
+        This function checks the completeness of the configuration object. During the check, all variables'
+        completeness is also being checked. If the configuration object has observation variable(s), observation
+        data will be read hear. In case of sensitivity analysis, samples will be loaded during this check.
+        The parameters' completeness will be checked as well.
+        Finally, model executable name and address is tested.
+
+        :return: (bool) True : if all checks succeed
+                        False : otherwise
+        '''
+
+        # step: check completeness of simulation variables. there must at least be one simulation variable
+        if not self.sim_variables: return False
         else:
-            if not self.sim_variables: return False
             for var in self.sim_variables:
                 if not var.is_okay(): return False
 
-        if self.obs_variables and len(self.obs_variables) > 0:
+        # step: check completeness of observation variables (if any). Try to load the observation data
+        if len(self.obs_variables) > 0:
             if not ObsVariable.data_collection(self.obs_variables): return False
-            else:
-                if not self.obs_variables: return False
-                for var in self.obs_variables:
-                    if not var.is_okay(): return False
 
+            for var in self.obs_variables:
+                if not var.is_okay(): return False
+
+        # step: check completeness of derived variables (if any)
+        if len(self.derived_variables) > 0:
+            for var in self.derived_variables:
+                if not var.is_okay(): return False
+                if not var.evaluate_equation(simvars=self.sim_variables, obsvars=self.obs_variables):
+                    return False
+
+        # step: check if the samples can be gathered in case of sensitivity analysis mode. load the samples.
+        # if parameter file is specified instead of defining individual parameters, create the parameter
+        # object with provided information in the parameter info file.
         if self.__mode == 'sensitivity':
+
+            # check the sample file and load samples
             if not self.sample_file: return False
             elif not self.samples:
                 header, dt = read_flat_file(self.sample_file, separator=',')
@@ -206,19 +229,23 @@ class Configuration:
                         if len(d) != len(self.parameters): return False
                     self.samples = dt
                 else: return False
-
             if not self.samples: return False
 
+            # create parameter objects from parameter info file (if given)
             if self.input_file_for_parameters: self.parameters = Parameter.read_parameter_list(self.input_file_for_parameters, header=True)
 
+        # step: check completeness of parameters
         if not self.parameters: return False
+        else:
+            for param in self.parameters:
+                if not param.is_okey(): return False
 
+        # step: check model executable name and address. [this check could be omitted]
         if not WaterGAP.executable:
             executable_name = self.get_executable_name()
             if WaterGAP.home_directory:
                 if executable_name.find(WaterGAP.home_directory) == -1: executable_name = os.path.join(WaterGAP.home_directory, executable_name)
             WaterGAP.executable = executable_name
-
         if not WaterGAP.executable: return False
 
         return True

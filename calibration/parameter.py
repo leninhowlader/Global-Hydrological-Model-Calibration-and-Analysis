@@ -17,6 +17,11 @@ class Parameter:
         self.cell_specific_values = []
         self.precision_level = 4
 
+    def is_okey(self):
+        if not self.parameter_name: return False
+        elif self.upper_bound <= self.lower_bound: return False
+        else: return True
+
     def set_parameter_name(self, param_name): self.parameter_name = param_name
     def set_lower_bound(self, bound): self.lower_bound = bound
     def set_upper_bount(self, bound): self.upper_bound = bound

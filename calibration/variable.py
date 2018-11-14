@@ -1,13 +1,14 @@
 __author__ = 'mhasan'
 
-import sys, numpy as np
+import sys, numpy as np, os
 sys.path.append('..')
 from calibration.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
-from utilities.fileio import read_binary_file, read_flat_file, write_flat_file
+from utilities.fileio import read_binary_file, read_flat_file, write_flat_file, acquire_lock, release_lock
 from calibration.stats import stats
 from calendar import isleap
 from collections import OrderedDict
 from calibration.wgapoutput import WGapOutput
+from calibration.watergap import WaterGAP
 
 class DataSource:
     def __init__(self):
@@ -914,12 +915,155 @@ class SimVariable(Variable):
 
         return succeed
 
+    def dump_time_series_from_model_prediction(self, start_year, end_year, dumping_directory='', additional_attributes=[]):
+        '''
+        This function will read model predictions and (usually) calculates basin average time-series. Finally
+        the timeseries will be dumped as binary files. To avoid unnecessary dumping of large data, the function
+        demands data (cell numbers) in its cell_group list. If cell_group is empty, the function returns an
+        unsuccessful operation signal.
+
+        If group function i.e., the aggregation function is specified, predictions will be aggregated for each
+        group of cell (or basin) and a group id will be assigned. If weights are available in the weights list,
+        these weights will be applied during applying aggregation function. The anomaly option will be ignored
+        in this operation. Furthermore, the operation will only be performed if the data type is a model output.
+
+        dump format: all values will be formatted/changed to data type 'float' and the file endian type specified
+        in data source will be followed. If additional attributes are provided, they will be placed in the beginning
+        of each row. If group operation is performed a group id will be added after the the additional attributes;
+        then an id for time period (e.g., year or year or month number etc) will be added. Finally, (time-specific)
+        values will be placed in the remaining places of the row.
+
+        An example of a row of monthly predictions would look like:
+            [add. attrib1, add. attrib2, ...., group id/cell id, year, value of jan, value of feb, .... , value of dec]
+
+        Row sizes of dumped files:
+            (1) For monthly output files (...[YEAR].UNF*):
+                    len of additional attribute + 1 (for cell/group id) + 1 (for year) + 12 (for each month)
+            (2) For daily dot365 output files (not implemented):
+                    len of additional attribute + 1 (for cell/group id) + 1 (for year) + 365 (for each day)
+            (3) For daily dot12.31 ourput files (not implemented): unknown
+
+        Parameters:
+        :param start_year: (int) start year of prediction
+        :param end_year: (int) end year of prediction
+        :param dumping_directory: (string; optional) path where data to be dumped
+        :param additional_attributes: (list of numbers; optional) additional attributes to be dumped
+        :return: (bool) True on success,
+                        False Otherwise
+        '''
+
+        # step: check presence of target cells
+        ncell = 0
+        for group in self.cell_groups: ncell += len(group)
+        if ncell == 0: return False
+
+        # step: check if data source object is okay
+        if not self.data_source.is_okay(): return False
+        if not self.data_source.file_type == FileType.wghm_binary: return False
+
+        # step: form data format string
+        format_str = 'f'
+        if self.data_source.file_endian == FileEndian.little_endian: format_str = '<%s'%format_str
+        else: format_str = '>%s'%format_str
+
+        # step: for each year from start year to end year read model predictions
+        succeed = True
+        prediction_filename = self.data_source.filename
+        ndx = prediction_filename.lower().find('[year]')
+        for year in range(start_year, end_year + 1):
+            file_name = prediction_filename[:ndx] + str(year) + prediction_filename[ndx + 6:]
+            file_name = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.output_directory, file_name)
+            pred = WGapOutput.read_unf(file_name, file_endian=self.data_source.file_endian)
+
+            if self.group_stats:
+                for i in range(len(self.cell_groups)):
+                    basin_id = i + 1
+                    basin = np.array(self.cell_groups[i])
+                    data = pred[basin]
+
+                    if self.cell_weights:
+                        weights = self.cell_weights[i]
+                        if data.ndim == 1: data = data * weights
+                        else: data = data * weights[:, None]
+
+                        data = np.sum(data, axis=0) / np.sum(weights)
+                    else: data = np.sum(data, axis=0)
+
+                    # step: append additing attributes and time data (time info i.e., year, month, day etc.)
+                    additional_attributes += [basin_id, year]
+                    if data.ndim == 1: data = np.append(additional_attributes, data)
+                    else:
+                        ncol = len(additional_attributes)
+                        nrow = data.shape[0]
+                        additional_attributes = np.array(additional_attributes * nrow).reshape(nrow, ncol)
+                        data = np.concatenate((additional_attributes, data), axis=0)
+
+                    # step: dump data into file
+                    ncol = 0
+                    if data.ndim == 1: ncol = data.size
+                    else: ncol = data.shape[1]
+
+                    dump_filename = self.varname + '.%d.unf0' % (ncol)
+                    if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
+
+                    succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), self.varname)
+            else:
+                cells = []
+                for group in self.cell_groups: cells += group
+                data = pred[cells]
+
+
+        return succeed
+
+    def dump_data_into_file(self, filename, data_bytes, lock_name=''):
+        '''
+        This function dumps data into specified file in binary (4-byte float) format. Lock will be used to avoid
+        conflicts in case of parallel runs, if lock name is provided.
+
+        Parameters:
+        :param filename: (string) name of the file
+        :param data: (bytes) binary data (as bytes) to be dumped into file
+        :param lock_name: (string; optional) name of lockfile. Lock will only be applied if provided
+        :return: (bool) True on success,
+                        False otherwise
+        '''
+        succeed = True
+
+        f = None
+        if lock_name:
+            fd = open(lock_name, 'w')
+            if acquire_lock(fd, lock_name):
+                try:
+                    f = open(filename, 'ab')
+                    f.write(data_bytes)
+                except: succeed = False
+                finally:
+                    try: f.close()
+                    except: pass
+                    release_lock(fd)
+            fd.close()
+        else:
+            try:
+                f = open(filename, 'ab')
+                f.write(data_bytes)
+            except: succeed = False
+            finally:
+                try: f.close()
+                except: pass
+
+        return succeed
+
 class DerivedVariable(Variable):
     def __init__(self):
         Variable.__init__(self)
         self.data_source = None
         self.equation = ''
         self.equ_evaluated = False
+        self.compute_anomaly = False
+
+    def is_okay(self):
+        if not self.varname or not self.equation: return False
+        else: return True
 
     def evaluate_equation(self, simvars=[], obsvars=[]):
         if not self.equ_evaluated:
@@ -965,6 +1109,9 @@ class DerivedVariable(Variable):
 
         return succeed
 
+    def compute_anomalies(self):
+        if self.compute_anomaly: self.data_cloud.data = stats.compute_anomalies(self.data_cloud.data)
+
     def find_variable(self, varname, variables, additional_variables=[]):
         var = None
 
@@ -1005,4 +1152,9 @@ class DerivedVariable(Variable):
                                 var.varname = value
                             elif key in ['equation']:
                                 var.equation = value
+                            elif key in ['compute anomalies', 'compute anomaly' , 'anomaly', 'anomalies', 'calculate anomalies',
+                                         'calculate anomaly']:
+                                value = value.lower()
+                                if value in ['yes', 'y', '1', 'true', 't']: var.compute_anomaly = True
+                                else: var.compute_anomaly = False
             except: return None

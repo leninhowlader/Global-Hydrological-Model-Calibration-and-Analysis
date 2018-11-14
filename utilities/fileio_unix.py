@@ -6,7 +6,7 @@
 #---------------------------:) DO NOT CHANGE ANYTHING BELOW IF YOU ARE NOT CONFIDENT :)----------------------------------#
 
 from datetime import datetime
-import struct, time
+import struct, fcntl, time
 
 # method for reading flat file
 def read_flat_file(filename, separator=' ', header=False, skiplines=0):
@@ -155,45 +155,40 @@ def write_UNF_file(data, filename, endian='big-endian', unf_type=-1):
 
     return True
 
-def acquire_lock(fd, sleep_time=0.1):
-    return True
-
-def release_lock(fd, sleep_time=0.1):
-    return True
 
 # acquire lock
-# def acquire_lock(fd, sleep_time=0.1):
-#     while True:
-#         try:
-#             fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-#             return True
-#         except: time.sleep(sleep_time)
-#
-# def release_lock(fd, sleep_time=0.1):
-#     while True:
-#         try:
-#             fcntl.lockf(fd, fcntl.LOCK_UN)
-#             return True
-#         except: time.sleep(sleep_time)
-#
-# def print_on_screen(message):
-#     f = open('_SCRNOUT.LOCK', 'w')
-#     if acquire_lock(f):
-#         print(message)
-#         release_lock(f)
-#     f.close()
-#
-# def print_on_file(lines, filename, lockname, sleep_time=0.1):
-#     fd = open(lockname, 'w')
-#     if acquire_lock(fd, sleep_time):
-#         f = None
-#         try:
-#             f = open(filename, 'a')
-#             for line in lines:
-#                 f.write(line + '\n')
-#         except: pass
-#         finally:
-#             f.close()
-#             release_lock(fd)
-#     fd.close()
+def acquire_lock(fd, sleep_time=0.1):
+    while True:
+        try:
+            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except: time.sleep(sleep_time)
+
+def release_lock(fd, sleep_time=0.1):
+    while True:
+        try:
+            fcntl.lockf(fd, fcntl.LOCK_UN)
+            return True
+        except: time.sleep(sleep_time)
+
+def print_on_screen(message):
+    f = open('_SCRNOUT.LOCK', 'w')
+    if acquire_lock(f):
+        print(message)
+        release_lock(f)
+    f.close()
+
+def print_on_file(lines, filename, lockname, sleep_time=0.1):
+    fd = open(lockname, 'w')
+    if acquire_lock(fd, sleep_time):
+        f = None
+        try:
+            f = open(filename, 'a')
+            for line in lines:
+                f.write(line + '\n')
+        except: pass
+        finally:
+            f.close()
+            release_lock(fd)
+    fd.close()
 

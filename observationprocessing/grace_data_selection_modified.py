@@ -29,66 +29,25 @@
 
 
 # 1. CONTROL VARIABLES - DEFINITION
-target_cells_only = False                    # a flag specifies if target cells are given
-grace_1deg_cells = [[(-36.5, -64.5)],
-                    [(-38.5, -62.5)],
-                    #[(-38.5, -57.5)],
-                    [(-37.5, -58.5)],
-                    [(-36.5, -59.5)],
-                    #[(-34.5, -57.5)],
-                    [(-34.5, -58.5)],
-                    [(-32.5, -60.5)],
-                    [(-31.5, -60.5)],
-                    [(-31.5, -59.5)],
-                    [(-34.5, -56.5)],
-                    [(-33.5, -58.5)],
-                    [(-33.5, -55.5)],
-                    [(-34.5, -54.5)],
-                    #[(-34.5, -53.5)],
-                    [(-31.5, -55.5)],
-                    [(-32.5, -58.5)],
-                    [(-29.5, -55.5)],
-                    [(-30.5, -51.5)],
-                    [(-29.5, -53.5)],
-                    [(-27.5, -55.5)],
-                    [(-27.5, -58.5)],
-                    [(-26.5, -54.5)],
-                    [(-27.5, -50.5)],
-                    #[(-28.5, -48.5)],
-                    [(-27.5, -52.5)],
-                    [(-24.5, -53.5)],
-                    [(-25.5, -51.5)],
-                    [(-25.5, -49.5)],
-                    #[(-25.5, -47.5)],
-                    [(-22.5, -44.5)],
-                    [(-20.5, -51.5)],
-                    [(-20.5, -54.5)],
-                    [(-22.5, -49.5)],
-                    [(-23.5, -51.5)],
-                    [(-23.5, -46.5)],
-                    [(-22.5, -52.5)],
-                    [(-21.5, -50.5)],
-                    [(-21.5, -45.5)],
-                    [(-20.5, -49.5)],
-                    [(-22.5, -47.5)],
-                    [(-20.5, -54.5)]]                       # container for the GRACE 1-degree cell centroid coordinates (see note 2.1)
+target_cells_only = True                    # a flag specifies if target cells are given
+grace_1deg_cells = []                       # container for the GRACE 1-degree cell centroid coordinates (see note 2.1)
 target_wghm_cells = []                      # container for WGHM cell numbers (see note 2.2)
-read_wghm_cells_from = ''                   # config_filename from which WGHM cell numbers could be generated (see note 2.3)
+read_wghm_cells_from = 'input/brahmaputra_upstreams_bahadurabad.txt'                   # config_filename from which WGHM cell numbers could be generated (see note 2.3)
 is_data_archived = True                     # a flag specifies if the data-files are archived into tar file
-data_files = ['/media/sf_private/GRACE/EGSIEM_DDK3.tar']# container for storing data-files (see note 2.4)
+data_files = ['F:/mhasan/private/GRACE/ITSG2014_DDK2.tar']# container for storing data-files (see note 2.4)
 data_directories = []                       # container for storing data-directories (see note 2.5)
 start_year = 2002                           # specifies the bottom limit of allowable temporal range (see note 2.6)
 end_year = 2014                             # specifies the upper limit of the allowable temporal range (see note 2.6)
 skip_lines = 0                              # no. of header lines to be skipped
 null_value = 32767                          # null representation (see note 2.7)
-output_file = '/media/sf_private/EGSIEM_DDK3.csv'        # output config_filename
-flag_basin_level_output = False              # a flag determines if the group average to be calculated (see note 2.8)
+output_file = 'output/brahmaputra_ITSG_BEN2014_DDK2_with_scaling.csv'        # output config_filename
+flag_basin_level_output = True              # a flag determines if the group average to be calculated (see note 2.8)
 apply_correction_factor = True              # a flag determines whether correction factor to be applied (see note 2.9)
-correction_factor_datafile = '/media/sf_private/GRACE/LND_1x1_scalingFactor_DDK3.txt' # correction factor datafile (see note 2.9)
-unit_conversion_factor = 1 # 10**-3             # unit conversion multiplier
+correction_factor_datafile = 'F:/mhasan/private/GRACE/LND_1x1_scalingFactor_DDK2.txt' # correction factor datafile (see note 2.9)
+unit_conversion_factor = 10**-3             # unit conversion multiplier
 apply_mean_shift = True                     # flag determines if current mean to be shifted to the mean between start and end year
-cell_area_file = ''#'brahmaputra_area.txt'          # config_filename containing cell areas (see note 2.10)
-flag_output_as_volume = False
+cell_area_file = 'input/brahmaputra_areas_bahadurabad.txt'          # config_filename containing cell areas (see note 2.10)
+flag_output_as_volume = True
 
 # 2. CONTROL VARIABLES - SPECIAL NOTES
 #
@@ -540,25 +499,25 @@ def main():
                 print('\t>> calculating basin statistic [in water colume height]..', end='', flush=True)
                 idfun = lambda x, i: i + 1
             elif flag_output_as_volume:
-                    print('\t>> transforming water column height to volume ..', end='', flush=True)
-                    idfun = lambda x, i: x[0]
+                print('\t>> transforming water column height to volume ..', end='', flush=True)
+                idfun = lambda x, i: x[0]
 
-                    reshape_cells = []
-                    reshape_areas = []
-                    for i in range(len(grace_1deg_cells)):
-                        temp = {}
-                        for j in range(len(grace_1deg_cells[i])):
-                            try:
-                                temp[grace_1deg_cells[i][j]].append(areas[i][j])
-                            except:
-                                temp[grace_1deg_cells[i][j]] = [areas[i][j]]
+                reshape_cells = []
+                reshape_areas = []
+                for i in range(len(grace_1deg_cells)):
+                    temp = {}
+                    for j in range(len(grace_1deg_cells[i])):
+                        try:
+                            temp[grace_1deg_cells[i][j]].append(areas[i][j])
+                        except:
+                            temp[grace_1deg_cells[i][j]] = [areas[i][j]]
 
-                        for key, value in temp.items():
-                            reshape_cells.append([key])
-                            reshape_areas.append([sum(value)])
+                    for key, value in temp.items():
+                        reshape_cells.append([key])
+                        reshape_areas.append([sum(value)])
 
-                    grace_1deg_cells = reshape_cells
-                    areas = reshape_areas
+                grace_1deg_cells = reshape_cells
+                areas = reshape_areas
 
             data = {}
             if flag_output_as_volume: fun = lambda x, y: sum(x)
@@ -573,6 +532,7 @@ def main():
                 for j in range(len(basin)):
                     cell = basin[j]
                     cdata = records[cell]
+
                     carea = areas[i][j]
                     barea += carea
 

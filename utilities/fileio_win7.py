@@ -155,11 +155,6 @@ def write_UNF_file(data, filename, endian='big-endian', unf_type=-1):
 
     return True
 
-def acquire_lock(fd, sleep_time=0.1):
-    return True
-
-def release_lock(fd, sleep_time=0.1):
-    return True
 
 # acquire lock
 # def acquire_lock(fd, sleep_time=0.1):
