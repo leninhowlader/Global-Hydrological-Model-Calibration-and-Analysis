@@ -8,7 +8,6 @@ from calibration.stats import stats
 from calendar import isleap
 from collections import OrderedDict
 from calibration.wgapoutput import WGapOutput
-from calibration.watergap import WaterGAP
 
 class DataSource:
     def __init__(self):
@@ -583,203 +582,8 @@ class SimVariable(Variable):
 
         return groups # 2-D array
 
-
     @staticmethod
-    def data_collection_old(sim_vars, start_year, end_year): # function can be deleted once the new one becomes functional
-        succeed = True
-
-        # collection of distinct data-sources
-        data_sources = []
-        try:
-            for var in sim_vars:
-                add = True
-                for ds in data_sources:
-                    if (var.data_source.file_type == ds.file_type and var.data_source.prediction_type == ds.prediction_type
-                        and var.data_source.filename == ds.filename and var.data_source.file_endian == ds.file_endian):
-                        add = False
-                        break
-                if add: data_sources.append(var.data_source)
-        except: succeed = False
-
-        # read (collect data from) each distinct data-source
-        year_count = end_year - start_year + 1
-        data = []
-        if succeed:
-            try:
-                for ds in data_sources:
-                    ds_data = []
-                    if ds.file_type == FileType.wghm_binary: # which is always true for simulation variables
-                        block_format, block_size = '', 0
-                        if ds.file_endian == FileEndian.big_endian: block_format += '>'
-                        else: block_format += '<'
-
-                        if ds.prediction_type == PredictionType.daily:
-                            for i in range(365): block_format += 'f'
-                            block_size = 365 * 4
-                        elif ds.prediction_type == PredictionType.monthly:
-                            for i in range(12): block_format += 'f'
-                            block_size = 12 * 4
-                        elif ds.prediction_type == PredictionType.yearly:
-                            for i in range(365): block_format += 'f'
-                            block_size = 365 * 4
-
-                        if block_size and block_format:
-                            for year in range(start_year, end_year+1):
-                                file_name = ds.filename
-                                ndx = file_name.lower().find('[year]')
-                                if ndx > 0:
-                                    file_name = file_name[:ndx] + str(year) + file_name[ndx+6:]
-                                    dt = read_binary_file(file_name, block_size, block_format)
-                                    ds_data.append(dt)
-
-                    data.append(ds_data)
-            except:
-                print('(Error) Failed to read simulation output!')
-                succeed = False
-
-        # (post) processing of collected data
-        if succeed and data and len(data) == len(data_sources):
-            try:
-                for var in sim_vars:
-                    ndx_ds = -1
-                    for i in range(len(data_sources)):
-                        ds = data_sources[i]
-                        if (var.data_source.file_type == ds.file_type and var.data_source.prediction_type == ds.prediction_type
-                            and var.data_source.filename == ds.filename and var.data_source.file_endian == ds.file_endian):
-                            ndx_ds = i
-                            break
-
-                    if ndx_ds >= 0:
-                        dt = data[ndx_ds]
-                        if dt and len(dt) == year_count:
-                            for i in range(year_count):
-                                year_dt = dt[i]
-                                year = start_year + i
-                                if var.data_source.prediction_type == PredictionType.yearly:
-                                    if var.cell_groups:
-                                        if var.group_stats or len(var.cell_groups) > 1:
-                                            group_ndx = 1 # starts from 1
-                                            for group in var.cell_groups:
-                                                group_dt = []
-                                                for cell in group: group_dt.append(year_dt[cell-1])
-                                                d = stats.mean(group_dt)
-                                                var.data_cloud.data.append(d)
-                                                var.data_cloud.data_indices.append([group_ndx, year])
-                                                group_ndx += 1
-                                        else:
-                                            group = var.cell_groups[0]
-                                            for cell in group:
-                                                var.data_cloud.data.append(year_dt[cell-1])
-                                                var.data_cloud.data_indices.append([cell, year])
-                                    else:
-                                        for j in range(len(year_dt)):
-                                            var.data_cloud.data.append(year_dt[j])
-                                            var.data_cloud.data_indices.append([j, year])
-                                elif var.data_source.prediction_type == PredictionType.monthly:
-                                    if var.cell_groups:
-                                        if var.group_stats or len(var.cell_groups) > 1:
-                                            group_ndx = 1
-                                            for group in var.cell_groups:
-                                                group_dt = []
-                                                for cell in group: group_dt.append(year_dt[cell-1])
-
-                                                weights = []
-                                                if var.cell_weights: weights = var.cell_weights[group_ndx - 1]
-
-                                                for j in range(12):
-                                                    month = j + 1
-                                                    month_dt = []
-                                                    for k in range(len(group)): month_dt.append(group_dt[k][j])
-                                                    if weights: var.data_cloud.data.append(stats.weighted_mean(month_dt, weights))
-                                                    else: var.data_cloud.data.append(stats.mean(month_dt))
-                                                    var.data_cloud.data_indices.append([group_ndx, year, month])
-                                                group_ndx += 1
-                                        else:
-                                            group = var.cell_groups[0]
-                                            for cell in group:
-                                                for j in range(12):
-                                                    month = j + 1
-                                                    var.data_cloud.data.append(year_dt[cell-1][j])
-                                                    var.data_cloud.data_indices.append([cell, year, month])
-                                    else:
-                                        for j in range(12):
-                                            month = j + 1
-                                            for i in range(len(year_dt)):
-                                                var.data_cloud.data.append(year_dt[i][j])
-                                                var.data_cloud.data_indices.append([i, year, month])
-                                elif var.data_source.prediction_type == PredictionType.daily:
-                                    is_leap_year = isleap(year)
-                                    if var.cell_groups:
-                                        if var.group_stats or len(var.cell_groups) > 1:
-                                            group_ndx = 1
-                                            for group in var.cell_groups:
-                                                group_dt = []
-                                                for cell in group: group_dt.append(year_dt[cell-1])
-
-                                                weights = []
-                                                if var.cell_weights: weights = var.cell_weights[group_ndx - 1]
-
-                                                day = 0
-                                                for j in range(59):
-                                                    day += 1
-                                                    month_dt = []
-                                                    for k in range(len(group)): month_dt.append(group_dt[k][j])
-                                                    if weights: var.data_cloud.data.append(stats.weighted_mean(month_dt, weights))
-                                                    else: var.data_cloud.data.append(stats.mean(month_dt))
-                                                    var.data_cloud.data_indices.append([group_ndx, year, day])
-
-                                                if is_leap_year: day += 1
-
-                                                for j in range(59, 365):
-                                                    day += 1
-                                                    month_dt = []
-                                                    for k in range(len(group)): month_dt.append(group_dt[k][j])
-                                                    if weights: var.data_cloud.data.append(stats.weighted_mean(month_dt, weights))
-                                                    else: var.data_cloud.data.append(stats.mean(month_dt))
-                                                    var.data_cloud.data_indices.append([group_ndx, year, day])
-
-                                                group_ndx += 1
-                                        else:
-                                            group = var.cell_groups[0]
-                                            for cell in group:
-                                                day = 0
-
-                                                for j in range(59):
-                                                    day += 1
-                                                    var.data_cloud.data.append(year_dt[cell-1][j])
-                                                    var.data_cloud.data_indices.append([cell, year, day])
-
-                                                if is_leap_year: day += 1
-
-                                                for j in range(59, 365):
-                                                    day += 1
-                                                    var.data_cloud.data.append(year_dt[cell-1][j])
-                                                    var.data_cloud.data_indices.append([cell, year, day])
-
-                                    else:
-                                        day = 0
-
-                                        for j in range(59):
-                                            day += 1
-                                            for k in range(len(year_dt)):
-                                                var.data_cloud.data.append(year_dt[k][j])
-                                                var.data_cloud.data_indices.append([k, year, day])
-
-                                        if is_leap_year: day += 1
-
-                                        for j in range(59, 365):
-                                            day += 1
-                                            for k in range(len(year_dt)):
-                                                var.data_cloud.data.append(year_dt[k][j])
-                                                var.data_cloud.data_indices.append([k, year, day])
-            except:
-                print('(Error) Simulation Output post-processing failed!')
-                succeed = False
-
-        return succeed
-
-    @staticmethod
-    def data_collection(sim_vars, start_year, end_year):
+    def data_collection_asof_20181115(sim_vars, start_year, end_year):
         succeed = True
 
         # collection of distinct data-sources
@@ -915,7 +719,103 @@ class SimVariable(Variable):
 
         return succeed
 
-    def dump_time_series_from_model_prediction(self, start_year, end_year, dumping_directory='', additional_attributes=[]):
+    def data_collection(self, start_year, end_year, prediction_directory=''):
+        '''
+        This function reads model predictions, processes predictions as required and stores the processed data into
+        the data container (data cloud) of the variable instance.
+
+        :param start_year: (int) start year of prediction
+        :param end_year:  (int) end year of prediction
+        :param prediction_directory: (string) directory path for prediction output files
+        :return: (bool) True on success,
+                        False otherwise
+        '''
+        succeed = True
+
+        if self.data_source.file_type == FileType.wghm_binary:
+            if self.data_source.prediction_type == PredictionType.monthly:
+                # try:
+                    filename = self.data_source.filename
+                    file_endian = self.data_source.file_endian
+
+                    ndx = filename.lower().find('[year]')
+                    for year in range(start_year, end_year + 1):
+                        # step: read predictions
+                        file_name = filename[:ndx] + str(year) + filename[ndx + 6:]
+                        if prediction_directory: file_name = os.path.join(prediction_directory, file_name)
+
+                        data = WGapOutput.read_unf(file_name, file_endian=file_endian)
+
+                        if not type(data) is np.ndarray: return False
+
+                        # step: if group statistics to be calculated, process data for each basin
+                        if self.group_stats:
+                            if not self.cell_groups: return False
+
+                            # step: crop data for each basin
+                            for i in range(len(self.cell_groups)):
+                                basin_id = i + 1
+                                basin = np.array(self.cell_groups[i])
+                                basin_data = data[basin-1]                                # notice -1 is used to convert 1-based
+                                                                                    # indexing to 0-based indexing
+
+                                # step: apply weights if application and compute aggregate values
+                                if self.cell_weights:
+                                    weights = np.array(self.cell_weights[i])
+                                    if basin_data.ndim == 1: basin_data = basin_data * weights
+                                    else: basin_data = basin_data * weights[:, None]
+
+                                    basin_data = np.sum(basin_data, axis=0) / np.sum(weights)
+                                else: basin_data = np.sum(basin_data, axis=0)
+
+                                # step: create indices for data
+                                basin_ndx = np.array([basin_id] * 12).reshape(12, 1)
+                                year_ndx = np.array([year] * 12).reshape(12, 1)
+                                month_ndx = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).reshape(12, 1)
+                                data_ndx = np.concatenate((basin_ndx, year_ndx, month_ndx), axis=1).tolist()
+
+                                # step: store data and indices into data cloud object
+                                self.data_cloud.data_indices += data_ndx
+                                self.data_cloud.data += basin_data.flatten().tolist()
+                        else:
+                            # step: create cell list
+                            cell_list = []
+                            for group in self.cell_groups: cell_list += group
+
+                            # step: crop data if cell_list is not empty
+                            if cell_list:  data = data[np.array(cell_list)-1]       # notice -1 is used to convert 1-based
+                                                                                    # indexing to 0-based indexing
+
+                            # step: create indices for data
+                            ncells = data.shape[0]
+                            if not cell_list: cell_list = list(range(1, ncells +1))
+
+                            cell_ndx = []
+                            for cid in cell_list: cell_ndx += [cid] * 12
+
+                            nrow = ncells * 12
+                            cell_ndx = np.array(cell_ndx).reshape(nrow, 1)
+                            year_ndx = np.array([year] * nrow).reshape(nrow, 1)
+                            month_ndx = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] * ncells).reshape(nrow, 1)
+
+                            data_ndx = np.concatenate((cell_ndx, year_ndx, month_ndx), axis=1).tolist()
+
+                            # step: store data and indices  in data cloud
+                            self.data_cloud.data_indices += data_ndx
+                            self.data_cloud.data += data.flatten().tolist()
+                # except: succeed = False
+            elif self.data_source.prediction_type == PredictionType.daily: # yet to be implemented
+                succeed = False
+            elif self.data_source.prediction_type == PredictionType.yearly: # yet to be implemented
+                succeed = False
+            else: succeed = False
+        else: # yet to be implemented
+            succeed = False
+
+        return succeed
+
+    def dump_time_series_from_model_prediction(self, start_year, end_year, additional_attributes=[], dumping_directory='',
+                                               prediction_directory=''):
         '''
         This function will read model predictions and (usually) calculates basin average time-series. Finally
         the timeseries will be dumped as binary files. To avoid unnecessary dumping of large data, the function
@@ -946,8 +846,9 @@ class SimVariable(Variable):
         Parameters:
         :param start_year: (int) start year of prediction
         :param end_year: (int) end year of prediction
-        :param dumping_directory: (string; optional) path where data to be dumped
         :param additional_attributes: (list of numbers; optional) additional attributes to be dumped
+        :param dumping_directory: (string; optional) path where data to be dumped
+        :param prediction_directory: (string; optional) path of model output directory
         :return: (bool) True on success,
                         False Otherwise
         '''
@@ -966,40 +867,72 @@ class SimVariable(Variable):
         if self.data_source.file_endian == FileEndian.little_endian: format_str = '<%s'%format_str
         else: format_str = '>%s'%format_str
 
-        # step: for each year from start year to end year read model predictions
         succeed = True
-        prediction_filename = self.data_source.filename
-        ndx = prediction_filename.lower().find('[year]')
-        for year in range(start_year, end_year + 1):
-            file_name = prediction_filename[:ndx] + str(year) + prediction_filename[ndx + 6:]
-            file_name = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.output_directory, file_name)
-            pred = WGapOutput.read_unf(file_name, file_endian=self.data_source.file_endian)
+        if self.data_source.prediction_type == PredictionType.monthly:
+            prediction_filename = self.data_source.filename
+            ndx = prediction_filename.lower().find('[year]')
 
-            if self.group_stats:
-                for i in range(len(self.cell_groups)):
-                    basin_id = i + 1
-                    basin = np.array(self.cell_groups[i])
-                    data = pred[basin]
+            # step: for each year from start year to end year read model predictions
+            for year in range(start_year, end_year + 1):
+                file_name = prediction_filename[:ndx] + str(year) + prediction_filename[ndx + 6:]
+                if prediction_directory: file_name = os.path.join(prediction_directory, file_name)
 
-                    if self.cell_weights:
-                        weights = self.cell_weights[i]
-                        if data.ndim == 1: data = data * weights
-                        else: data = data * weights[:, None]
+                pred = WGapOutput.read_unf(file_name, file_endian=self.data_source.file_endian)
+                if not type(pred) is np.ndarray: return False
 
-                        data = np.sum(data, axis=0) / np.sum(weights)
-                    else: data = np.sum(data, axis=0)
+                if self.group_stats:
+                    # step: for each basin collect values for each cell and aggregate data
+                    for i in range(len(self.cell_groups)):
+                        basin_id = i + 1
+                        basin = np.array(self.cell_groups[i])-1     # reducing the cell number by 1 is necessary,
+                                                                    # because cell numbers have a 1-based indexing
+                        data = pred[basin]
 
-                    # step: append additing attributes and time data (time info i.e., year, month, day etc.)
-                    additional_attributes += [basin_id, year]
-                    if data.ndim == 1: data = np.append(additional_attributes, data)
-                    else:
+                        if self.cell_weights:
+                            weights = np.array(self.cell_weights[i])
+                            if data.ndim == 1: data = data * weights
+                            else: data = data * weights[:, None]
+
+                            data = np.sum(data, axis=0) / np.sum(weights)
+                        else: data = np.sum(data, axis=0)
+
+                        # step: append additing attributes and time data (time info i.e., year, month, day etc.)
+                        additional_cols = additional_attributes + [basin_id, year]
+                        if data.ndim == 1: data = np.append(additional_cols, data)
+                        else:
+                            ncol = len(additional_cols)
+                            nrow = data.shape[0]
+                            additional_cols = np.array(additional_cols * nrow).reshape(nrow, ncol)
+                            data = np.concatenate((additional_cols, data), axis=1)
+
+                        # step: dump data into file
+                        if data.ndim == 1: ncol = data.size
+                        else: ncol = data.shape[1]
+
+                        dump_filename = self.varname + '.%d.unf0' % (ncol)
+                        if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
+
+                        succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), '_%s.LOCK'%self.varname.upper())
+
+                        if not succeed: break
+                else:
+                    # step: gather cell numbers in all basins and crop data for those cells
+                    cells = []
+                    for group in self.cell_groups: cells += group
+                    data = pred[cells]
+
+                    # step: append additional attributes and time info into the data
+                    nrow = len(cells)
+                    time_info = np.array([year] * nrow).reshape(nrow, 1)
+                    cells = np.array(cells).reshape(nrow, 1)
+                    data = np.concatenate((cells, time_info, data), axis=1)
+
+                    if additional_attributes:
                         ncol = len(additional_attributes)
-                        nrow = data.shape[0]
-                        additional_attributes = np.array(additional_attributes * nrow).reshape(nrow, ncol)
-                        data = np.concatenate((additional_attributes, data), axis=0)
+                        additional_cols = np.array(additional_attributes * nrow).reshape(nrow, ncol)
+                        data = np.concatenate((additional_cols, data), axis=1)
 
                     # step: dump data into file
-                    ncol = 0
                     if data.ndim == 1: ncol = data.size
                     else: ncol = data.shape[1]
 
@@ -1007,11 +940,8 @@ class SimVariable(Variable):
                     if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
 
                     succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), self.varname)
-            else:
-                cells = []
-                for group in self.cell_groups: cells += group
-                data = pred[cells]
 
+                if not succeed: break
 
         return succeed
 

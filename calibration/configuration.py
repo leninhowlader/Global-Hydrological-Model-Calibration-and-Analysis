@@ -21,6 +21,7 @@ class Configuration:
         self.prediction_summary_filename = 'prediction_summary.dat'
         self.prediction_efficiency_filename = 'prediction_efficiency.dat'
         self.summary_statistics_filename = 'summary_statistics.csv'
+        self.output_directory = 'output'
 
         # variables for calibration-mode
         self.__executable_name = ''
@@ -123,13 +124,7 @@ class Configuration:
                         if key in ['summary_statistics_filename', 'summary_statistics', 'stat_summary', 'summary statistics filename',
                                      'summary statistics', 'stat summary']:
                             config.summary_statistics_filename = value
-                        # elif key in ['prediction_summary_filename', 'prediction summary config_filename',  'prediction_summary', 'prediction summary']:
-                        #     config.prediction_summary_filename = value
-                        # elif key in ['monthly_summary_filename', 'monthly summary config_filename',  'month_summary',
-                        #            'monthly_summary', 'month summary', 'monthly summary']:
-                        #     config.monthly_prediction_summary_filename = value
-                        # elif key in ['yearly_summary_filename', 'yearly summary config_filename', 'yearly_summary', 'yearly summary',
-                        #            'year_summary', 'year summary']: config.yearly_prediction_summary_filename = value
+                        elif key in ['output_directory', 'output directory']: config.output_directory = value
                         elif key in ['output_model_efficiency', 'output model efficiency', 'output_efficiency',
                                      'output efficiency', 'prediction_efficiency_filename']: config.prediction_efficiency_filename = value
                         elif key in ['input_parameter_list_filename', 'input_parameter_list', 'parameter_list',
@@ -199,6 +194,7 @@ class Configuration:
         if not self.sim_variables: return False
         else:
             for var in self.sim_variables:
+                var.data_source.file_endian = WaterGAP.output_endian_type
                 if not var.is_okay(): return False
 
         # step: check completeness of observation variables (if any). Try to load the observation data

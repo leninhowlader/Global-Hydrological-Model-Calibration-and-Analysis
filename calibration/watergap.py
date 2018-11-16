@@ -240,17 +240,29 @@ class WaterGAP:
 
     @staticmethod
     def read_predictions(sim_vars, output_directory_name=''):
-        # update the output config_filename in sim-variables
-        if not output_directory_name: output_directory_name = WaterGAP.dir_info.output_directory
+        '''
+        This method reads model predictions for all simulation variables.
 
+        Parameters:
+        :param sim_vars: (list of SimVariable)  list of simulation variables
+        :param output_directory_name: (string; optional) path of model output directory
+        :return: (bool) True on success,
+                        False otherwise
+        '''
+
+        # step: if not provided, get output directory name from directory object of WaterGAP static class
+        if not output_directory_name: output_directory_name = WaterGAP.dir_info.output_directory
         output_directory_name = os.path.join(WaterGAP.home_directory, output_directory_name)
 
+        # step: update file endian in variable object and read data using data collection method
+        succeed = True
         for var in sim_vars:
-            var.data_source.filename = os.path.join(output_directory_name, var.data_source.filename)
+            # var.data_source.filename = os.path.join(output_directory_name, var.data_source.filename)
             var.data_source.file_endian = WaterGAP.output_endian_type
+            succeed = var.data_collection(WaterGAP.start_year, WaterGAP.end_year, prediction_directory=output_directory_name)
+            if not succeed: break
 
-        # read sim-output
-        return SimVariable.data_collection(sim_vars, WaterGAP.start_year, WaterGAP.end_year)
+        return succeed
 
     @staticmethod
     def prediction_efficiency(sim_vars, obs_vars, iter_no=-1):
