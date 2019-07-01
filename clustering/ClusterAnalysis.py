@@ -1,7 +1,7 @@
 import sys
 sys.path.append('..')
 from utilities.fileio import read_UNF_file
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 import shapefile as shp, numpy as np
 
 
@@ -21,7 +21,7 @@ def main():
 
     # read wghm 0.5 degree grid centroid
     succeed = True
-    wghm_centroids = grid.get_wghm_world_grid_centroids()
+    wghm_centroids = GlobalGrid.get_wghm_world_grid_centroids()
     if wghm_centroids: ng = len(wghm_centroids)
     else:
         succeed = False
@@ -79,7 +79,7 @@ def main():
                 world_shape.field('TLW', 'N', 15, 7)
 
 
-                points = grid.cell_vertices(wghm_centroids, degree_resolution=0.5)
+                points = GlobalGrid.cell_vertices(wghm_centroids, degree_resolution=0.5)
                 print(succeed)
                 for i in range(len(points)):
                     world_shape.autoBalance = 1 # ensures gemoetry and attributes match

@@ -32,22 +32,22 @@
 target_cells_only = True                    # a flag specifies if target cells are given
 grace_1deg_cells = []                       # container for the GRACE 1-degree cell centroid coordinates (see note 2.1)
 target_wghm_cells = []                      # container for WGHM cell numbers (see note 2.2)
-read_wghm_cells_from = 'input/brahmaputra_upstreams_bahadurabad.txt'                   # config_filename from which WGHM cell numbers could be generated (see note 2.3)
+read_wghm_cells_from = 'input/hermann_cindex.txt'                   # config_filename from which WGHM cell numbers could be generated (see note 2.3)
 is_data_archived = True                     # a flag specifies if the data-files are archived into tar file
-data_files = ['F:/mhasan/private/GRACE/ITSG2014_DDK2.tar']# container for storing data-files (see note 2.4)
+data_files = ['F:/mhasan/private/GRACE/EGSIEM_DDK2.tar']# container for storing data-files (see note 2.4)
 data_directories = []                       # container for storing data-directories (see note 2.5)
 start_year = 2002                           # specifies the bottom limit of allowable temporal range (see note 2.6)
 end_year = 2014                             # specifies the upper limit of the allowable temporal range (see note 2.6)
 skip_lines = 0                              # no. of header lines to be skipped
 null_value = 32767                          # null representation (see note 2.7)
-output_file = 'output/brahmaputra_ITSG_BEN2014_DDK2_with_scaling.csv'        # output config_filename
+output_file = 'output/grace_egsiem_hermann.csv'        # output config_filename
 flag_basin_level_output = True              # a flag determines if the group average to be calculated (see note 2.8)
 apply_correction_factor = True              # a flag determines whether correction factor to be applied (see note 2.9)
 correction_factor_datafile = 'F:/mhasan/private/GRACE/LND_1x1_scalingFactor_DDK2.txt' # correction factor datafile (see note 2.9)
 unit_conversion_factor = 10**-3             # unit conversion multiplier
 apply_mean_shift = True                     # flag determines if current mean to be shifted to the mean between start and end year
-cell_area_file = 'input/brahmaputra_areas_bahadurabad.txt'          # config_filename containing cell areas (see note 2.10)
-flag_output_as_volume = True
+cell_area_file = 'input/hermann_carea.txt'          # config_filename containing cell areas (see note 2.10)
+flag_output_as_volume = False
 
 # 2. CONTROL VARIABLES - SPECIAL NOTES
 #
@@ -129,7 +129,8 @@ flag_output_as_volume = True
 # IMPORT STATEMENTS
 import sys, tarfile, os
 sys.path.extend('..')
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
+GlobalGrid.set_model_version('wghm22d')
 from datetime import datetime
 from utilities.fileio import write_flat_file, read_flat_file
 from collections import OrderedDict
@@ -303,7 +304,7 @@ def main():
             # if target wghm cell numbers are not provided, read cell numbers
             # from file, if file path is given
             if not target_wghm_cells and read_wghm_cells_from:
-                target_wghm_cells = grid.read_groupfile(read_wghm_cells_from)
+                target_wghm_cells = GlobalGrid.read_cell_info(read_wghm_cells_from)
 
             if target_wghm_cells:
                 # for each group of wghm cells, delete_ndx duplicate wghm cells if any
@@ -322,9 +323,9 @@ def main():
                 for basin in target_wghm_cells:
                     temp = []
                     for cnum in basin:
-                        centroid_lat, centroid_lng = grid.map_centroid_from_wghm_cell_number(cnum)
-                        grace_row, grace_col = grid.find_row_column(centroid_lat, centroid_lng, 1.0)
-                        centroid_lat, centroid_lng = grid.find_centroid(grace_row, grace_col, 1.0)
+                        centroid_lat, centroid_lng = GlobalGrid.get_wghm_centroid(cnum)
+                        grace_row, grace_col = GlobalGrid.find_row_column(centroid_lat, centroid_lng, 1.0)
+                        centroid_lat, centroid_lng = GlobalGrid.find_centroid(grace_row, grace_col, 1.0)
                         if 90>=centroid_lat>=-90 and 180>=centroid_lng>=-180: temp.append((centroid_lat, centroid_lng))
                     if len(temp) == len(basin): grace_1deg_cells.append(temp)
                     else: break
@@ -380,14 +381,14 @@ def main():
             for basin in target_wghm_cells:
                 temp = []
                 for cnum in basin:
-                    row = grid.find_row_number(grid.map_centroid_from_wghm_cell_number(cnum)[0])
-                    temp.append(grid.find_wghm_cellarea(row))
+                    row = GlobalGrid.find_row_number(GlobalGrid.get_wghm_centroid(cnum)[0])
+                    temp.append(GlobalGrid.find_wghm_cellarea(row))
                 areas.append(temp)
             succeed = True
 
         message = ''
         if not succeed and cell_area_file and os.path.exists(cell_area_file):
-            temp = grid.read_groupfile(cell_area_file, data_type=float)
+            temp = GlobalGrid.read_cell_info(cell_area_file, data_type=float)
 
             if len(temp) != len(grace_1deg_cells):
                 message = '[Error]\n\t\tnumber of groups in cell area file is inconsistent with the number of target groups.'
@@ -476,6 +477,7 @@ def main():
                 print(message)
                 exit(os.EX_DATAERR)
             elif len(correction_factors) != len(clist_1D):
+
                 message = '[Error] \n\tcorrection factors for some target cells are missing. Please check the correction datafile.'
                 print(message)
                 exit(os.EX_DATAERR)
@@ -637,8 +639,8 @@ def main():
                     keys = records.keys()
                     for key in keys:
                         ds = records[key]
-                        r, c = grid.find_row_column(key[0], key[1], degree_resolution=0.5)
-                        cnum = grid.map_wghm_cell_number(r, c, base_resolution=0.5)
+                        r, c = GlobalGrid.find_row_column(key[0], key[1], degree_resolution=0.5)
+                        cnum = GlobalGrid.get_wghm_cell_number(r, c, base_resolution=0.5)
                         if cnum:
                             for d in ds: data.append([cnum, key[1], key[0]] + d)
                 else:

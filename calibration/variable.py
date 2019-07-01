@@ -919,12 +919,13 @@ class SimVariable(Variable):
                     # step: gather cell numbers in all basins and crop data for those cells
                     cells = []
                     for group in self.cell_groups: cells += group
-                    data = pred[cells]
+                    cells = np.array(cells)
+                    data = pred[cells-1]
 
                     # step: append additional attributes and time info into the data
                     nrow = len(cells)
                     time_info = np.array([year] * nrow).reshape(nrow, 1)
-                    cells = np.array(cells).reshape(nrow, 1)
+                    cells = cells.reshape(nrow, 1)
                     data = np.concatenate((cells, time_info, data), axis=1)
 
                     if additional_attributes:
@@ -939,13 +940,13 @@ class SimVariable(Variable):
                     dump_filename = self.varname + '.%d.unf0' % (ncol)
                     if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
 
-                    succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), self.varname)
+                    succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), '_%s.LOCK'%self.varname.upper())
 
                 if not succeed: break
 
         return succeed
 
-    def dump_data_into_file(self, filename, data_bytes, lock_name=''):
+    def dump_data_into_file(self, filename, data_bytes, lock_name):
         '''
         This function dumps data into specified file in binary (4-byte float) format. Lock will be used to avoid
         conflicts in case of parallel runs, if lock name is provided.
@@ -953,7 +954,7 @@ class SimVariable(Variable):
         Parameters:
         :param filename: (string) name of the file
         :param data: (bytes) binary data (as bytes) to be dumped into file
-        :param lock_name: (string; optional) name of lockfile. Lock will only be applied if provided
+        :param lock_name: (string) name of lockfile. Lock will only be applied if provided
         :return: (bool) True on success,
                         False otherwise
         '''
@@ -962,7 +963,8 @@ class SimVariable(Variable):
         f = None
         if lock_name:
             fd = open(lock_name, 'w')
-            if acquire_lock(fd, lock_name):
+            sleep_time = round(np.random.uniform(0.1, 0.3), 3)
+            if acquire_lock(fd, sleep_time=sleep_time):
                 try:
                     f = open(filename, 'ab')
                     f.write(data_bytes)

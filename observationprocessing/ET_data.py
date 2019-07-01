@@ -4,14 +4,14 @@ data_filename = 'F:/mhasan/private/ET_Mueller2013/LandFluxEVAL.merged.89-05.mont
 output_filename = 'output/brahmaputra_bahadurabad_ET_Mueller2013_iqr_mm_daily.csv'
 # stat name should be one of the followings:
 # 'ET_mean', 'ET_median', 'ET_IQR', 'ET_25', 'ET_75', 'ET_min', 'ET_max', 'ET_sd'
-stat_name = 'ET_IQR'
+stat_name = 'ET_mean'
 
 from netCDF4 import Dataset
 import numpy as np, sys, os
 sys.path.append('..')
 from utilities.upstream import Upstream
 from utilities.station import Station
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from utilities.fileio import write_flat_file
 
 def ncdump(nc_fid, verb=True):
@@ -97,12 +97,12 @@ def main():
     basin_count = 0
 
     if upstream_filename:
-        temp = grid.read_groupfile(upstream_filename, data_type=int)
+        temp = GlobalGrid.read_cell_info(upstream_filename, data_type=int)
         for cell_group in temp:
             cells = []
             for cell in cell_group:
-                lat, lon = grid.map_centroid_from_wghm_cell_number(cell)
-                cells.append(grid.find_row_column(lat, lon, degree_resolution=0.5))
+                lat, lon = GlobalGrid.get_wghm_centroid(cell)
+                cells.append(GlobalGrid.find_row_column(lat, lon, degree_resolution=0.5))
             basins_0p5deg.append(cells)
         basin_count = len(temp)
         temp, cells = None, None
@@ -110,7 +110,7 @@ def main():
         stations = Station.read_stations(station_file=station_filename)
 
         for station in stations:
-            row, col = grid.find_row_column(station[2], station[1], degree_resolution=0.5)
+            row, col = GlobalGrid.find_row_column(station[2], station[1], degree_resolution=0.5)
             cells = Upstream.get_upstream_cells(row, col)
             basins_0p5deg.append(cells)
         basin_count = len(stations)
@@ -125,8 +125,8 @@ def main():
             basin = basins_0p5deg[i]
             temp, barea = [], []
             for j in range(len(basin)):
-                temp.append(grid.transform_row_column(basin[j][0], basin[j][1], 0.5, 1.0))
-                barea.append(grid.find_wghm_cellarea(basin[j][0]))
+                temp.append(GlobalGrid.transform_row_column(basin[j][0], basin[j][1], 0.5, 1.0))
+                barea.append(GlobalGrid.find_wghm_cellarea(basin[j][0]))
             basins_1deg.append(temp)
             barea_0p5deg.append(barea)
 
@@ -160,7 +160,7 @@ def main():
         basin = basins_1deg[i]
         for j in range(len(basin)):
             row, col = basin[j][0], basin[j][1]
-            basin[j] = grid.find_centroid(row, col, deg_resolution=1.0)
+            basin[j] = GlobalGrid.find_centroid(row, col, deg_resolution=1.0)
 
     # step-06: open the NetCDF file, load necessary data into variables, and close file
     nc_fid = Dataset(data_filename, 'r')

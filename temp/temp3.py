@@ -1,18 +1,20 @@
 import sys, os, numpy as np
 sys.path.append('..')
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from utilities.fileio import write_flat_file, read_flat_file
 from utilities.upstream import Upstream
+from calibration.wgapoutput import WGapOutput
+from utilities.station import Station
 
 succeed = False
 if succeed:
-    grid.read_wghm_cell_map()
-    dt = grid.wghm_grid_mapping_data
+    GlobalGrid.read_wghm_grid_lookup_table()
+    dt = GlobalGrid.__wghm_grid_lookup_table
 
     headers = ['cell_num', 'arc_id', 'longitude', 'latitude', 'cell_area']
     for d in dt:
-        row  = grid.find_row_number(d[-1])
-        d.append(grid.find_wghm_cellarea(row))
+        row  = GlobalGrid.find_row_number(d[-1])
+        d.append(GlobalGrid.find_wghm_cellarea(row))
     succeed = write_flat_file('wghm_grid.csv', dt, data_headers=headers, separator=',')
     print(succeed)
     #66896	66042	147.75	-38.25 'cell_num', 'arc_id', 'longitude', 'latitude'
@@ -21,7 +23,7 @@ if succeed:
 succeed = False
 if succeed:
     cell = (90.75, 22.75)
-    row, col = grid.find_row_column(cell[1], cell[0], degree_resolution=0.5)
+    row, col = GlobalGrid.find_row_column(cell[1], cell[0], degree_resolution=0.5)
     station = [(row, col)]
 
 
@@ -32,14 +34,14 @@ if succeed:
 succeed = False
 if succeed:
     filename = '../observationprocessing/input/meghna_brahmaputra_upstream.txt'
-    basin = grid.read_groupfile(filename, data_type=int)[0]
+    basin = GlobalGrid.read_cell_info(filename, data_type=int)[0]
     areas = []
     for cnum in basin:
-        lat, lon = grid.map_centroid_from_wghm_cell_number(cnum)
-        row = grid.find_row_number(lat)
-        areas.append(grid.find_wghm_cellarea(row))
+        lat, lon = GlobalGrid.get_wghm_centroid(cnum)
+        row = GlobalGrid.find_row_number(lat)
+        areas.append(GlobalGrid.find_wghm_cellarea(row))
     filename = '../observationprocessing/input/meghna_brahmaputra_upstream_area.txt'
-    succeed = grid.write_groupfile(filename, [areas])
+    succeed = GlobalGrid.write_cell_info(filename, [areas])
     print(succeed)
 
 
@@ -60,13 +62,13 @@ if succeed:
     for ndx in exclude_cellndx_list: cells.pop(ndx)
 
     filename = '../observationprocessing/input/ganges_salameh2017_upstream.txt'
-    succeed = grid.write_groupfile(filename, [cells])
+    succeed = GlobalGrid.write_cell_info(filename, [cells])
 
 
     areas = data[:,4].astype('float').tolist()
     for ndx in exclude_cellndx_list: areas.pop(ndx)
     filename = '../observationprocessing/input/ganges_salameh2017_upstream_area.txt'
-    succeed = grid.write_groupfile(filename, [areas])
+    succeed = GlobalGrid.write_cell_info(filename, [areas])
     print(succeed)
 
 succeed = False
@@ -219,3 +221,157 @@ if succeed:
 
     filename = 'F:/mhasan/Experiments/SENSITIVITY_DATASET_GB/WaterGAP_EET/output/nan_samples.csv'
     write_flat_file(filename, nan_samples, separator=',')
+
+succeed = False
+if succeed:
+    filename = 'F:/mhasan/data/GlobalCDA/wghm_22d_gcid.txt'
+    h,d = read_flat_file(filename, separator=',')
+    data = []
+    for i in range(len(d[0])):
+        row = [d[0][i], d[1][i]]
+        data.append(row)
+
+    filename = 'F:/mhasan/data/GlobalCDA/wghm_22d_gcid1.txt'
+    succeed = write_flat_file(filename, data, separator=',')
+
+    filename = 'F:/mhasan/data/GlobalCDA/wghm22d_grid.txt'
+    h, d = read_flat_file(filename, separator=',', header=True)
+    grid22d = np.array(d)
+
+    GlobalGrid.read_wghm_grid_lookup_table()
+    grid22b = np.array(GlobalGrid.__wghm_grid_lookup_table)
+
+    match_data = []
+    for b_row in grid22b:
+        b_row = b_row.tolist()
+        b_lon, b_lat = b_row[2:]
+
+        ndx = np.where((grid22d[:,2]==b_lon) & (grid22d[:,3] == b_lat))
+        d_row = grid22d[ndx]
+        d_row = d_row.flatten().tolist()
+
+        if d_row:
+            row = b_row + d_row[:2]
+            match_data.append(row)
+
+    d = np.array(match_data).tolist()
+
+match_data = []
+succeed = False
+if succeed:
+    filename = 'F:/mhasan/Code&Script/ProjectWGHM/utilities/data/GAREA.UNF0'
+    b_area = WGapOutput.read_unf(filename)
+
+    filename = 'F:/mhasan/Code&Script/wgap22d_home/INPUT/GAREA.UNF0'
+    d_area = WGapOutput.read_unf(filename)
+
+    filename = 'F:/mhasan/Code&Script/wgap22d_home/INPUT/GCRC.UNF4'
+    d_gcrc = WGapOutput.read_unf(filename)
+
+    filename = 'F:/mhasan/Code&Script/wgap_home/INPUT/GCRC.UNF4'
+    b_gcrc = WGapOutput.read_unf(filename)
+
+    diff = []
+    for row in match_data:
+        b = row[0]
+        d = row[4]
+
+        diff.append(np.where(d_gcrc==d)[0]-np.where(b_gcrc==b)[0])
+
+
+succeed = False
+if succeed:
+    filename = 'F:/mhasan/data/GlobalCDA/experiment/stations.txt'
+    stations = Station.read_stations(filename)
+
+    succeed = GlobalGrid.set_wghm_grid_lookup_table_filename('data/grid_wghm22d.txt')
+
+    for s in stations:
+        sid = s[0]
+        row, col = GlobalGrid.find_row_column(s[2], s[1])
+        # upcells = Upstream.get_upstream_cells(row, col)
+
+        filename = 'F:/mhasan/private/temp/GlobalCDA_test/test_basin_%d.shp' % sid
+        succeed = Upstream.create_basin_shape(filename, [[row, col]], add_wghm_cnum=True)
+        print('upstream for %d [%s]'%(sid, str(succeed)))
+
+    upstream_cells = []
+    for s in stations:
+        sid = s[0]
+        row, col = GlobalGrid.find_row_column(s[2], s[1])
+
+
+
+succeed = False
+if succeed:
+    ndx = []
+    from datetime import datetime, timedelta
+
+    dir_name = 'Z:/USER/Mehedi_Hasan/WFDEI_GPCC_67420'
+    filename = 'GTEMP'
+    nfile = 0
+    t1 = datetime.now()
+    for year in range(1901, 2017):
+        for month in range(1, 13):
+            fname = os.path.join(dir_name, filename + '_%d_%d.31.UNF0' % (year, month))
+            #fname = os.path.join(dir_name, filename + '_%d.UNF0' % (year))
+            try:
+                if not os.path.exists(fname): print('%f not exists'%fname)
+                d = WGapOutput.read_unf(fname)
+                if type(d) is np.ndarray:
+                    nfile += 1
+                    if not d.shape == (67420, ): print('%s' % os.path.split(fname)[-1])
+                    print(np.mean(d[ndx]))
+            except Exception as ex:
+                print(fname)
+                print(str(ex))
+    t2 = datetime.now()
+    td = t2 - t1
+    total_time = td.seconds + td.microseconds * 10**-6
+    avg_time = total_time / nfile
+
+    onlyfiles = [f for f in os.listdir(dir_name) if os.path.isfile(os.path.join(dir_name, f))]
+    for file in onlyfiles:
+        fname = os.path.join(dir_name, file)
+        try:
+            d = WGapOutput.read_unf(fname)
+            if type(d) is np.ndarray:
+                nfile += 1
+                if not d.shape == (67420, 31): print('%s' % os.path.split(fname)[-1])
+        except Exception as ex:
+            print(fname)
+            print(str(ex))
+
+
+succeed = False
+if succeed:
+    output_directory = 'F:/mhasan/experiments/GlobalCDA/test_results/output'
+    filename = 'CanopyBRH_km3.15.unf0'
+
+    files = [f for f in os.listdir(output_directory) if os.path.isfile(os.path.join(output_directory, f))]
+    for file in files:
+        d = WGapOutput.read_unf(os.path.join(output_directory, file))
+        print('%s\tNan Count: %d' %(file, sum(np.isnan(d[:, 3]))))
+
+    filename = 'GlobalWetlandBRH_km3.15.unf0'
+    d = WGapOutput.read_unf(os.path.join(output_directory, filename))
+
+    ndx = np.isnan(d[:,3])
+    dnan = d[ndx]
+
+succeed = False
+if succeed:
+    filename = 'F:/mhasan/experiments/GlobalCDA/test_results/parameters_000000.json'
+    f = open(filename, 'r')
+    line = ''
+    for l in f.readlines(): line += l
+    f.close()
+
+    filename = 'F:/mhasan/experiments/GlobalCDA/test_results/new_parameters.json'
+    f = open(filename, 'w')
+    while line:
+        ndx = line.find(', "')
+        l = line[:ndx+1]
+        line = line[ndx+2:].strip()
+        f.write(l + '\n')
+    f.close()

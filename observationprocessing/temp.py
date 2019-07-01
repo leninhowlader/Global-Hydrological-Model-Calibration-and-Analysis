@@ -2,7 +2,7 @@ import sys, os
 sys.path.append('..')
 
 from utilities.station import Station
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from utilities.upstream import Upstream
 from utilities.fileio import write_flat_file
 
@@ -54,8 +54,8 @@ grace_1deg_cells = [(-36.6215,-64.280405),
 
 centroids = []
 for c in grace_1deg_cells:
-    row, col = grid.find_row_column(c[0], c[1], degree_resolution=1.0)
-    centroid = grid.find_centroid(row, col, deg_resolution=1.0)
+    row, col = GlobalGrid.find_row_column(c[0], c[1], degree_resolution=1.0)
+    centroid = GlobalGrid.find_centroid(row, col, deg_resolution=1.0)
     centroids.append(centroid)
     print(centroid)
 

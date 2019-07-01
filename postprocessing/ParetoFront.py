@@ -96,3 +96,59 @@ class ParetoDominance():
         mask[ndces] = True
 
         return fx[mask], ndces
+
+    @staticmethod
+    def Rotation_R2(vectors:np.ndarray, theta:float, origin:tuple=(0,0)):
+        '''
+        Rotates vectors in R^2 space by specified angle
+
+        :param vectors (2d-array)   : list of vectors
+        :param theta (float)        : rotation angle in degree
+        :param origin (tuple; optional) : origin of R^2 space. default value (0,0)
+        :return (2d-array)          : rotated vectors
+        '''
+        if theta == 0: return vectors
+
+        ox, oy = origin
+        angle = np.radians(theta)
+
+        rotated_fx = []
+        for point in vectors:
+            px, py = point
+
+            qx = ox + np.cos(angle) * (px - ox) - np.sin(angle) * (py - oy)
+            qy = oy + np.sin(angle) * (px - ox) + np.cos(angle) * (py - oy)
+
+            rotated_fx.append([qx, qy])
+
+        return np.array(rotated_fx)
+
+    @staticmethod
+    def FalseParetoFront_2D(fx:np.ndarray, rotation_start:int=-60, rotation_end:int=60, rotation_interval:int=15):
+        '''
+        Finds false Pareto Front in 2D objective space.
+
+        :param fx: (2d-array) objective values
+        :param rotation_start: (int, optional, default=-60) starting angle in Degree for rotation of objective space
+        :param rotation_end: (int, optional, default=60) ending angle in Degree for rotation of objective space
+        :param rotation_interval: (int, optional, default=15) interval angle in Degree
+        :return: (tuple of (2d-array, 1d-array)) False Pareto Front and their indices
+        '''
+        pf, indices = [], []
+        if fx.shape[1] != 2: return np.array(pf)
+
+        for theta in range(rotation_start, rotation_end + 1, rotation_interval):
+            temp_fx = ParetoDominance.Rotation_R2(fx, theta)
+            temp_fx, ndx = ParetoDominance.ParetoFront(temp_fx)
+
+            # t1 = [tuple(fx[i]) for i in ndx]
+            # for i in range(len(t1)):
+            #     if t1[i] not in pf: pf.append(t1[i])
+            
+            for i in ndx:
+                t = tuple(fx[i])
+                if t not in pf:
+                    pf.append(t)
+                    indices.append(i)
+        
+        return np.array(pf), indices

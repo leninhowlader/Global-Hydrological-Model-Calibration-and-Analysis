@@ -29,24 +29,24 @@
 
 
 # 1. CONTROL VARIABLES - DEFINITION
-target_cells_only = False                    # a flag specifies if target cells are given
-grace_1deg_cells = [[(-36.5, -64.5)]]                       # container for the GRACE 1-degree cell centroid coordinates (see note 2.1)
+target_cells_only = True                    # a flag specifies if target cells are given
+grace_1deg_cells = []                       # container for the GRACE 1-degree cell centroid coordinates (see note 2.1)
 target_wghm_cells = []                      # container for WGHM cell numbers (see note 2.2)
-read_wghm_cells_from = ''                   # config_filename from which WGHM cell numbers could be generated (see note 2.3)
+read_wghm_cells_from = 'F:/mhasan/Code&Script/ProjectWGHM/input/hermann_cindex.txt'                   # config_filename from which WGHM cell numbers could be generated (see note 2.3)
 is_data_archived = True                     # a flag specifies if the data-files are archived into tar file
-data_files = ['/media/sf_private/GRACE/CSR_RL05_DDK2.tar']# container for storing data-files (see note 2.4)
+data_files = ['F:/mhasan/private/GRACE/EGSIEM_DDK2.tar']# container for storing data-files (see note 2.4)
 data_directories = []                       # container for storing data-directories (see note 2.5)
-start_year = 2002                           # specifies the bottom limit of allowable temporal range (see note 2.6)
-end_year = 2014                             # specifies the upper limit of the allowable temporal range (see note 2.6)
-skip_lines = 0                              # no. of header lines to be skipped
+start_year = 2003                           # specifies the bottom limit of allowable temporal range (see note 2.6)
+end_year = 2012                             # specifies the upper limit of the allowable temporal range (see note 2.6)
+skip_lines = 11                              # no. of header lines to be skipped
 null_value = 32767                          # null representation (see note 2.7)
-output_file = '/media/sf_private/grace_micha.csv'        # output config_filename
-flag_basin_level_output = False              # a flag determines if the group average to be calculated (see note 2.8)
+output_file = 'F:/mhasan/Code&Script/ProjectWGHM/grace_egsiem_hermann.csv'        # output config_filename
+flag_basin_level_output = True              # a flag determines if the group average to be calculated (see note 2.8)
 apply_correction_factor = True              # a flag determines whether correction factor to be applied (see note 2.9)
-correction_factor_datafile = '/media/sf_private/GRACE/LND_1x1_scalingFactor_DDK2.txt' # correction factor datafile (see note 2.9)
-unit_conversion_factor = 1 # 10**-3             # unit conversion multiplier
+correction_factor_datafile = 'F:/mhasan/private/GRACE/LND_1x1_scalingFactor_DDK2.txt' # correction factor datafile (see note 2.9)
+unit_conversion_factor = 10**-3             # unit conversion multiplier
 apply_mean_shift = True                     # flag determines if current mean to be shifted to the mean between start and end year
-cell_area_file = ''#'brahmaputra_area.txt'          # config_filename containing cell areas (see note 2.10)
+cell_area_file = '' #''F:/mhasan/Code&Script/ProjectWGHM/input/hermann_carea.txt'#'brahmaputra_area.txt'          # config_filename containing cell areas (see note 2.10)
 flag_output_as_volume = False
 
 # 2. CONTROL VARIABLES - SPECIAL NOTES
@@ -129,7 +129,8 @@ flag_output_as_volume = False
 # IMPORT STATEMENTS
 import sys, tarfile, os
 sys.path.extend('..')
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
+GlobalGrid.set_model_version('wghm22d')
 from datetime import datetime
 from utilities.fileio import write_flat_file, read_flat_file
 
@@ -302,7 +303,7 @@ def main():
             # if target wghm cell numbers are not provided, read cell numbers
             # from file, if file path is given
             if not target_wghm_cells and read_wghm_cells_from:
-                target_wghm_cells = grid.read_groupfile(read_wghm_cells_from)
+                target_wghm_cells = GlobalGrid.read_cell_info(read_wghm_cells_from)
 
             if target_wghm_cells:
                 # for each group of wghm cells, delete_ndx duplicate wghm cells if any
@@ -321,9 +322,9 @@ def main():
                 for basin in target_wghm_cells:
                     temp = []
                     for cnum in basin:
-                        centroid_lat, centroid_lng = grid.map_centroid_from_wghm_cell_number(cnum)
-                        grace_row, grace_col = grid.find_row_column(centroid_lat, centroid_lng, 1.0)
-                        centroid_lat, centroid_lng = grid.find_centroid(grace_row, grace_col, 1.0)
+                        centroid_lat, centroid_lng = GlobalGrid.get_wghm_centroid(cnum)
+                        grace_row, grace_col = GlobalGrid.find_row_column(centroid_lat, centroid_lng, 1.0)
+                        centroid_lat, centroid_lng = GlobalGrid.find_centroid(grace_row, grace_col, 1.0)
                         if 90>=centroid_lat>=-90 and 180>=centroid_lng>=-180: temp.append((centroid_lat, centroid_lng))
                     if len(temp) == len(basin): grace_1deg_cells.append(temp)
                     else: break
@@ -332,7 +333,8 @@ def main():
         if not succeed:
             message = '[Error]\n\t\ttarget cells flag has been set but inforamtion regarding cell number(s) could not be generated!'
             print(message)
-            exit(os.EX_DATAERR)
+            # exit(os.EX_DATAERR)
+            exit()
         else: print('[okay]')
     else: print('[not required]')
 
@@ -356,7 +358,8 @@ def main():
         if not data_files:
             message = '[Error]\n\t\tno data file has been specified!'
             print(message)
-            exit(os.EX_NOINPUT)
+#            exit(os.EX_NOINPUT)
+            exit()
     print('[okay]')
 
 
@@ -366,7 +369,8 @@ def main():
         if (not correction_factor_datafile) or (not os.path.exists(correction_factor_datafile)):
             message = '[Error]\n\t\tdatafile for correction factors is required but not provided.'
             print(message)
-            exit(os.EX_NOINPUT)
+#            exit(os.EX_NOINPUT)
+            exit()
         else: print('[okay]')
     else: print('[not required]')
 
@@ -379,15 +383,15 @@ def main():
             for basin in target_wghm_cells:
                 temp = []
                 for cnum in basin:
-                    row = grid.find_row_number(grid.map_centroid_from_wghm_cell_number(cnum)[0])
-                    temp.append(grid.find_wghm_cellarea(row))
+                    row = GlobalGrid.find_row_number(GlobalGrid.get_wghm_centroid(cnum)[0])
+                    temp.append(GlobalGrid.find_wghm_cellarea(row))
                 areas.append(temp)
             succeed = True
 
         message = ''
         if not succeed and cell_area_file and os.path.exists(cell_area_file):
-            temp = grid.read_groupfile(cell_area_file, data_type=float)
-
+            temp = GlobalGrid.read_cell_info(cell_area_file, data_type=float)
+            print(temp)
             if len(temp) != len(grace_1deg_cells):
                 message = '[Error]\n\t\tnumber of groups in cell area file is inconsistent with the number of target groups.'
             else:
@@ -403,7 +407,8 @@ def main():
         if not succeed:
             if message: print(message)
             else: print('[not okay]')
-            exit(os.EX_DATAERR)
+#            exit(os.EX_DATAERR)
+            exit()
         else: print('[okay]')
     else: print('[not required]')
 
@@ -463,15 +468,19 @@ def main():
         if apply_correction_factor:
             print('\t>> applying correction factor..', end='', flush=True)
             correction_factors = read_correction_factors(correction_factor_datafile, clist_1D)
-
             if not correction_factors:
                 message = '[Error] \n\tcorrection factors could not be retrieved from the datafile - %s.'%correction_factor_datafile
                 print(message)
-                exit(os.EX_DATAERR)
+#                exit(os.EX_DATAERR)
+                exit()
             elif len(correction_factors) != len(clist_1D):
-                message = '[Error] \n\tcorrection factors for some target cells are missing. Please check the correction datafile.'
-                print(message)
-                exit(os.EX_DATAERR)
+                temp = correction_factors.keys()
+                for cell in clist_1D:
+                    if cell not in temp: correction_factors[cell] = 1
+#                 message = '[Error] \n\tcorrection factors for some target cells are missing. Please check the correction datafile.'
+#                 print(message)
+# #                exit(os.EX_DATAERR)
+#                 exit()
             else:
                 for key in records.keys():
                     rs = records[key]
@@ -542,7 +551,8 @@ def main():
             print('[success]')
         else:
             print('[Error]\n\t\taverage calculation was unsuccessful.')
-            exit(os.EX_DATAERR)
+            # exit(os.EX_DATAERR)
+            exit()
 
         # shift mean in anomaly data
         if apply_mean_shift:
@@ -608,8 +618,8 @@ def main():
                 keys.sort()
                 for key in keys:
                     ds = records[key]
-                    r, c = grid.find_row_column(key[0], key[1], degree_resolution=0.5)
-                    cnum = grid.map_wghm_cell_number(r, c, base_resolution=0.5)
+                    r, c = GlobalGrid.find_row_column(key[0], key[1], degree_resolution=0.5)
+                    cnum = GlobalGrid.get_wghm_cell_number(r, c, base_resolution=0.5)
                     if cnum:
                         for d in ds: data.append([cnum, key[1], key[0]] + d)
 
@@ -620,19 +630,23 @@ def main():
                 else:
                     message = '[Error]\n\t\tdata could not be saved. Check weather the output config_filename is correct.'
                     print(message)
-                    exit(os.EX_IOERR)
+#                    exit(os.EX_IOERR)
+                    exit()
         else:
             message = '(Error) Output config_filename was not provided.'
             print(message)
-            exit(os.EX_CONFIG)
+#            exit(os.EX_CONFIG)
+            exit()
     else:
         message = '(Error) Either the data-files could not be found or data-files are ill-formatted.'
         print(message)
-        exit(os.EX_CONFIG)
+#        exit(os.EX_CONFIG)
+        exit()
 
     # exit success
     print('\nProgram exits normally.Thank you for using this program!')
-    exit(os.EX_OK)
+#    exit(os.EX_OK)
+    exit()
 
 if __name__ == '__main__':
     main()

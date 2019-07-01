@@ -10,7 +10,7 @@ unit_conversion_factor = 10**-6
 from netCDF4 import Dataset
 import numpy as np, sys, os
 sys.path.append('..')
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from utilities.fileio import write_flat_file
 
 from datetime import datetime, timedelta
@@ -87,9 +87,9 @@ def find_grace1deg_cells(wgmh_cell_list):
     grace1deg_cells = []
 
     for cnum in wgmh_cell_list:
-        centroid_lat, centroid_lng = grid.map_centroid_from_wghm_cell_number(cnum)
-        grace_row, grace_col = grid.find_row_column(centroid_lat, centroid_lng, 1.0)
-        centroid_lat, centroid_lng = grid.find_centroid(grace_row, grace_col, 1.0)
+        centroid_lat, centroid_lng = GlobalGrid.get_wghm_centroid(cnum)
+        grace_row, grace_col = GlobalGrid.find_row_column(centroid_lat, centroid_lng, 1.0)
+        centroid_lat, centroid_lng = GlobalGrid.find_centroid(grace_row, grace_col, 1.0)
         grace1deg_cells.append((centroid_lat, centroid_lng))
 
     return grace1deg_cells
@@ -100,10 +100,10 @@ def find_year_month(base_date, days=0):
 
 
 def main():
-    basin_cells = grid.read_groupfile(basin_cell_file, data_type=int)[0]
+    basin_cells = GlobalGrid.read_cell_info(basin_cell_file, data_type=int)[0]
     cell_count = len(basin_cells)
 
-    basin_areas = grid.read_groupfile(basin_area_file, data_type=float)[0]
+    basin_areas = GlobalGrid.read_cell_info(basin_area_file, data_type=float)[0]
 
     grace_1deg_cells = find_grace1deg_cells(basin_cells)
 

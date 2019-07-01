@@ -37,7 +37,7 @@ output_file = 'STATIONS.DAT'                                    # output filenam
 # IMPORT STATEMENTS
 import os, sys
 from utilities.fileio import read_flat_file, write_flat_file
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from utilities.station import Station
 
 # STATIC VARIABLE
@@ -110,8 +110,8 @@ def main():
     else:
         #set station coordinates to the coordinates of nearest wghm grid cell centroids
         for i in range(len(target_station_coordinates)):
-            row, col = grid.find_row_column(target_station_coordinates[i][0], target_station_coordinates[i][1])
-            lat, long = grid.find_centroid(row, col, deg_resolution=0.5)
+            row, col = GlobalGrid.find_row_column(target_station_coordinates[i][0], target_station_coordinates[i][1])
+            lat, long = GlobalGrid.find_centroid(row, col, deg_resolution=0.5)
             target_station_coordinates[i] = (lat, long)
 
         if not station_datafile: station_datafile = Station.get_default_station_file()

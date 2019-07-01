@@ -178,7 +178,7 @@ class Configuration:
                             else: config.set_parallel_evaluation_flag(False)
         return False
 
-    def is_okay(self):
+    def is_okay(self, skip_observation=False):
         '''
         This function checks the completeness of the configuration object. During the check, all variables'
         completeness is also being checked. If the configuration object has observation variable(s), observation
@@ -198,11 +198,12 @@ class Configuration:
                 if not var.is_okay(): return False
 
         # step: check completeness of observation variables (if any). Try to load the observation data
-        if len(self.obs_variables) > 0:
-            if not ObsVariable.data_collection(self.obs_variables): return False
+        if not skip_observation:
+            if len(self.obs_variables) > 0:
+                if not ObsVariable.data_collection(self.obs_variables): return False
 
-            for var in self.obs_variables:
-                if not var.is_okay(): return False
+                for var in self.obs_variables:
+                    if not var.is_okay(): return False
 
         # step: check completeness of derived variables (if any)
         if len(self.derived_variables) > 0:

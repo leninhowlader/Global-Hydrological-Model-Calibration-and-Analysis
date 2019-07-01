@@ -87,7 +87,7 @@ output_file_area = 'output/ganges_areas_hardinge_bridge.txt'                    
 # IMPORT STATEMENTS
 import os, sys
 sys.path.append('..')
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from utilities.fileio import read_flat_file
 from utilities.upstream import Upstream
 
@@ -99,9 +99,9 @@ from utilities.upstream import Upstream
 
 # setting wghm cell-number and area mapping data files, if applicable
 if output_as_wghm_cellnum and wghm_cell_number_mapping_datafile:
-    grid.wghm_grid_mapping_file = wghm_cell_number_mapping_datafile
+    GlobalGrid.__wghm_grid_lookup_table_filename = wghm_cell_number_mapping_datafile
 
-if output_cell_area and area_mapping_datafile: grid.wghm_cellarea_file = area_mapping_datafile
+if output_cell_area and area_mapping_datafile: GlobalGrid.__wghm_cell_area_file = area_mapping_datafile
 
 # method of reading flow-direction data
 # def read_flow_data():
@@ -210,7 +210,7 @@ def main():
     # for each station find the upstream cells
     upstream_cells = []
     for station in stations:
-        row, col = grid.find_row_column(station[0], station[1], degree_resolution=0.5)
+        row, col = GlobalGrid.find_row_column(station[0], station[1], degree_resolution=0.5)
         up_cells = Upstream.get_upstream_cells(row, col)
 
         # add the base station to the list
@@ -234,7 +234,7 @@ def main():
         # apply grouping only if group flag (make_1deg_group) is set true
         one_deg_groups = []
         if make_1deg_group:
-            for i in range(len(upstream_cells)): one_deg_groups.append(grid.cell_grouping(upstream_cells[i]))
+            for i in range(len(upstream_cells)): one_deg_groups.append(GlobalGrid.cell_grouping(upstream_cells[i]))
 
 
         # find cell area if the corresponding flag is set on
@@ -247,7 +247,7 @@ def main():
                     for group in one_deg_groups[i]:
                         area_lst = []
                         for cell in group:
-                            area = grid.find_wghm_cellarea(cell[0])
+                            area = GlobalGrid.find_wghm_cellarea(cell[0])
                             if area: area_lst.append(area)
                         if area_lst: area_groups[i].append(area_lst)
                 area_lst = []
@@ -256,7 +256,7 @@ def main():
                 for i in range(len(upstream_cells)):
                     temp = []
                     for cell in upstream_cells[i]:
-                        area = grid.find_wghm_cellarea(cell[0])
+                        area = GlobalGrid.find_wghm_cellarea(cell[0])
                         if area: temp.append(area)
                     area_lst.append(temp)
 
@@ -268,14 +268,14 @@ def main():
                     for j in range(len(one_deg_groups[i])):
                         cnum_lst = []
                         for cell in one_deg_groups[i][j]:
-                            cnum = grid.map_wghm_cell_number(cell[0], cell[1], base_resolution=0.5)
+                            cnum = GlobalGrid.get_wghm_cell_number(cell[0], cell[1], base_resolution=0.5)
                             if cnum: cnum_lst.append(cnum)
                         one_deg_groups[i][j] = cnum_lst
 
             # find wghm cell numbers for all upstream cells
             for i in range(len(upstream_cells)):
                 for j in range(len(upstream_cells[i])):
-                    cnum = grid.map_wghm_cell_number(upstream_cells[i][j][0], upstream_cells[i][j][1], base_resolution=0.5)
+                    cnum = GlobalGrid.get_wghm_cell_number(upstream_cells[i][j][0], upstream_cells[i][j][1], base_resolution=0.5)
                     upstream_cells[i][j] = cnum
         # if cell are not to be represented as wghm cell numbers, find cell centroids
         else:
@@ -284,12 +284,12 @@ def main():
                     for j in range(len(one_deg_groups[i])):
                         temp = []
                         for k in range(len(one_deg_groups[i][j])):
-                            lat, long = grid.find_centroid(one_deg_groups[i][j][k][0], one_deg_groups[i][j][k][1], deg_resolution=0.5)
+                            lat, long = GlobalGrid.find_centroid(one_deg_groups[i][j][k][0], one_deg_groups[i][j][k][1], deg_resolution=0.5)
                             temp.append((lat, long))
                         one_deg_groups[i][j] = temp
             for i in range(len(upstream_cells)):
                 for j in range(len(upstream_cells[i])):
-                    lat, long = grid.find_centroid(upstream_cells[i][j][0], upstream_cells[i][j][1], deg_resolution=0.5)
+                    lat, long = GlobalGrid.find_centroid(upstream_cells[i][j][0], upstream_cells[i][j][1], deg_resolution=0.5)
                     upstream_cells[i][j] = (lat, long)
 
         # print on screen if the corresponding flag is set on
@@ -364,17 +364,17 @@ def main():
                     filename = output_file_upstream[:-4] + '_' + str(stations[i][2]) + '.txt'
 
                     if one_deg_groups:
-                        succeed = grid.write_groupfile(filename, one_deg_groups[i])
+                        succeed = GlobalGrid.write_cell_info(filename, one_deg_groups[i])
                     else:
-                        succeed = grid.write_groupfile(filename, [upstream_cells[i]])
+                        succeed = GlobalGrid.write_cell_info(filename, [upstream_cells[i]])
 
                     if not succeed: break
             else:
                 for i in range(len(stations)):
                     if one_deg_groups:
-                        succeed = grid.write_groupfile(output_file_upstream, one_deg_groups[i], mode='a')
+                        succeed = GlobalGrid.write_cell_info(output_file_upstream, one_deg_groups[i], mode='a')
                     else:
-                        succeed = grid.write_groupfile(output_file_upstream, [upstream_cells[i]], mode='a')
+                        succeed = GlobalGrid.write_cell_info(output_file_upstream, [upstream_cells[i]], mode='a')
 
                     if not succeed: break
 
@@ -389,14 +389,14 @@ def main():
                 if create_station_wise_output_file:
                     for i in range(len(stations)):
                         filename = output_file_area[:-4] + '_' + str(stations[i][2]) + '.txt'
-                        if one_deg_groups: succeed = grid.write_groupfile(filename, area_groups[i])
-                        else: succeed = grid.write_groupfile(filename, [area_lst[i]])
+                        if one_deg_groups: succeed = GlobalGrid.write_cell_info(filename, area_groups[i])
+                        else: succeed = GlobalGrid.write_cell_info(filename, [area_lst[i]])
 
                         if not succeed: break
                 else:
                     for i in range(len(stations)):
-                        if one_deg_groups: succeed = grid.write_groupfile(output_file_area, area_groups[i], mode='a')
-                        else: succeed = grid.write_groupfile(output_file_area, [area_lst[i]], mode='a')
+                        if one_deg_groups: succeed = GlobalGrid.write_cell_info(output_file_area, area_groups[i], mode='a')
+                        else: succeed = GlobalGrid.write_cell_info(output_file_area, [area_lst[i]], mode='a')
 
                         if not succeed: break
                 message = ''

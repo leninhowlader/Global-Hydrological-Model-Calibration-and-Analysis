@@ -46,7 +46,7 @@ import os, sys
 sys.path.append('..')
 from datetime import datetime
 from utilities.fileio import read_flat_file, write_flat_file
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 
 # method of finding stations along with their coordinates
 def find_stations_from_file(station_file):
@@ -72,8 +72,8 @@ def main():
     # replace coordinate pair with the wghm cell number in the stations list
     if stations:
         for station_id, coordinates in stations.items():
-            row, col = grid.find_row_column(coordinates[0], coordinates[1], degree_resolution=0.5)
-            cnum = grid.map_wghm_cell_number(row, col, base_resolution=0.5)
+            row, col = GlobalGrid.find_row_column(coordinates[0], coordinates[1], degree_resolution=0.5)
+            cnum = GlobalGrid.get_wghm_cell_number(row, col, base_resolution=0.5)
             if cnum : stations[station_id] = cnum
             else:
                 message = 'Cell number in WGHM grid for latitude $d and longitude %d could not be retrieved. ' %coordinates

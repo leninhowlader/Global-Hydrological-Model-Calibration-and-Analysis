@@ -15,7 +15,7 @@ class Parameter:
         self.cell_list = []
         self.single_value_flag = True
         self.cell_specific_values = []
-        self.precision_level = 4
+        self.precision_level = 8
 
     def is_okey(self):
         if not self.parameter_name: return False

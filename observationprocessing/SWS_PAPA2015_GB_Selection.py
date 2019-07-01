@@ -1,7 +1,7 @@
 import os, math, sys
 sys.path.append('..')
 from utilities.fileio import read_flat_file, write_flat_file
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 
 
 basin_extent_filename = ''#''extent_papa_etal.dat'
@@ -45,9 +45,9 @@ def find_extent(data):
             if (d[1], d[0]) not in coords: coords.append((d[1], d[0]))
     return coords
 
-def read_upstream_file(filename): return grid.read_groupfile(filename)
+def read_upstream_file(filename): return GlobalGrid.read_cell_info(filename)
 
-def read_upstream_area(filename): return grid.read_groupfile(filename, data_type=float)
+def read_upstream_area(filename): return GlobalGrid.read_cell_info(filename, data_type=float)
 
 def read_basin_extent(filename):
     h, d = read_flat_file(filename, separator=',', header=True)
@@ -122,7 +122,7 @@ def main():
     # find upstream cell centroids
     print('Selection of WGHM sub-basin..'.ljust(50, ' '), end='', flush=True)
     centroid_upc = [] # upstream cell centroids
-    for c in upc[0]: centroid_upc.append(grid.map_centroid_from_wghm_cell_number(c))
+    for c in upc[0]: centroid_upc.append(GlobalGrid.get_wghm_centroid(c))
 
     # select (wghm) cell centroids for which data can be reconstructed
     slc = {}  # selected cells = {centroids: [corresponding papa_etal_2015 cells], ...}
@@ -235,12 +235,12 @@ def main():
         sub_basin = []
         sub_basin_area = []
         for c in slc.keys():
-            row, col = grid.find_row_column(c[0], c[1])
-            sub_basin.append(grid.map_wghm_cell_number(row, col))
-            sub_basin_area.append(grid.find_wghm_cellarea(row))
+            row, col = GlobalGrid.find_row_column(c[0], c[1])
+            sub_basin.append(GlobalGrid.get_wghm_cell_number(row, col))
+            sub_basin_area.append(GlobalGrid.find_wghm_cellarea(row))
 
-        grid.write_groupfile(output_subbasin_filename, [sub_basin])
-        grid.write_groupfile('sub_basin_area.txt', [sub_basin_area])
+        GlobalGrid.write_cell_info(output_subbasin_filename, [sub_basin])
+        GlobalGrid.write_cell_info('sub_basin_area.txt', [sub_basin_area])
     print('[done]')
 
     if msgs:

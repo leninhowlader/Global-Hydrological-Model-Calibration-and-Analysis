@@ -6,14 +6,26 @@ from calibration.configuration import Configuration
 from calibration.watergap import WaterGAP
 from calibration.stats import stats
 from copy import deepcopy
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
+GlobalGrid.set_model_version('wghm22d')
 
 #temporarily
 from calibration.variable import SimVariable
 
-config_filename = 'input/configuration_GAN.txt'
-total_storage_variable_name = 'TotalStorageGAN_km3'
-filename_postfix = 'ganges_'
+config_filename = 'configuration_contribution_mississippi.txt'
+total_storage_variable_name = 'TWS_km3'
+filename_postfix = 'missi_'
+
+# contibution map types:
+#       (1) contribution of storage compartments to TWS seasonal amplitude [per year]
+#       (2) contribution of storage compartments to mean TWS seasonal amplitude [long term]
+#       (3) monthly contribution of storage components to tws [per month]
+#       (4) monthly contribution of storage components to tws change/variation [per month]
+
+
+# seasonal behavior
+
+# read storages from start to end year
 
 def main():
     global config_filename, total_storage_variable_name, filename_postfix
@@ -181,8 +193,8 @@ def main():
             clist = twsa['cls']
             for i in range(len(clist)):
                 # draw cell
-                centroid = grid.map_centroid_from_wghm_cell_number(clist[i])
-                vertices = grid.cell_vertices([centroid], degree_resolution=0.5)
+                centroid = GlobalGrid.get_wghm_centroid(clist[i])
+                vertices = GlobalGrid.cell_vertices([centroid], degree_resolution=0.5)
 
 
                 g.poly(parts=vertices, shapeType=shp.POLYGON)
@@ -240,8 +252,8 @@ def main():
 
             for i in range(len(clist)):
                 # draw cell
-                centroid = grid.map_centroid_from_wghm_cell_number(clist[i])
-                vertices = grid.cell_vertices([centroid], degree_resolution=0.5)
+                centroid = GlobalGrid.get_wghm_centroid(clist[i])
+                vertices = GlobalGrid.cell_vertices([centroid], degree_resolution=0.5)
 
 
                 g.poly(parts=vertices, shapeType=shp.POLYGON)

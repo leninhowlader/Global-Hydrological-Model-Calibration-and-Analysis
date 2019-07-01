@@ -2,7 +2,7 @@
 import sys
 sys.path.append('..')
 from utilities.fileio import read_flat_file, write_flat_file
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 
 filename = '/media/sf_mhasan/private/month_data/ET_STD_WGAP_OUTPUT/Landcover/LCT_Brahmaputra.csv'
 
@@ -13,9 +13,9 @@ cell_groups = []
 group_areas = []
 
 for cell in data:
-    row, col = grid.find_row_column(cell[1], cell[0], degree_resolution=0.5)
-    cnum = grid.map_wghm_cell_number(row, col)
-    area = grid.find_wghm_cellarea(row, base_resolution=0.5)
+    row, col = GlobalGrid.find_row_column(cell[1], cell[0], degree_resolution=0.5)
+    cnum = GlobalGrid.get_wghm_cell_number(row, col)
+    area = GlobalGrid.find_wghm_cellarea(row, base_resolution=0.5)
     try:
         ndx = land_cover_types.index(cell[2])
         cell_groups[ndx].append(cnum)
@@ -36,8 +36,8 @@ for i in range(len(cell_groups)): print(land_cover_types[i], cell_groups[i])
 filename = 'Brahmaputra.txt'
 
 output_filename = 'LCT_Groups_' + filename
-grid.write_groupfile(output_filename, cell_groups, mode='w')
+GlobalGrid.write_cell_info(output_filename, cell_groups, mode='w')
 output_filename = 'LCT_areas_' + filename
-grid.write_groupfile(output_filename, group_areas, mode='w')
+GlobalGrid.write_cell_info(output_filename, group_areas, mode='w')
 output_filename = 'LC_Types_' + filename
 write_flat_file(output_filename, [land_cover_types], separator=',')

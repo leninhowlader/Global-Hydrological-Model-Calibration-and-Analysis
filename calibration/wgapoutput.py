@@ -31,11 +31,19 @@ class WGapOutput:
                   otherwise, an empty array
 
         Example:
-        filename = os.path.join(wgap_output_directory, 'G_TOTAL_STORAGES_km3_2003.12.UNF0')
-        tws_2003 = WGapOutput.read_unf(filename, FileEndian.big_endian, 12)
-        tws_2003 = WGapOutput.read_unf(filename, ncol=12)
-        tws_2003 = WGapOutput.read_unf(filename, file_endian=FileEndian.big_endian)
-        tws_2003 = WGapOutput.read_unf(filename)
+        >>> filename = os.path.join(wgap_output_directory, 'G_TOTAL_STORAGES_km3_2003.12.UNF0')
+        >>> tws_2003 = WGapOutput.read_unf(filename, FileEndian.big_endian, 12)
+        >>> tws_2003.shape
+        (66740, 12)
+        >>> tws_2003 = WGapOutput.read_unf(filename, ncol=12)
+        >>> tws_2003.shape
+        (66740, 12)
+        >>> tws_2003 = WGapOutput.read_unf(filename, file_endian=FileEndian.big_endian)
+        >>> tws_2003.shape
+        (66740, 12)
+        >>> tws_2003 = WGapOutput.read_unf(filename)
+        >>> tws_2003.shape
+        (66740, 12)
         '''
 
         # step: check if file exists

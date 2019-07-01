@@ -21,7 +21,7 @@ import sys, numpy as np, os, shapefile as shp
 sys.path.append('..')
 from utilities.upstream import Upstream
 from calibration.wgapoutput import WGapOutput
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from copy import deepcopy
 from utilities.station import Station
 from calibration.enums import FileEndian
@@ -46,14 +46,14 @@ def generate_target_cells():
         stations = Station.read_stations(station_filename)
 
         for station in stations:
-            row, col = grid.find_row_column(station[2], station[1], degree_resolution=0.5)
+            row, col = GlobalGrid.find_row_column(station[2], station[1], degree_resolution=0.5)
             uscells = [(row, col)]
             uscells += Upstream.get_upstream_cells(row, col)
             upstreams += uscells
 
         for i in range(len(upstreams)):
             row, col = upstreams[i]
-            cnum = grid.map_wghm_cell_number(row, col, base_resolution=0.5)
+            cnum = GlobalGrid.get_wghm_cell_number(row, col, base_resolution=0.5)
             upstreams[i] = cnum
 
         for i in reversed(range(len(upstreams))):
@@ -151,10 +151,10 @@ def main():
     direction_map = np.array(Upstream.flow_direction_data)
 
     # read and translate WaterGAP grid into row-column pairs
-    wgmap_centroids = grid.get_wghm_world_grid_centroids()
-    wgmap_GeoPoints = grid.cell_vertices(wgmap_centroids, degree_resolution=degree_resolution)
+    wgmap_centroids = GlobalGrid.get_wghm_world_grid_centroids()
+    wgmap_GeoPoints = GlobalGrid.cell_vertices(wgmap_centroids, degree_resolution=degree_resolution)
     for i in range(len(wgmap_centroids)):
-        wgmap_RowColumn.append(grid.find_row_column(wgmap_centroids[i][0], wgmap_centroids[i][1], degree_resolution=degree_resolution))
+        wgmap_RowColumn.append(GlobalGrid.find_row_column(wgmap_centroids[i][0], wgmap_centroids[i][1], degree_resolution=degree_resolution))
 
     # initialize empty inflow map with 0 values
     GFactor = int(1 / degree_resolution)

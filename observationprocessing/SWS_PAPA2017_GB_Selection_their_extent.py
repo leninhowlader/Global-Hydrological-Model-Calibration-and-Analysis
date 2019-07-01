@@ -2,7 +2,7 @@ import sys, numpy as np
 sys.path.append('..')
 from utilities.fileio import read_flat_file, write_flat_file
 from utilities.station import Station
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from utilities.upstream import Upstream
 
 # filename_data = 'f:/mhasan/private/SWS_PAPA_2017/surface_water_volume_change_global_1993_2007_from_aster_GB.dat'
@@ -46,10 +46,10 @@ def read_basin_cells():
     stations = Station.read_stations(filename_station)
 
     for station in stations:
-        row, col = grid.find_row_column(station[2], station[1], degree_resolution=0.5)
+        row, col = GlobalGrid.find_row_column(station[2], station[1], degree_resolution=0.5)
         temp = Upstream.get_upstream_cells(row, col)
         temp = [(row, col)] + temp
-        for i in range(len(temp)): temp[i] = grid.map_wghm_cell_number(temp[i][0], temp[i][1], base_resolution=0.5)
+        for i in range(len(temp)): temp[i] = GlobalGrid.get_wghm_cell_number(temp[i][0], temp[i][1], base_resolution=0.5)
         basins.append(temp)
 
     return basins
@@ -113,7 +113,7 @@ def main():
     # read basin cells from station file
     print('reading basin cells of targeted stations ...', end='', flush=True)
     # basins = read_basin_cells()
-    basins = grid.read_groupfile(basin_cell_filename, data_type=int)
+    basins = GlobalGrid.read_cell_info(basin_cell_filename, data_type=int)
     if basins: print('[done]')
     else:
         print('[failed]')

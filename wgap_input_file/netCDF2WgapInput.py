@@ -2,7 +2,7 @@ from netCDF4 import Dataset
 import numpy as np, sys, struct, os
 sys.path.append('..')
 from utilities.fileio import write_UNF_file
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
 from datetime import datetime, timedelta
 from copy import deepcopy
 from calibration.enums import FileEndian
@@ -41,10 +41,10 @@ def main():
 
     # read wghm world grid
     print('reading wghm grid info ... ', end='', flush=True)
-    grid.read_wghm_cell_map()
-    mapData = deepcopy(grid.wghm_grid_mapping_data)
+    GlobalGrid.read_wghm_grid_lookup_table()
+    mapData = deepcopy(GlobalGrid.__wghm_grid_lookup_table)
     for i in range(len(mapData)):
-        mapData[i] = grid.find_row_column(mapData[i][3], mapData[i][2], degree_resolution=0.5)
+        mapData[i] = GlobalGrid.find_row_column(mapData[i][3], mapData[i][2], degree_resolution=0.5)
     if not mapData or len(mapData) != wghm_cell_count: succeed = False
     if succeed: print('[done]')
     else:

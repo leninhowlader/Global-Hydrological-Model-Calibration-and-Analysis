@@ -40,8 +40,9 @@ Inputs:
 
 r = 400
 M = 24
-config_filename = 'input/configuration_evaluation_step_one_test.txt'
-output_directory = 'output'
+working_directory = 'F:/mhasan/experiments/GlobalCDA/SA_mississippi/replication_one/'
+config_filename = 'config/configuration_eet_sample_evaluation_mississippi_step_one.txt'
+output_directory = 'output_step_two'
 start_year = -1
 end_year = -1
 
@@ -54,6 +55,8 @@ from calibration.wgapoutput import WGapOutput
 from calibration.watergap import WaterGAP
 from calibration.enums import FileEndian
 from calibration.variable import SimVariable
+from utilities.fileio import write_flat_file
+from datetime import datetime, timedelta
 
 def compute_rmsd(ts1:np.ndarray, ts2:np.ndarray)->np.ndarray:
     '''
@@ -96,14 +99,15 @@ def construct_time_series(data, sample_id, basin_id, start_year=-1, end_year=-1)
     return d.flatten()
 
 def main():
-    
+
     # step: fetch global variables
-    global r, M, config_filename, output_directory, start_year, end_year
+    global r, M, working_directory, config_filename, output_directory, start_year, end_year
 
     # step: compute total number of samples
     nsample = r * (M + 1)
 
     # step: read configuration file
+    os.chdir(working_directory)
     config = Configuration.read_configuration_file(config_filename)
     if not config and config.is_okay(): return False
 
@@ -113,6 +117,8 @@ def main():
 
     # step: for each simulation variable follow next steps
     for var in config.sim_variables:
+        print('Processing has started for variable: %s' % var.varname)
+
         # step: generate data filename
         filename = '%s.15.unf0'%var.varname             # for monthly time series
         filename = os.path.join(data_directory, filename)
@@ -125,7 +131,9 @@ def main():
         nbasin = 0
         if var.group_stats: nbasin = len(var.cell_groups)
         else:
-            for group in var.cell_groups: nbasin += len(group)
+            grp_member = []
+            for group in var.cell_groups: grp_member += group
+            nbasin = len(np.unique(grp_member))
 
         basins = np.unique(data[:,1])
         if basins.size != nbasin: return False
@@ -133,6 +141,9 @@ def main():
         results_rmsd = []
         # step: for each basin/cell, compute rmsd with each sample and store the results
         for bid in basins:
+            print('\tcurrent basin no.: %d' %bid, end='', flush=True)
+            t = datetime.now()
+
             time_series_ref = None          # reference time series
 
             # step: for each sample, construct time-series and compute rmsd with the current time-series and reference
@@ -149,9 +160,15 @@ def main():
 
                 results_rmsd.append([bid, sid, rmsd])
 
+            # display how much time required for each basin
+            tdif = datetime.now() - t
+            total_t = tdif.seconds + tdif.microseconds / 10**6
+            print(' [total time: %f seconds]' % total_t)
+
         # step: write results into output file
-        filename = os.path.join(output_directory, '%s_rmsd.csv' % var.varname.lower())
-        np.savetxt(filename, results_rmsd, delimiter=',')
+        filename = os.path.join(output_directory, '%s2_rmsd.csv' % var.varname.lower())
+        # np.savetxt(filename, results_rmsd, delimiter=',')
+        succeed = write_flat_file(filename, results_rmsd, separator=',')
     return True
 
 if __name__ == '__main__': main()

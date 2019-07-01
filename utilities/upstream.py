@@ -5,7 +5,8 @@ __author__ = 'mhasan'
 import sys, os, math
 sys.path.append('..')
 from utilities.fileio import read_flat_file
-from utilities.grid import grid
+from utilities.globalgrid import GlobalGrid
+from calibration.enums import FileEndian
 
 
 class Upstream:
@@ -129,7 +130,7 @@ class Upstream:
         dline, arrows = [], []
 
         try:
-            row, col = grid.find_row_column(centroid[0], centroid[1], degree_resolution=degree_resolution)
+            row, col = GlobalGrid.find_row_column(centroid[0], centroid[1], degree_resolution=degree_resolution)
             direction = Upstream.get_flow_direction(row, col)
 
             dline.append([centroid[1], centroid[0]])
@@ -161,7 +162,7 @@ class Upstream:
             upstreams = []
             for s in stations:
                 row, col = s[0], s[1]
-                if base_resolution != 0.5: row, col = grid.transform_row_column(row, col, base_resolution, target_resolution=0.5)
+                if base_resolution != 0.5: row, col = GlobalGrid.transform_row_column(row, col, base_resolution, target_resolution=0.5)
                 temp = Upstream.get_upstream_cells(row, col)
                 if temp: upstreams.append([(row, col)]+temp)
                 else: upstreams.append([(row, col)])
@@ -169,8 +170,8 @@ class Upstream:
             geopoints = []
             for basin in upstreams:
                 centroids = []
-                for cell in basin: centroids.append(grid.find_centroid(cell[0], cell[1], deg_resolution=0.5))
-                geopoints.append(grid.cell_vertices(centroids, degree_resolution=0.5))
+                for cell in basin: centroids.append(GlobalGrid.find_centroid(cell[0], cell[1], deg_resolution=0.5))
+                geopoints.append(GlobalGrid.cell_vertices(centroids, degree_resolution=0.5))
 
             # creating shape file
             import shapefile as shp
@@ -191,7 +192,7 @@ class Upstream:
                         else: basin_id = i + 1
 
                         for j in range(len(basin)):
-                            cnum = grid.map_wghm_cell_number(basin[j][0], basin[j][1], base_resolution=0.5)
+                            cnum = GlobalGrid.get_wghm_cell_number(basin[j][0], basin[j][1], base_resolution=0.5)
                             shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
                             shp_basin.record(basin_id, cnum)
                 else:
@@ -224,7 +225,7 @@ class Upstream:
                 arrow_id = 1
                 for basin in upstreams:
                     for cell in basin:
-                        centroid = grid.find_centroid(cell[0], cell[1], deg_resolution=0.5)
+                        centroid = GlobalGrid.find_centroid(cell[0], cell[1], deg_resolution=0.5)
                         arrow, pointer = Upstream.get_direction_line(centroid)
                         shp_arrow.line(parts=[arrow, pointer], shapeType=shp.POLYLINEM)
                         shp_arrow.record(arrow_id)
@@ -245,3 +246,160 @@ class Upstream:
                 f.close()
 
         return succeed
+
+    @staticmethod
+    def create_shape_with_predictions(filename_output_shape, filename_station, filename_wghm_prediction,
+                                      model_version='wghm22d', basin_ids=[], prediction_file_endian=FileEndian.big_endian,
+                                      add_wghm_cnum=True, model_grid_resolution=0.5):
+
+        # step: check input parameters
+        if not (filename_output_shape or filename_station or filename_wghm_prediction): return False
+        if not(os.path.exists(filename_station) and os.path.exists(filename_wghm_prediction)): return False
+        if not model_version.lower() in ['wghm22b', 'wghm22d']: return False
+
+        # step: read stations from [station] file
+        from utilities.station import Station
+        stations = Station.read_stations(filename_station)
+        if not stations: return False
+        if basin_ids:
+            if len(basin_ids) != len(stations): return False
+            for bid in basin_ids:
+                if type(bid) is not int: return False
+        else:
+            for i in range(len(stations)): basin_ids.append(i+1)
+
+        # step: set model version
+        GlobalGrid.set_model_version(model_version)
+
+        # step: find upstream basin for each stations
+        upstream_basins = []
+        for s in stations:
+            lat, lon = s[2], s[1]
+            row, col = GlobalGrid.find_row_column(lat, lon, model_grid_resolution)
+
+            temp = Upstream.get_upstream_cells(row, col)
+            if temp: upstream_basins.append([(row, col)] + temp)
+            else: upstream_basins.append([(row, col)])
+        if not upstream_basins: return False
+
+        # step: find cell centroid for each cell in each basin
+        geopoints = []
+        for basin in upstream_basins:
+            centroids = []
+            for cell in basin: centroids.append(GlobalGrid.find_centroid(cell[0], cell[1], deg_resolution=model_grid_resolution))
+            geopoints.append(GlobalGrid.cell_vertices(centroids, degree_resolution=model_grid_resolution))
+        if not geopoints: return False
+
+        # step: find wghm cell number
+        wghm_upstreams_cnum = []
+        for basin in upstream_basins:
+            temp = []
+            for cell in basin: temp.append(GlobalGrid.get_wghm_cell_number(cell[0], cell[1], base_resolution=model_grid_resolution))
+            wghm_upstreams_cnum.append(temp)
+        if not wghm_upstreams_cnum: return False
+
+        # step: read wghm predictions
+        from calibration.wgapoutput import WGapOutput
+        import numpy as np
+
+        d = WGapOutput.read_unf(filename_wghm_prediction, file_endian=prediction_file_endian)
+        if type(d) is not np.ndarray: return False
+
+        data = []
+        for basin in wghm_upstreams_cnum:
+            basin = np.array(basin) - 1
+            data.append(d[basin])
+
+        ncol = d.shape[1]
+        d = None
+        if not data: return False
+
+        # step: add attributes for each column in data
+        attrib_list = []
+        if ncol == 12: attrib_list = ['jan', 'feb', 'mar', 'arp', 'may', 'jun',
+                                      'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        else:
+            for i in range(ncol): attrib_list.append('value%d'%(i+1))
+        if not attrib_list: return False
+
+        try:
+            # step: create shape
+            import shapefile as shp
+            shp_basin = shp.Writer(shp.POLYGON)
+            shp_basin.autoBalance = 1
+
+            # add fields
+            shp_basin.field('BASIN', 'N', 8)
+            shp_basin.field('CNUM', 'N', 8)
+            for attrib in attrib_list: shp_basin.field(attrib, 'N', decimal=10)
+
+            for i in range(len(upstream_basins)):
+                bid = basin_ids[i]
+
+                basin_cnum = wghm_upstreams_cnum[i]
+                records = data[i]
+                points = geopoints[i]
+                for j in range(len(basin_cnum)):
+                    record_row = [bid, basin_cnum[j]] + records[j].flatten().tolist()
+                    shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
+                    shp_basin.record(*record_row)
+
+
+            # step: save shape into shape file and add projection file
+            shp_basin.save(filename_output_shape)
+            ndx = filename_output_shape.lower().find('.shp')
+            if ndx >= 0: filename_output_shape = filename_output_shape[:ndx]
+            filename_output_shape += '.prj'
+            f = open(filename_output_shape, 'w')
+            prj_string = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]'
+            f.write(prj_string)
+            f.close()
+        except: return False
+
+        return True
+
+    @staticmethod
+    def create_shape_with_data(filename_output_shape, basin_id, data, wghm_cnum_list, model_grid_resolution=0.5):
+
+        # step: check input parameters
+        if not filename_output_shape: return False
+        if not (len(wghm_cnum_list) == len(data)): return False
+        if basin_id <= 0: return False
+
+        # step: find cell centroid for each cell in each basin
+        geopoints, centroids = [], []
+        for cnum in wghm_cnum_list:
+            centroids.append(GlobalGrid.get_wghm_centroid(cnum))
+        geopoints = GlobalGrid.cell_vertices(centroids, degree_resolution=model_grid_resolution)
+        if not geopoints: return False
+
+        try:
+            # step: create shape
+            import shapefile as shp
+            shp_basin = shp.Writer(shp.POLYGON)
+            shp_basin.autoBalance = 1
+
+            # add fields
+            shp_basin.field('BASIN', 'N', 8)
+            shp_basin.field('CNUM', 'N', 8)
+            shp_basin.field('Value', 'N', decimal=10)
+
+            # create polygon
+            for j in range(len(wghm_cnum_list)):
+                record_row = [basin_id, wghm_cnum_list[j], data[j]]
+                shp_basin.poly(parts=[geopoints[j]], shapeType=shp.POLYGON)
+                shp_basin.record(*record_row)
+
+            # step: save shape into shape file and add projection file
+            shp_basin.save(filename_output_shape)
+            ndx = filename_output_shape.lower().find('.shp')
+            if ndx >= 0: filename_output_shape = filename_output_shape[:ndx]
+            filename_output_shape += '.prj'
+            f = open(filename_output_shape, 'w')
+            prj_string = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]'
+            f.write(prj_string)
+            f.close()
+        except:
+            return False
+
+        return True
