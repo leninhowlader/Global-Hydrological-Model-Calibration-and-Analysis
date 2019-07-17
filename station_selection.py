@@ -114,7 +114,7 @@ def main():
             lat, long = GlobalGrid.find_centroid(row, col, deg_resolution=0.5)
             target_station_coordinates[i] = (lat, long)
 
-        if not station_datafile: station_datafile = Station.get_default_station_file()
+        if not station_datafile: station_datafile = Station.get_fullpath_station_file()
 
         selected_station = select_stations(target_station_coordinates, station_datafile)
 

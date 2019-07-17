@@ -1,6 +1,6 @@
 __author__ = 'mhasan'
 
-import sys, os
+import sys, os, numpy as np
 sys.path.append('..')
 from utilities.fileio import read_flat_file, write_flat_file
 
@@ -9,62 +9,103 @@ class Station:
     stations = []
 
     @staticmethod
-    def get_default_station_file(): return os.path.join(os.path.dirname(os.path.realpath(__file__)), Station.station_datafile)
+    def get_fullpath_station_file():
+        '''
+        Generates the full path of station data file
 
-    # method of reading stations [from a file]
+        :return: (string) full path of station data file
+        '''
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)), Station.station_datafile)
+
     @staticmethod
-    def read_stations(station_file=''):
-        stations = []
-        if station_file == '':
-            if Station.stations: return Station.stations
-            else:
-                if Station.station_datafile: stations = Station.read_stations(Station.get_default_station_file())
+    def set_station_filename(filename):
+        '''
+        Sets station filename
+        :param filename: (string) station filename
+        :return: None
+        '''
 
-                if stations: Station.stations = stations
-        else:
-            h, stations = read_flat_file(station_file, separator=' ', header=False)
-            if stations:
-                for i in reversed(range(len(stations))):
-                    if len(stations[i]) < 3 or not (-180 <= stations[i][1] <= 180) or not (
-                            -90 <= stations[i][2] <= 90): stations.pop(i)
-                    else: stations[i] = tuple(stations[i][:-3])
-            else: stations = []
+        if filename: Station.station_datafile = filename
 
-        return stations
-
-    # method of finding station id (this method was not used so far)
     @staticmethod
-    def find_station_id(latitude, longitude, station_file=''):
-        stations = Station.read_stations(station_file)
+    def read_stations(filename=''):
+        '''
+        Reads station info from file
+
+        :param filename: (string) filename
+        :return: None
+        '''
+        # set station filename when applicable
+        if filename and not os.path.exists(filename) and Station.station_datafile != filename:
+            Station.station_datafile = filename
+            filename = ''
+
+        # generate full pathname of station datafile, if filename is not provided explicitly
+        if not filename: filename = Station.get_fullpath_station_file()
+
+        # read stations from the file
+        stations = np.array([])
+        if os.path.exists(filename):
+            d = np.loadtxt(filename, skiprows=0, ndmin=2)
+            if len(d) > 0: stations = d[:,:3]
+
+        # assign stations into class variable
+        Station.stations = stations
+
+    @staticmethod
+    def get_stations():
+        '''
+        Returns all stations
+
+        :return: (2-d numpy array) list of all stations
+        '''
+        if len(Station.stations) == 0: Station.read_stations()
+
+        return Station.stations
+
+    @staticmethod
+    def find_station_id(latitude, longitude):
+        '''
+        Finds station id of the station specified with its geolocation.
+
+        :param latitude: (float) latitude of a given station
+        :param longitude: (float) longitude of a given station
+        :return: (int) station id
+        '''
+
+        stations = Station.get_stations()
 
         station_id = None
-        if stations:
-            for s in stations:
-                if s[2] == latitude and s[1] == longitude:
-                    station_id = s[0]
-                    break
+        if len(stations) > 0:
+            ndx = np.where((stations[:,1]==longitude) & (stations[:,2]==latitude))
+            station_id = stations[ndx][0,0].astype(int)
+
 
         return station_id
 
-    # method of selecting stations from the station datafile and creating a subset of the stations
     @staticmethod
-    def select_stations(coordinates, station_file='', lat_first=True):
-        stations = Station.read_stations(station_file)
+    def find_stations(coordinates, first_column_as_latitude=True):
+        '''
+        Finds stations by their location coordinates from the station list
 
-        selected_stations = []
-        if stations:
-            if lat_first:
-                for coord in coordinates:
-                    for st in stations:
-                        if st[2] == coord[0] and st[1] == coord[1]:
-                            selected_stations.append(st)
-                            break
-            else:
-                for coord in coordinates:
-                    for st in stations:
-                        if st[1] == coord[0] and st[2] == coord[1]:
-                            selected_stations.append(st)
-                            break
+        :param coordinates: (list of tuples or list) longitude and latitude of target stations
+        :param first_column_as_latitude: (boolean, optional, default = True) a flag to indicate that the first column of
+                                    the geo-coordinates are latitude. If the flag is set false, the first column will
+                                    be taken as latitudes of target stations
+        :return: (2-d numpy array) list of selected stations
+        '''
+        stations = Station.get_stations()
+
+        if first_column_as_latitude: coordinates = np.array(coordinates)[:, [1,0]]
+        else: coordinates = np.array(coordinates)
+
+        selected_stations = None
+        for station_coord in coordinates:
+            ndx = np.where((stations[:, 1] == station_coord[0]) & (stations[:, 2] == station_coord[1]))
+            temp = stations[ndx]
+
+            try: selected_stations = np.concatenate((selected_stations, temp), axis=0)
+            except: selected_stations = temp
 
         return selected_stations
 

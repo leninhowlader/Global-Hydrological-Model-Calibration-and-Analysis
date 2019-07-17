@@ -126,6 +126,15 @@ class GlobalGrid:
         else: return np.array([])
 
     @staticmethod
+    def get_wghm_grid_rowcolumn():
+        ndx = np.argsort(GlobalGrid.__wghm_grid_lookup_table[:,0])
+        coords = GlobalGrid.__wghm_grid_lookup_table[ndx][:,[2,3]]
+
+        rowcol = [GlobalGrid.find_row_column(lat, lon) for lon, lat in coords]
+        return np.array(rowcol)
+
+
+    @staticmethod
     def get_wghm_world_grid_centroids():
         '''
         Returns all WGHM cell centroids of the current model version.

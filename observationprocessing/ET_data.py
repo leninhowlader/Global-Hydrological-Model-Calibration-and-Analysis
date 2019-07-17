@@ -107,7 +107,7 @@ def main():
         basin_count = len(temp)
         temp, cells = None, None
     else:
-        stations = Station.read_stations(station_file=station_filename)
+        stations = Station.read_stations(filename=station_filename)
 
         for station in stations:
             row, col = GlobalGrid.find_row_column(station[2], station[1], degree_resolution=0.5)

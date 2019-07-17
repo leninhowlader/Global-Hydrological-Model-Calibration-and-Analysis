@@ -40,11 +40,12 @@ Inputs:
 
 r = 400
 M = 24
-working_directory = 'F:/mhasan/experiments/GlobalCDA/SA_mississippi/replication_one/'
+working_directory = 'F:/mhasan/experiments/GlobalCDA/SA_mississippi/replication_three/'
 config_filename = 'config/configuration_eet_sample_evaluation_mississippi_step_one.txt'
-output_directory = 'output_step_two'
+output_directory = 'output_step_two/anomaly'
 start_year = -1
 end_year = -1
+flag_compute_anomaly = True
 
 
 
@@ -98,10 +99,32 @@ def construct_time_series(data, sample_id, basin_id, start_year=-1, end_year=-1)
 
     return d.flatten()
 
-def main():
 
+def build_prediction_time_series(data, sample_id):
+    """
+    This method constructs 1d time-series from the data. First it find data for specified sample and then sort data
+    according to the years. Finally, it constructs the time-series with monthly data of all years.
+
+    :param data: (ndarray) input 2d data having 15 columns containing sample id, basin id, year, and 12 monthly values
+    :param sample_id: (int) sample id
+    :return: (1d numpy array) time series for the current sample for specified basin
+    """
+
+    # step: filter data using basin id and sample id. crop data from 3rd column till the end column
+    #       [expected shape is (nyear, 13)]
+    ndx = np.where(data[:, 0] == sample_id)
+    d = data[ndx][:, 2:]
+
+    # step: sort the data according to the year column. crop data from 2nd column till the end column
+    ndx = np.argsort(d[:, 0])
+    d = d[ndx][:, 1:]
+
+    return d.flatten()
+
+
+def main():
     # step: fetch global variables
-    global r, M, working_directory, config_filename, output_directory, start_year, end_year
+    global r, M, working_directory, config_filename, output_directory, start_year, end_year, flag_compute_anomaly
 
     # step: compute total number of samples
     nsample = r * (M + 1)
@@ -146,11 +169,20 @@ def main():
 
             time_series_ref = None          # reference time series
 
+            # step: crop basin specific predictions from data
+            ndx = np.where(data[:, 1] == bid)
+            basin_data = data[ndx]
+            if start_year > 1901 and end_year > 1901 and start_year <= end_year:
+                ndx = np.where((basin_data[:, 2] >= start_year) & (basin_data[:, 2] <= end_year))
+                basin_data = basin_data[ndx]
+            # ... end [of data cropping]
+
             # step: for each sample, construct time-series and compute rmsd with the current time-series and reference
             #       time-series. if the current sample is a reference sample, reference time-series must be updated
             #       with the current time-series and rmsd should be assign to zero
             for sid in range(nsample):
-                time_series_curr = construct_time_series(data, sid, bid)
+                time_series_curr = build_prediction_time_series(basin_data, sid)
+                if flag_compute_anomaly: time_series_curr = time_series_curr - time_series_curr.mean()
                 if sid%(M+1) == 0:
                     # if the current sample should be considered as a reference, set rmsd to zero and update
                     # the reference time-series with current time-series
@@ -166,7 +198,8 @@ def main():
             print(' [total time: %f seconds]' % total_t)
 
         # step: write results into output file
-        filename = os.path.join(output_directory, '%s2_rmsd.csv' % var.varname.lower())
+        if flag_compute_anomaly: filename = os.path.join(output_directory, 'anomaly_%s_rmsd.csv' % var.varname.lower())
+        else: filename = os.path.join(output_directory, '%s_rmsd.csv' % var.varname.lower())
         # np.savetxt(filename, results_rmsd, delimiter=',')
         succeed = write_flat_file(filename, results_rmsd, separator=',')
     return True
