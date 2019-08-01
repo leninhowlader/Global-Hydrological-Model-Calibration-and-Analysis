@@ -4,11 +4,11 @@ config_filename = 'input/configuration_GAN.txt'
 result_filename = 'input/results_G4G6.csv'
 
 
-import sys, os
+import sys
+
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.watergap import WaterGAP
-from calibration.parameter import Parameter
+from wgap.watergap import WaterGAP
 from postprocessing.borgoutput import BorgOutput
 
 

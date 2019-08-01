@@ -1,11 +1,10 @@
 from netCDF4 import Dataset
 import numpy as np, sys, struct, os
 sys.path.append('..')
-from utilities.fileio import write_UNF_file
 from utilities.globalgrid import GlobalGrid
 from datetime import datetime, timedelta
 from copy import deepcopy
-from calibration.enums import FileEndian
+from utilities.enums import FileEndian
 
 # data filenames
 filename_list = ['/media/sf_mhasan/private/temp/Temperature future tas_bced_1960_1999_miroc-esm-chem_rcp2p6_2006-2010.nc']

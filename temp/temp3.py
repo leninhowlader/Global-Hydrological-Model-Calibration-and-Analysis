@@ -3,7 +3,7 @@ sys.path.append('..')
 from utilities.globalgrid import GlobalGrid
 from utilities.fileio import write_flat_file, read_flat_file
 from utilities.upstream import Upstream
-from calibration.wgapoutput import WGapOutput
+from wgap.wgapoutput import WGapOutput
 from utilities.station import Station
 
 succeed = False
@@ -125,7 +125,7 @@ succeed = False
 if succeed:
     from calibration.configuration import Configuration
     from calibration.parameter import Parameter
-    from calibration.watergap import WaterGAP
+    from wgap.watergap import WaterGAP
 
     param = Parameter()
 
@@ -305,7 +305,7 @@ if succeed:
 succeed = False
 if succeed:
     ndx = []
-    from datetime import datetime, timedelta
+    from datetime import datetime
 
     dir_name = 'Z:/USER/Mehedi_Hasan/WFDEI_GPCC_67420'
     filename = 'GTEMP'

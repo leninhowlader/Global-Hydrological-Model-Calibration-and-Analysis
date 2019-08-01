@@ -7,11 +7,8 @@ import sys
 sys.path.append('..')
 from postprocessing.borgoutput import BorgOutput
 from calibration.configuration import Configuration
-from calibration.watergap import WaterGAP
+from wgap.watergap import WaterGAP
 
-
-import numpy as np
-from datetime import datetime
 
 def main():
     global config_filename, borg_output_filename, filename_postfix

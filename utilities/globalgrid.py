@@ -31,6 +31,13 @@ class GlobalGrid:
     __wghm_cell_area_file = 'data/GAREA.UNF0'
     __wghm_grid_lookup_table = np.array([])
     __wghm_grid_lookup_table_filename = 'data/grid_wghm22b.txt'
+    __grid_resolution = 0.5     # grid resolution in degrees
+
+    @staticmethod
+    def get_grid_resolution(): return GlobalGrid.__grid_resolution
+
+    @staticmethod
+    def set_grid_resolution(resolution_deg): GlobalGrid.__grid_resolution = resolution_deg
 
     @staticmethod
     def get_current_model_version():
@@ -127,6 +134,8 @@ class GlobalGrid:
 
     @staticmethod
     def get_wghm_grid_rowcolumn():
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+
         ndx = np.argsort(GlobalGrid.__wghm_grid_lookup_table[:,0])
         coords = GlobalGrid.__wghm_grid_lookup_table[ndx][:,[2,3]]
 

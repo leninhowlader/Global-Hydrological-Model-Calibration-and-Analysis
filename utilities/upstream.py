@@ -5,9 +5,8 @@ __author__ = 'mhasan'
 import sys, os, math, numpy as np
 from collections import OrderedDict
 sys.path.append('..')
-from utilities.fileio import read_flat_file
 from utilities.globalgrid import GlobalGrid
-from calibration.enums import FileEndian
+from utilities.enums import FileEndian
 
 
 class Upstream:
@@ -59,6 +58,51 @@ class Upstream:
             message = 'Flow direction data could not be retrieved. Either "%s" does not exists or has bad-format.' % direction_datafile
             print(message)
             exit(os.EX_NOINPUT)
+
+    @staticmethod
+    def construct_flow_data_from_unf(filename):
+        '''
+        The method generates flow-direction map (data) from WGHM flow direction file (i.e., G_FLOWDIR.UNF2) and stores
+        or replace flow direction map into class variable
+
+        :param filename: (string) full path of WGHM binary flow direction file
+        :return: (boolean) True on success, False otherwise
+
+        NB: WGHM flow direction map must be in UNF2 format. Number of cell must be in agreement with number of WGHM grid
+            cells (as in GlobalGrid class)
+        '''
+
+        # remove existing flow direction data
+        Upstream.flow_direction_data = np.array([])
+
+        # find number of WGHM grid cell accounted in the current mode version
+        ncell = GlobalGrid.get_wghm_cell_count()
+
+        # read WGHM flow direction file (UNF2)
+        d = np.array([])
+        try: d = np.fromfile(filename, dtype='>h')
+        except: return False
+
+        # If number of cells both in WGHM flow direction file and current WGHM model grid, construct flow-direction
+        # grid for the entire globe
+        if len(d) == ncell:
+            # define a global grid and initialize with none values (i.e., -9999)
+            grid_globe = np.zeros((360, 720), dtype=int)        # 0.5 degree world grid
+            grid_globe[:,:] = -9999
+
+            # read row-column index of WGHM cells
+            grid_wghm = GlobalGrid.get_wghm_grid_rowcolumn()   # WGHM grid (only land)
+
+            # assign flow direction value to appropriate cells
+            for i in range(ncell):
+                row, col = grid_wghm[i]
+                grid_globe[row, col] = d[i]
+        else: return False # Otherwise, report failure
+
+        # store newly constructed flow-direction map (into class variable)
+        Upstream.flow_direction_data = grid_globe
+
+        return True
 
     @staticmethod
     def get_flow_direction(row, col):
@@ -251,7 +295,7 @@ class Upstream:
 
         # step: return current cell as the most downstream cell if flow direction from this cell goes into ocean or
         #       inland sink
-        if direction == 0: return row, col
+        if direction == 0 or direction == -1: return row, col
 
         # step: move to the next cell in the (forward) direction of flow
         row, col = Upstream.get_neighbour_cell_forward_direction(row, col, direction)
@@ -274,7 +318,7 @@ class Upstream:
 
         # step: return current cell as the most downstream cell if flow direction from this cell goes into ocean or
         #       inland sink
-        if direction == 0: return row, col
+        if direction == 0 or direction == -1: return row, col
 
         # step: move to the next cell in the (forward) direction of flow
         row, col = Upstream.get_neighbour_cell_forward_direction(row, col, direction)
@@ -370,7 +414,7 @@ class Upstream:
         return super_basin
 
     @staticmethod
-    def compute_basin_coverage(basin_outlets):
+    def compute_basin_extent(basin_outlets):
         '''
         This method find the upstream basin coverage (i.e., cells) from each given outlet points. The outlet points are
         given as tuples of row and column index of a grid cell
@@ -392,7 +436,7 @@ class Upstream:
         return basins
 
     @staticmethod
-    def compute_disjoint_basin_coverage(basins:OrderedDict, super_basin:dict):
+    def compute_disjoint_basin_extent(basins:OrderedDict, super_basin:dict):
         '''
         The method computes disjoint basin coverage i.e., the part of the basin starting from the basin outlet to the
         next upstream basin outlet
@@ -511,7 +555,7 @@ class Upstream:
 
             if direction > 0:
                 theta = theta_radian(direction)
-                if math.log2(direction)%2 ==0:
+                if math.log2(direction)%2 == 0:
                     dest = origin_to_destination_point(centroid[1], centroid[0], degree_resolution * 0.5 * 1.5, theta)
                 else: dest = origin_to_destination_point(centroid[1], centroid[0], degree_resolution * 1.06066, theta)
             else:
@@ -559,9 +603,9 @@ class Upstream:
             list_of_basins = []
 
             if disjoint_basin:
-                basins = Upstream.compute_basin_coverage(basin_outlets)
+                basins = Upstream.compute_basin_extent(basin_outlets)
                 super_basins = Upstream.find_super_basin(basin_outlets)
-                disjoint_basins = Upstream.compute_disjoint_basin_coverage(basins, super_basins)
+                disjoint_basins = Upstream.compute_disjoint_basin_extent(basins, super_basins)
                 for key, value in disjoint_basins.items(): list_of_basins.append(value)
 
                 basins, super_basins, disjoint_basins = None, None, None
@@ -717,7 +761,7 @@ class Upstream:
         if not wghm_upstreams_cnum: return False
 
         # step: read wghm predictions
-        from calibration.wgapoutput import WGapOutput
+        from wgap.wgapoutput import WGapOutput
         import numpy as np
 
         d = WGapOutput.read_unf(filename_wghm_prediction, file_endian=prediction_file_endian)

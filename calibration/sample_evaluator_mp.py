@@ -5,9 +5,8 @@ __author__ = 'mhasan'
 import os, sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.variable import SimVariable, ObsVariable, DerivedVariable
 from calibration.predstat import SeasonalStatistics
-from calibration.watergap import WaterGAP
+from wgap.watergap import WaterGAP
 from utilities.fileio import *
 # from mpi4py import MPI
 from copy import deepcopy

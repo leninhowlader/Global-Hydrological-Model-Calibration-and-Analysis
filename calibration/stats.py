@@ -2,7 +2,7 @@
 import sys
 sys.path.append('..')
 import numpy as np
-from calibration.enums import ObjectiveFunction, DataNormalization
+from utilities.enums import ObjectiveFunction, DataNormalization
 
 np.seterr(divide='ignore', invalid='ignore')
 

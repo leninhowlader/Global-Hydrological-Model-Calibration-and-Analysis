@@ -2,15 +2,12 @@
 
 __author__ = 'mhasan'
 
-import os, sys
+import sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.variable import SimVariable, ObsVariable, DerivedVariable
-from calibration.predstat import SeasonalStatistics
-from calibration.watergap import WaterGAP
-from utilities.fileio import *
+from wgap.watergap import WaterGAP
+
 # from mpi4py import MPI
-from copy import deepcopy
 
 config_filename = 'input/Config_BRH_Efficiency.txt'
 # output_directory = '/media/sf_private/FINAL_CALIBRATION/Predictions/B2C06'

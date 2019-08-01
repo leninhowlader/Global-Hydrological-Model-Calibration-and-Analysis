@@ -7,8 +7,8 @@ Created on Fri Jan 18 21:10:30 2019
 
 from calibration.configuration import Configuration
 import numpy as np, pandas as pd, os
-from calibration.watergap import WaterGAP
-from calibration.wgapoutput import WGapOutput
+from wgap.watergap import WaterGAP
+from wgap.wgapoutput import WGapOutput
 from utilities.globalgrid import GlobalGrid
 
 

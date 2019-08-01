@@ -1,7 +1,7 @@
 import sys, numpy as np, os
 sys.path.append('..')
-from calibration.enums import FileEndian
-from utilities.fileio import read_binary_file
+from utilities.enums import FileEndian
+
 
 class WGapOutput:
     @staticmethod
@@ -45,16 +45,17 @@ class WGapOutput:
         >>> tws_2003.shape
         (66740, 12)
         '''
-
+        d = np.array([])
+        
         # step: check if file exists
-        if not os.path.exists(filename): return []
+        if not os.path.exists(filename): return d
 
         # step: find the data type in output file mentioned in as the extension of filename
         unf_type = -1
         try: unf_type = int(filename[-1])
         except: pass
 
-        if unf_type not in [0, 1, 2, 4]: return []
+        if unf_type not in [0, 1, 2, 4]: return d
         dtype = '>'
         if file_endian == FileEndian.little_endian: dtype = '<'
 
@@ -85,52 +86,44 @@ class WGapOutput:
             d = d.reshape(nrow, ncol)
 
         return d
-
+    
     @staticmethod
-    def read_unf_old(filename, file_endian=FileEndian.big_endian, ncol=0):
-        if not os.path.exists(filename): return []
+    def write_unf(filename:str, data:np.ndarray, unf_type=0, file_endian:FileEndian=FileEndian.big_endian):
+        '''
+        This method writes data into UNF file format.
 
-        unf_type = -1
-        try: unf_type = int(filename[-1])
-        except: pass
+        :param filename: (string) name of the output file
+        :param data: (numpy n-d array) data
+        :param unf_type: (int) Integer code for UNF data type. Following data types are valid:
+                                0: for 4-byte float
+                                1: for 1-byte integer
+                                2: for 2-byte integer
+                                4: for 4-byte integer
+        :param file_endian: (int/FileEndian) File endianness
+        :return: (bool) True on success, False otherwise
+        '''
 
-        if unf_type  not in [0, 1, 2, 4]: return []
+        succeed = True
 
-        if not ncol > 0:
-            temp = os.path.split(filename)[-1]
-            if temp.count('.') >= 2:
-                try:
-                    ndx1 = temp.find('.') + 1
-                    ndx2 = temp[ndx1:].find('.')
-                    ncol = int(temp[ndx1:ndx1+ndx2])
-                except: pass
+        if unf_type not in [0, 1, 2, 4]:
+            try: unf_type = int(filename[-1])
+            except: pass
 
-            if not ncol > 0: return []
+        if unf_type == 0: format_str = 'f'
+        elif unf_type == 1: format_str = 'b'
+        elif unf_type == 2: format_str = 'h'
+        elif unf_type == 4: format_str = 'i'
+        else: return False
 
-        format_str = ''
-        if file_endian == FileEndian.big_endian: format_str += '>'
-        elif file_endian == FileEndian.little_endian: format_str += '<'
-        else: format_str += '@'
-
-        if unf_type == 0:
-            format_str += 'f' * ncol
-            block_size = 4 * ncol
-        elif unf_type == 1:
-            format_str += 'b' * ncol
-            block_size = 1 * ncol
-        elif unf_type == 2:
-            format_str += 'h' * ncol
-            block_size = 2 * ncol
-        else:
-            format_str += 'i' * ncol
-            block_size = 4 * ncol
-
-        d = read_binary_file(filename, block_size, format_str)
-
-        if ncol == 1:
-            for i in range(len(d)): d[i] = d[i][0]
-
-        return d
+        if file_endian == FileEndian.little_endian: format_str = '<%s'%format_str
+        else: format_str = '>%s'%format_str
+        
+        try:
+            f = open(filename, 'wb')
+            f.write(data.astype(format_str))
+        except: succeed = False
+        
+        return succeed
 
     @staticmethod
     def summarize(data, basin=[], weights=[]):

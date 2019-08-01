@@ -3,7 +3,7 @@ __author__ = 'mhasan'
 
 import os, sys
 from calibration.configuration import Configuration
-from calibration.watergap import WaterGAP
+from wgap.watergap import WaterGAP
 
 
 def main(argv):

@@ -3,6 +3,7 @@ __author__ = 'mhasan'
 import sys, os, numpy as np
 sys.path.append('..')
 from utilities.fileio import read_flat_file, write_flat_file
+from utilities.globalgrid import GlobalGrid as gg
 
 class Station:
     station_datafile = 'data/ALLSTATIONS.DAT'
@@ -28,17 +29,17 @@ class Station:
         if filename: Station.station_datafile = filename
 
     @staticmethod
-    def read_stations(filename=''):
+    def read_stations(filename='', unique_only:bool=True):
         '''
         Reads station info from file
 
         :param filename: (string) filename
+        :param unique_only: (bool) a flag determines whether or not duplicate stations, if any, would be excluded
         :return: None
         '''
         # set station filename when applicable
-        if filename and not os.path.exists(filename) and Station.station_datafile != filename:
+        if filename and os.path.exists(filename) and Station.station_datafile != filename:
             Station.station_datafile = filename
-            filename = ''
 
         # generate full pathname of station datafile, if filename is not provided explicitly
         if not filename: filename = Station.get_fullpath_station_file()
@@ -48,20 +49,29 @@ class Station:
         if os.path.exists(filename):
             d = np.loadtxt(filename, skiprows=0, ndmin=2)
             if len(d) > 0: stations = d[:,:3]
+            if unique_only: stations = np.unique(stations, axis=0)
 
         # assign stations into class variable
         Station.stations = stations
 
     @staticmethod
-    def get_stations():
+    def get_stations(filename:str='', rowcol_only=False):
         '''
         Returns all stations
 
+        :param filename: (string) station filename
+        :param rowcol_only: (bool) a flag determining if only row and col index of corresponding station cell would be
+                            returned as output
         :return: (2-d numpy array) list of all stations
         '''
-        if len(Station.stations) == 0: Station.read_stations()
 
-        return Station.stations
+        if len(Station.stations) == 0 or len(filename) > 0: Station.read_stations(filename)
+
+        if rowcol_only:
+            rowcol = []
+            for s in Station.stations: rowcol.append(gg.find_row_column(s[2], s[1]))
+            return np.array(rowcol)
+        else: return Station.stations
 
     @staticmethod
     def find_station_id(latitude, longitude):

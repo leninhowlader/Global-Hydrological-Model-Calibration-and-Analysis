@@ -50,14 +50,13 @@ flag_compute_anomaly = True
 
 
 # import required modules and classes
-import os, sys, numpy as np
+import os, numpy as np
 from calibration.configuration import Configuration
-from calibration.wgapoutput import WGapOutput
-from calibration.watergap import WaterGAP
-from calibration.enums import FileEndian
-from calibration.variable import SimVariable
+from wgap.wgapoutput import WGapOutput
+from wgap.watergap import WaterGAP
 from utilities.fileio import write_flat_file
-from datetime import datetime, timedelta
+from datetime import datetime
+
 
 def compute_rmsd(ts1:np.ndarray, ts2:np.ndarray)->np.ndarray:
     '''

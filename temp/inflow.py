@@ -20,11 +20,11 @@ end_year = 2005
 import sys, numpy as np, os, shapefile as shp
 sys.path.append('..')
 from utilities.upstream import Upstream
-from calibration.wgapoutput import WGapOutput
+from wgap.wgapoutput import WGapOutput
 from utilities.globalgrid import GlobalGrid
 from copy import deepcopy
 from utilities.station import Station
-from calibration.enums import FileEndian
+from utilities.enums import FileEndian
 
 # GLOBAL VARIABLES
 direction_map = None

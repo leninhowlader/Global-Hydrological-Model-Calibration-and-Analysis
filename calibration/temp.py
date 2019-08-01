@@ -1,9 +1,8 @@
 import os, sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.wgapoutput import WGapOutput
-from calibration.watergap import WaterGAP
-from calibration.variable import SimVariable
+from wgap.wgapoutput import WGapOutput
+from wgap.watergap import WaterGAP
 import numpy as np
 
 # os.chdir(os.path.join(os.getcwd(), 'calibration'))

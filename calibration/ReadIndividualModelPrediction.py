@@ -1,7 +1,6 @@
 import sys
 sys.path.append('..')
-from calibration.watergap import WaterGAP
-from calibration.variable import SimVariable, DerivedVariable
+from wgap.watergap import WaterGAP
 from calibration.configuration import Configuration
 
 #

@@ -1,10 +1,10 @@
-import os, sys, numpy as np
+import sys, numpy as np
 sys.path.append('..')
 # sys.path.append('F:/mhasan/PyScript')
 from utilities.globalgrid import GlobalGrid
 GlobalGrid.set_model_version('wghm22d')
 from utilities.upstream import Upstream
-from calibration.wgapoutput import WGapOutput
+from wgap.wgapoutput import WGapOutput
 
 
 upstream_filename = 'F:/mhasan/experiments/GlobalCDA/SA_mississippi/replication_one/input/mississippi_subbasin_1234a4b45_upstream.txt'

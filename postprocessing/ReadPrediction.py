@@ -1,9 +1,7 @@
 import sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.watergap import WaterGAP
-from calibration.variable import SimVariable, DerivedVariable
-
+from wgap.watergap import WaterGAP
 
 config_filename = 'input/configuration_GAN.txt'
 output_directory = '/media/sf_private/FINAL_CALIBRATION/predictions/G6C04/'

@@ -2,12 +2,12 @@ __author__ = 'mhasan'
 
 import sys, numpy as np, os
 sys.path.append('..')
-from calibration.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
-from utilities.fileio import read_binary_file, read_flat_file, write_flat_file, acquire_lock, release_lock
+from utilities.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
+from utilities.fileio import read_flat_file, write_flat_file, acquire_lock, release_lock
 from calibration.stats import stats
 from calendar import isleap
 from collections import OrderedDict
-from calibration.wgapoutput import WGapOutput
+from wgap.wgapoutput import WGapOutput
 
 class DataSource:
     def __init__(self):
@@ -470,18 +470,30 @@ class SimVariable(Variable):
     def __init__(self):
         Variable.__init__(self)
         self.data_source.file_type = FileType.wghm_binary
-        self.cell_groups = []           # two-dimensional array
+        self.__basin_outlets_only = False
+        self.basin_cell_list = []           # two-dimensional array
         self.group_stats = False
         self.compute_anomaly = False
-        self.cell_weights = []          # two-dimensional array
+        self.__cell_area_as_weight = False
+        self.cell_weights = []              # two-dimensional array
+
+    @property
+    def cell_area_as_weight(self): return self.__cell_area_as_weight
+    @cell_area_as_weight.setter
+    def cell_area_as_weight(self, flag:bool): self.__cell_area_as_weight = flag
+
+    @property
+    def basin_outlets_only(self): return self.__basin_outlets_only
+    @basin_outlets_only.setter
+    def basin_outlets_only(self, flag:bool): self.__basin_outlets_only = flag
 
     def is_okay(self):
         if not Variable.is_okay(self): return False
         elif self.group_stats:
-            if not self.cell_groups: return False
+            if not self.basin_cell_list: return False
             else:
-                for i in range(len(self.cell_groups)):
-                    if not self.cell_groups[i] and type(self.cell_groups[i]) is not list: return False
+                for i in range(len(self.basin_cell_list)):
+                    if not self.basin_cell_list[i] and type(self.basin_cell_list[i]) is not list: return False
         return True
 
     def compute_anomalies(self):
@@ -536,9 +548,9 @@ class SimVariable(Variable):
                                             except: pass
 
                                         if temp_str:
-                                            var.cell_groups = SimVariable.read_groups(temp_str, type='int')
+                                            var.basin_cell_list = SimVariable.read_groups(temp_str, type='int')
                                             temp_str = None
-                                else: var.cell_groups = SimVariable.read_groups(value, type='int')
+                                else: var.basin_cell_list = SimVariable.read_groups(value, type='int')
                             elif key in ['compute anomalies', 'compute anomaly' , 'anomaly', 'anomalies', 'calculate anomalies',
                                          'calculate anomaly']:
                                 value = value.lower()
@@ -564,6 +576,14 @@ class SimVariable(Variable):
                                             var.cell_weights = SimVariable.read_groups(temp_str)
                                             temp_str = None
                                 else: var.cell_weights = SimVariable.read_groups(value)
+                            elif key in ['area_as_weight', 'cell_area_as_weight', 'use cell areas for weights']:
+                                value = value.lower()
+                                if value in ['yes', 'y', '1', 'true', 't']: var.cell_area_as_weight = True
+                                else: var.cell_area_as_weight = False
+                            elif key in ['basin_outlets_only', 'basin outlets only', 'basin_outlet_only', 'basin outlet only']:
+                                value = value.lower()
+                                if value in ['yes', 'y', '1', 'true', 't']: var.cell_area_as_weight = True
+                                else: var.cell_area_as_weight = False
             except: return None
 
     @staticmethod
@@ -750,12 +770,12 @@ class SimVariable(Variable):
 
                         # step: if group statistics to be calculated, process data for each basin
                         if self.group_stats:
-                            if not self.cell_groups: return False
+                            if not self.basin_cell_list: return False
 
                             # step: crop data for each basin
-                            for i in range(len(self.cell_groups)):
+                            for i in range(len(self.basin_cell_list)):
                                 basin_id = i + 1
-                                basin = np.array(self.cell_groups[i])
+                                basin = np.array(self.basin_cell_list[i])
                                 basin_data = data[basin-1]                                # notice -1 is used to convert 1-based
                                                                                     # indexing to 0-based indexing
 
@@ -780,7 +800,7 @@ class SimVariable(Variable):
                         else:
                             # step: create cell list
                             cell_list = []
-                            for group in self.cell_groups: cell_list += group
+                            for group in self.basin_cell_list: cell_list += group
 
                             # step: crop data if cell_list is not empty
                             if cell_list:  data = data[np.array(cell_list)-1]       # notice -1 is used to convert 1-based
@@ -855,7 +875,7 @@ class SimVariable(Variable):
 
         # step: check presence of target cells
         ncell = 0
-        for group in self.cell_groups: ncell += len(group)
+        for group in self.basin_cell_list: ncell += len(group)
         if ncell == 0: return False
 
         # step: check if data source object is okay
@@ -878,13 +898,13 @@ class SimVariable(Variable):
                 if prediction_directory: file_name = os.path.join(prediction_directory, file_name)
 
                 pred = WGapOutput.read_unf(file_name, file_endian=self.data_source.file_endian)
-                if not type(pred) is np.ndarray: return False
+                if not type(pred) is np.ndarray or len(pred) == 0: return False
 
                 if self.group_stats:
                     # step: for each basin collect values for each cell and aggregate data
-                    for i in range(len(self.cell_groups)):
+                    for i in range(len(self.basin_cell_list)):
                         basin_id = i + 1
-                        basin = np.array(self.cell_groups[i])-1     # reducing the cell number by 1 is necessary,
+                        basin = np.array(self.basin_cell_list[i]) - 1     # reducing the cell number by 1 is necessary,
                                                                     # because cell numbers have a 1-based indexing
                         data = pred[basin]
 
@@ -916,22 +936,45 @@ class SimVariable(Variable):
 
                         if not succeed: break
                 else:
-                    # step: gather cell numbers in all basins and crop data for those cells
-                    cells = []
-                    for group in self.cell_groups: cells += group
-                    cells = np.array(cells)
-                    data = pred[cells-1]
+                    if self.basin_outlets_only:
+                        # step: gather outlet discharges and compute actual discharge (i.e., deduct sub-basin discharges)
+                        data = []
+                        for outlets in self.basin_cell_list:
+                            outlets = np.array(outlets) - 1
+                            temp = pred[outlets]
 
-                    # step: append additional attributes and time info into the data
-                    nrow = len(cells)
-                    time_info = np.array([year] * nrow).reshape(nrow, 1)
-                    cells = cells.reshape(nrow, 1)
-                    data = np.concatenate((cells, time_info, data), axis=1)
+                            for i in range(1, len(temp)): temp[0] -= temp[i]
+                            data.append(temp[0])
+                        data = np.array(data)
 
-                    if additional_attributes:
-                        ncol = len(additional_attributes)
-                        additional_cols = np.array(additional_attributes * nrow).reshape(nrow, ncol)
-                        data = np.concatenate((additional_cols, data), axis=1)
+                        # step: append additional attributes and time info to data
+                        nrow = len(self.basin_cell_list)
+                        time_info = np.array([year] * nrow).reshape(nrow, 1)
+                        basin_ids = np.arange(1, nrow+1, dtype=np.int32).reshape(nrow, 1)
+                        data = np.concatenate((basin_ids, time_info, data), axis=1)
+
+                        if additional_attributes:
+                            ncol = len(additional_attributes)
+                            additional_cols = np.array(additional_attributes * nrow).reshape(nrow, ncol)
+                            data = np.concatenate((additional_cols, data), axis=1)
+
+                    else:
+                        # step: gather cell numbers in all basins and crop data for those cells
+                        cells = []
+                        for group in self.basin_cell_list: cells += group
+                        cells = np.array(cells)
+                        data = pred[cells-1]
+
+                        # step: append additional attributes and time info into the data
+                        nrow = len(cells)
+                        time_info = np.array([year] * nrow).reshape(nrow, 1)
+                        cells = cells.reshape(nrow, 1)
+                        data = np.concatenate((cells, time_info, data), axis=1)
+
+                        if additional_attributes:
+                            ncol = len(additional_attributes)
+                            additional_cols = np.array(additional_attributes * nrow).reshape(nrow, ncol)
+                            data = np.concatenate((additional_cols, data), axis=1)
 
                     # step: dump data into file
                     if data.ndim == 1: ncol = data.size

@@ -4,11 +4,11 @@ __author__ = 'mhasan'
 import os, sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.watergap import WaterGAP
+from wgap.watergap import WaterGAP
 from utilities.fileio import *
 from copy import deepcopy
 from datetime import datetime
-from calibration.variable import DerivedVariable, ObsVariable
+
 
 def read_iter_number():
     iter_no = 0

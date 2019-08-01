@@ -3,13 +3,18 @@ __author__ = 'mhasan'
 import sys, os
 sys.path.append('..')
 from calibration.variable import ObsVariable, SimVariable, DerivedVariable
-from calibration.watergap import WaterGAP
+from wgap.watergap import WaterGAP
 from calibration.parameter import Parameter
 from utilities.fileio import read_flat_file
+from utilities.station import Station
+from utilities.upstream import Upstream
+from utilities.globalgrid import GlobalGrid as gg
 
 class Configuration:
     def __init__(self, mode='sensitivity'):
         self.__mode = mode
+        self.__target_cells_from_station_file = True
+        self.__disjoint_basin_extent = True
 
         # variables for sensitivity-mode
         self.input_file_for_parameters = ''
@@ -39,6 +44,16 @@ class Configuration:
         self.derived_variables = []
         self.parameters = []
         self.samples = []
+
+    @property
+    def target_cells_from_station_file(self): return self.__target_cells_from_station_file
+    @target_cells_from_station_file.setter
+    def target_cells_from_station_file(self, flag:bool): self.__target_cells_from_station_file = flag
+
+    @property
+    def disjoint_basin_extent(self): return self.__disjoint_basin_extent
+    @disjoint_basin_extent.setter
+    def disjoint_basin_extent(self, flag): self.__disjoint_basin_extent = flag
 
     def set_executable_name(self, executable_name): self.__executable_name = executable_name
     def set_system_arguments(self, args): self.__system_arguments = args
@@ -136,6 +151,13 @@ class Configuration:
                             value = value.lower()
                             if value in ['true', 't', '1', 'yes', 'y']: config.prediction_statistics = True
                             else: config.prediction_statistics = False
+                        elif key in ['target_cells_from_station_file', 'target_cell_from_station_file',
+                                     'target cells from station file', 'target cell from station file']:
+                            if value.lower() in ['y', 'yes', 'true', 't', '1']: config.target_cells_from_station_file = True
+                            else: config.target_cells_from_station_file = False
+                        elif key in ['disjoint_basin_extent', 'disjoint basin extent']:
+                            if value.lower() in ['y', 'yes', 'true', 't', '1']: config.disjoint_basin_extent = True
+                            else: config.disjoint_basin_extent = False
         return False
 
     @staticmethod
@@ -176,6 +198,13 @@ class Configuration:
                         elif key in ['parallel_evaluations', 'parallel_evaluation', 'parallel evaluations', 'parallel evaluation', 'parallel', 'parallelization']:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']: config.set_parallel_evaluation_flag(True)
                             else: config.set_parallel_evaluation_flag(False)
+                        elif key in ['target_cells_from_station_file', 'target_cell_from_station_file',
+                                     'target cells from station file', 'target cell from station file']:
+                            if value.lower() in ['y', 'yes', 'true', 't', '1']: config.target_cells_from_station_file = True
+                            else: config.target_cells_from_station_file = False
+                        elif key in ['disjoint_basin_extent', 'disjoint basin extent']:
+                            if value.lower() in ['y', 'yes', 'true', 't', '1']: config.disjoint_basin_extent = True
+                            else: config.disjoint_basin_extent = False
         return False
 
     def is_okay(self, skip_observation=False):
@@ -189,6 +218,17 @@ class Configuration:
         :return: (bool) True : if all checks succeed
                         False : otherwise
         '''
+
+        # step: check whether or not the station file is available when 'target cell from station file' flag is set ON
+        if not (WaterGAP.station_filename and
+                os.path.exists(os.path.join(WaterGAP.home_directory, WaterGAP.station_filename))):
+            self.target_cells_from_station_file = False
+            self.disjoint_basin_extent = False
+
+        # step: read the target cells from station file, if applicable
+        if self.target_cells_from_station_file:
+            succeed = self.generate_target_cells_from_station_file()
+            if not succeed: return False
 
         # step: check completeness of simulation variables. there must at least be one simulation variable
         if not self.sim_variables: return False
@@ -246,3 +286,70 @@ class Configuration:
         if not WaterGAP.executable: return False
 
         return True
+
+    def generate_target_cells_from_station_file(self):
+        '''
+        This method generate basin cell list from given station file and then assign them to variables and parameter.
+        However, if target cell list (either of a variable or of a parameter) is provided by another mean (i.e., usign
+        old method), the cell list will not be overwritten. This will ensure explicit assignment of target cell if it
+        is needed.
+
+        :return: (bool) True on success, False otherwise
+        '''
+        succeed = True
+
+        # setp: get basin outlet cells
+        filename = os.path.join(WaterGAP.home_directory, WaterGAP.station_filename)
+        outlets = Station.get_stations(filename, rowcol_only=True)
+        if len(outlets) == 0: return False
+
+        # step: compute entire upstream basin extents
+        basins = Upstream.compute_basin_extent(outlets)
+        if len(basins) != len(outlets): return False
+
+        discharge_outlets = []
+        # step: compute disjoint basins (if applicable) and discharge outlet cells for all basins
+        if self.disjoint_basin_extent:
+            supbasins = Upstream.find_super_basin(outlets)
+
+            discharge_outlets = Upstream.find_basin_discharge_cell(basins, supbasins)
+            basins = Upstream.compute_disjoint_basin_extent(basins, supbasins)
+        else:
+            for cell in outlets: discharge_outlets.append([cell])
+
+        # step: find wghm cell num and area for all basin cells
+        basin_cellnum, basin_cellareas = [], []
+        for key, value in basins.items():
+
+            cnums, careas = [], []
+            for cell in value:
+                cnums.append(gg.get_wghm_cell_number(cell[0], cell[1]))
+                careas.append(gg.find_wghm_cellarea(cell[0]))
+
+            basin_cellnum.append(cnums)
+            basin_cellareas.append(careas)
+
+        # step: find wghm cell num of discharge outlets
+        cellnum_discharge = []
+        for basin_outlets in discharge_outlets:
+            cnums = []
+            for cell in basin_outlets: cnums.append(gg.get_wghm_cell_number(cell[0], cell[1]))
+            cellnum_discharge.append(cnums)
+
+        # step: assign target cells in simulation variables
+        for var in self.sim_variables:
+            if not var.basin_cell_list:
+                if var.basin_outlets_only: var.basin_cell_list = cellnum_discharge
+                else: var.basin_cell_list = basin_cellnum
+
+            if not var.cell_weights and var.cell_area_as_weight: var.cell_weights = basin_cellareas
+
+        # step: assign target cells in parameters
+        unique_target_cells = []
+        for basin in basin_cellnum: unique_target_cells += basin
+        unique_target_cells = list(set(unique_target_cells))
+
+        for param in self.parameters:
+            if not param.cell_list: param.cell_list = unique_target_cells
+
+        return succeed

@@ -1,7 +1,7 @@
 
 import sys
 sys.path.append('..')
-from calibration.watergap import WaterGAP
+from wgap.watergap import WaterGAP
 from calibration.parameter import Parameter
 
 

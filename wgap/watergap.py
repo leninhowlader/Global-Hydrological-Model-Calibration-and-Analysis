@@ -2,12 +2,11 @@ __author__ = 'mhasan'
 
 import json, os, sys
 sys.path.append('..')
-from collections import OrderedDict
 from copy import deepcopy
-from calibration.enums import FileEndian, PredictionType
+from utilities.enums import FileEndian, PredictionType
 from subprocess import call
 import shutil
-from calibration.variable import SimVariable,  DataCloud
+from calibration.variable import DataCloud
 from calibration.stats import stats
 from collections import OrderedDict
 
@@ -72,6 +71,14 @@ class WaterGAP:
     json_paramset = None
     dir_info = None
 
+    station_filename = ''
+
+    @staticmethod
+    def set_station_filename(filename:str): WaterGAP.station_filename = filename
+
+    @staticmethod
+    def get_station_filename(): return WaterGAP.station_filename
+
     @staticmethod
     def get_grid_cell_count(): return WaterGAP.ngc
 
@@ -89,7 +96,6 @@ class WaterGAP:
                                                                   WaterGAP.json_parameter_file)): return False
 
         return True
-
 
     @staticmethod
     def update_parameter_file(parameter_list, filename):

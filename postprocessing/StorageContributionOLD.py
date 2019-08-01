@@ -3,14 +3,12 @@ __author__ = 'mhasan'
 import sys, shapefile as shp, os
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.watergap import WaterGAP
+from wgap.watergap import WaterGAP
 from calibration.stats import stats
-from copy import deepcopy
 from utilities.globalgrid import GlobalGrid
 GlobalGrid.set_model_version('wghm22d')
 
 #temporarily
-from calibration.variable import SimVariable
 
 config_filename = 'configuration_contribution_mississippi.txt'
 total_storage_variable_name = 'TWS_km3'

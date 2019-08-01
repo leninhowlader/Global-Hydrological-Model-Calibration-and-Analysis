@@ -4,7 +4,7 @@ __author__ = 'mhasan'
 import os, sys
 # sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.watergap import WaterGAP
+from wgap.watergap import WaterGAP
 from utilities.fileio import *
 from collections import OrderedDict
 
