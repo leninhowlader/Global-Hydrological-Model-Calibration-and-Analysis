@@ -304,6 +304,8 @@ class Configuration:
         if len(outlets) == 0: return False
 
         # step: compute entire upstream basin extents
+        succeed = Upstream.read_flow_data(unf_input=True, model_version=WaterGAP.model_version)
+        if not succeed: return False
         basins = Upstream.compute_basin_extent(outlets)
         if len(basins) != len(outlets): return False
 

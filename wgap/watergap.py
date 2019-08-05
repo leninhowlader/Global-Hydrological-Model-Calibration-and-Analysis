@@ -9,6 +9,7 @@ import shutil
 from calibration.variable import DataCloud
 from calibration.stats import stats
 from collections import OrderedDict
+from utilities.globalgrid import GlobalGrid as gg
 
 class DirInfo:
     def __init__(self):
@@ -66,12 +67,23 @@ class WaterGAP:
     start_year = 1901
     end_year = 2100
     output_endian_type = FileEndian.little_endian
-    ngc = 66896
+
+    model_version = ''
+    ngc = -1
 
     json_paramset = None
     dir_info = None
 
     station_filename = ''
+    @staticmethod
+    def set_model_version(version):
+        if version in ['wghm22b', 'wghm22d']:
+            WaterGAP.model_version = version
+            gg.set_model_version(version)
+            if WaterGAP.ngc <= 0: WaterGAP.ngc = gg.get_wghm_cell_count()
+
+    @staticmethod
+    def get_model_version(): return WaterGAP.model_version
 
     @staticmethod
     def set_station_filename(filename:str): WaterGAP.station_filename = filename
@@ -195,6 +207,10 @@ class WaterGAP:
                         elif key in ['grid_cell_count', 'grid cell count', 'ng', 'ngc']:
                             try: WaterGAP.ngc = int(value)
                             except: pass
+                        elif key in ['station_file', 'station_filename', 'station file', 'station filename']:
+                            WaterGAP.station_filename = value
+                        elif key in ['model_version', 'model version']:
+                            WaterGAP.set_model_version(value)
         except: succeed = False
 
         return succeed

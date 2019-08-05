@@ -41,23 +41,51 @@ class Upstream:
         Upstream.read_flow_data(filename)
 
     @staticmethod
-    def read_flow_data(direction_datafile=''):
+    def read_flow_data(direction_datafile='', unf_input=False, model_version='wghm22b'):
         '''
         The method reads flow-direction data from file
 
         Parameters:
         :param direction_datafile: (string; optional; default = '') name of flow-direction map file
+        :param model_version: (string; optional; default = 'wghm22b') model version
         :return: None
         '''
+        succeed = True
 
-        if not direction_datafile: direction_datafile = Upstream.get_flow_direction_datafile()
+        if not direction_datafile:
+            if unf_input: direction_datafile = 'data/flow_direction_%s.unf2' % model_version
+            else: direction_datafile = 'data/flow_direction%s.asc' % model_version
+            Upstream.flow_direction_file = direction_datafile
 
-        d = np.loadtxt(direction_datafile, skiprows=6)
-        if d.shape == (360, 720): Upstream.flow_direction_data = d
+        datafile_fullpath = Upstream.get_flow_direction_datafile()
+
+        if not os.path.exists(datafile_fullpath): succeed = False
         else:
-            message = 'Flow direction data could not be retrieved. Either "%s" does not exists or has bad-format.' % direction_datafile
-            print(message)
-            exit(os.EX_NOINPUT)
+            Upstream.flow_direction_data = np.array([])
+
+            if unf_input: succeed = Upstream.construct_flow_data_from_unf(datafile_fullpath)
+            else: succeed = Upstream.read_flow_data_from_ascii(datafile_fullpath)
+
+            if not (succeed and Upstream.flow_direction_data.shape == (360, 720)): succeed = False
+
+        return succeed
+
+    @staticmethod
+    def read_flow_data_from_ascii(filename, skiprows=6):
+        '''
+        Reads flow-direction from ascii or text file.
+
+        :param filename: (string) name of the datafile
+        :param skiprows: (int) number of lines to be skipped
+        :return: (bool) True on success, False otherwise
+        '''
+
+        succeed = True
+        d = np.loadtxt(filename, skiprows=skiprows)
+        if d.shape == (360, 720): Upstream.flow_direction_data = d
+        else: succeed = False
+
+        return succeed
 
     @staticmethod
     def construct_flow_data_from_unf(filename):
@@ -431,6 +459,7 @@ class Upstream:
         '''
         basins = OrderedDict()
         for cell in basin_outlets:
+            cell = tuple(cell)
             upstream_basin = [cell] + Upstream.get_upstream_cells(cell[0], cell[1])
             basins[cell] = upstream_basin
         return basins
@@ -457,7 +486,7 @@ class Upstream:
 
             # exclude sub-basin cells from super-basin coverage, for each sub-basin
             temp = set(disjoint_basins[key])
-            for cell in outlets_subbasin: temp = temp - set(disjoint_basins[cell])
+            for cell in outlets_subbasin: temp = temp - set(basins[cell])
 
             # set non-overlapping cells as the coverage of the super basin
             disjoint_basins[key] = list(temp)

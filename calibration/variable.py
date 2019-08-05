@@ -582,8 +582,8 @@ class SimVariable(Variable):
                                 else: var.cell_area_as_weight = False
                             elif key in ['basin_outlets_only', 'basin outlets only', 'basin_outlet_only', 'basin outlet only']:
                                 value = value.lower()
-                                if value in ['yes', 'y', '1', 'true', 't']: var.cell_area_as_weight = True
-                                else: var.cell_area_as_weight = False
+                                if value in ['yes', 'y', '1', 'true', 't']: var.basin_outlets_only = True
+                                else: var.basin_outlets_only = False
             except: return None
 
     @staticmethod
@@ -769,7 +769,7 @@ class SimVariable(Variable):
                         if not type(data) is np.ndarray: return False
 
                         # step: if group statistics to be calculated, process data for each basin
-                        if self.group_stats:
+                        if self.group_stats and not self.basin_outlets_only:
                             if not self.basin_cell_list: return False
 
                             # step: crop data for each basin
@@ -798,13 +798,25 @@ class SimVariable(Variable):
                                 self.data_cloud.data_indices += data_ndx
                                 self.data_cloud.data += basin_data.flatten().tolist()
                         else:
-                            # step: create cell list
                             cell_list = []
-                            for group in self.basin_cell_list: cell_list += group
 
-                            # step: crop data if cell_list is not empty
-                            if cell_list:  data = data[np.array(cell_list)-1]       # notice -1 is used to convert 1-based
-                                                                                    # indexing to 0-based indexing
+                            if self.basin_outlets_only:
+                                # calculate discharges for outlets (explanation needed!!!!)
+                                d = []
+                                for outlets in self.basin_cell_list:
+                                    outlets = np.array(outlets) - 1
+                                    temp = data[outlets]
+
+                                    for i in range(1, len(temp)): temp[0] -= temp[i]
+                                    d.append(temp[0])
+                                data = np.array(d)
+                            else:
+                                # step: generate cell list
+                                for group in self.basin_cell_list: cell_list += group
+
+                                # step: crop data if cell_list is not empty
+                                if cell_list:  data = data[np.array(cell_list)-1]       # notice -1 is used to convert 1-based
+                                                                                        # indexing to 0-based indexing
 
                             # step: create indices for data
                             ncells = data.shape[0]
@@ -900,7 +912,7 @@ class SimVariable(Variable):
                 pred = WGapOutput.read_unf(file_name, file_endian=self.data_source.file_endian)
                 if not type(pred) is np.ndarray or len(pred) == 0: return False
 
-                if self.group_stats:
+                if self.group_stats and not self.basin_outlets_only:
                     # step: for each basin collect values for each cell and aggregate data
                     for i in range(len(self.basin_cell_list)):
                         basin_id = i + 1

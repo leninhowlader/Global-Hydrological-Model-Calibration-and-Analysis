@@ -214,7 +214,7 @@ class GlobalGrid:
 
         ndx = np.where((d[:,2]==x)&(d[:,3]==y))[0]
 
-        return d[ndx, 0][0]
+        return int(d[ndx, 0][0])
 
     @staticmethod
     def get_wghm_centroid(cell_number:int):
