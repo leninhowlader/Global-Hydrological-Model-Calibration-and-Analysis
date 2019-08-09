@@ -37,7 +37,7 @@ def read_iter_number():
 
     return iter_no
 
-def process_parameter_sample(config, iter_no):
+def process_parameter_sample(config, iter_no, node_id):
     '''
     This function takes a sample of a given id as iter_no and sets the corresponding sample parameter values
     in the model input parameter file. Then it executes the model. When the model completes its run successfully
@@ -48,6 +48,7 @@ def process_parameter_sample(config, iter_no):
                     about how to run the model, which parameters to modify, which output files to be read in
                     and what statistical calculation to be made etc
     :param iter_no: (int) iteration number. the iteration number serves as the sample number in effect
+    :param node_id: (int) serial number for processing node
     :return: (bool) on successful operation it returns True,
                     False otherwise.
     '''
@@ -86,7 +87,8 @@ def process_parameter_sample(config, iter_no):
     attribs = [iter_no]
     for var in config.sim_variables:
         succeed = var.dump_time_series_from_model_prediction(WaterGAP.start_year, WaterGAP.end_year, additional_attributes=attribs,
-                                                             prediction_directory=output_directory_name, dumping_directory=dumping_directory)
+                                                             prediction_directory=output_directory_name, dumping_directory=dumping_directory,
+                                                             prefix_filename=str(node_id))
         if not succeed: break
 
     # step: remove model output files
@@ -119,7 +121,7 @@ def main(argv):
     while sample_no < iter_limit:
         # step: process the current sample
         print_on_screen('\tSample no. %d is being processed on Computer Node No. %d.' % (sample_no, node_id))
-        succeed = process_parameter_sample(config, sample_no)
+        succeed = process_parameter_sample(config, sample_no, node_id)
 
         # read current iteration number
         while True:

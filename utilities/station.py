@@ -49,7 +49,7 @@ class Station:
         if os.path.exists(filename):
             d = np.loadtxt(filename, skiprows=0, ndmin=2)
             if len(d) > 0: stations = d[:,:3]
-            if unique_only: stations = np.unique(stations, axis=0)
+            # if unique_only: stations = np.unique(stations, axis=0)
 
         # assign stations into class variable
         Station.stations = stations
@@ -125,6 +125,10 @@ class Station:
 
         data = []
         for s in stations: data.append(list(s) + [-99] * (6 - len(s)))
+
+        # id as integer
+        for i in range(len(data)): data[i][0] = int(data[i][0])
+
         if data: succeed = write_flat_file(filename, data, separator=' ')
 
         return succeed

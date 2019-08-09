@@ -847,7 +847,7 @@ class SimVariable(Variable):
         return succeed
 
     def dump_time_series_from_model_prediction(self, start_year, end_year, additional_attributes=[], dumping_directory='',
-                                               prediction_directory=''):
+                                               prediction_directory='', prefix_filename=''):
         '''
         This function will read model predictions and (usually) calculates basin average time-series. Finally
         the timeseries will be dumped as binary files. To avoid unnecessary dumping of large data, the function
@@ -881,6 +881,7 @@ class SimVariable(Variable):
         :param additional_attributes: (list of numbers; optional) additional attributes to be dumped
         :param dumping_directory: (string; optional) path where data to be dumped
         :param prediction_directory: (string; optional) path of model output directory
+        :param prefix_filename: (string; optional; default = '') prefix/postfix of output filename
         :return: (bool) True on success,
                         False Otherwise
         '''
@@ -941,10 +942,11 @@ class SimVariable(Variable):
                         if data.ndim == 1: ncol = data.size
                         else: ncol = data.shape[1]
 
-                        dump_filename = self.varname + '.%d.unf0' % (ncol)
+                        dump_filename = self.varname + '%s.%d.unf0' % (prefix_filename, ncol)
                         if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
 
-                        succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), '_%s.LOCK'%self.varname.upper())
+                        lock_file = '_%s%s.LOCK' % (self.varname.upper(), prefix_filename)
+                        succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), lock_file)
 
                         if not succeed: break
                 else:
@@ -992,10 +994,11 @@ class SimVariable(Variable):
                     if data.ndim == 1: ncol = data.size
                     else: ncol = data.shape[1]
 
-                    dump_filename = self.varname + '.%d.unf0' % (ncol)
+                    dump_filename = self.varname + '%s.%d.unf0' % (prefix_filename, ncol)
                     if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
 
-                    succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), '_%s.LOCK'%self.varname.upper())
+                    lock_file = '_%s%s.LOCK'% (self.varname.upper(), prefix_filename)
+                    succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), lock_file)
 
                 if not succeed: break
 
