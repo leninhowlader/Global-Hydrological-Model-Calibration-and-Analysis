@@ -309,12 +309,13 @@ class Configuration:
         basins = Upstream.compute_basin_extent(outlets)
         if len(basins) != len(outlets): return False
 
-        discharge_outlets = []
+        discharge_outlets, discharge_outlets_without_supbasin = [], []
         # step: compute disjoint basins (if applicable) and discharge outlet cells for all basins
         if self.disjoint_basin_extent:
             supbasins = Upstream.find_super_basin(outlets)
 
             discharge_outlets = Upstream.find_basin_discharge_cell(basins, supbasins)
+            discharge_outlets_without_supbasin = Upstream.find_basin_discharge_cell(basins, {})
             basins = Upstream.compute_disjoint_basin_extent(basins, supbasins)
         else:
             for cell in outlets: discharge_outlets.append([cell])
@@ -332,16 +333,24 @@ class Configuration:
             basin_cellareas.append(careas)
 
         # step: find wghm cell num of discharge outlets
-        cellnum_discharge = []
+        cellnum_discharge, cellnum_discharge_without_supbasin = [], []
         for basin_outlets in discharge_outlets:
             cnums = []
             for cell in basin_outlets: cnums.append(gg.get_wghm_cell_number(cell[0], cell[1]))
             cellnum_discharge.append(cnums)
 
+        for basin_outlets in discharge_outlets_without_supbasin:
+            cnums = []
+            for cell in basin_outlets: cnums.append(gg.get_wghm_cell_number(cell[0], cell[1]))
+            cellnum_discharge_without_supbasin.append(cnums)
+
         # step: assign target cells in simulation variables
         for var in self.sim_variables:
             if not var.basin_cell_list:
-                if var.basin_outlets_only: var.basin_cell_list = cellnum_discharge
+                if var.basin_outlets_only:
+                    if not var.boo_consider_super_basins:
+                        var.basin_cell_list = cellnum_discharge_without_supbasin
+                    else: var.basin_cell_list = cellnum_discharge
                 else: var.basin_cell_list = basin_cellnum
 
             if not var.cell_weights and var.cell_area_as_weight: var.cell_weights = basin_cellareas

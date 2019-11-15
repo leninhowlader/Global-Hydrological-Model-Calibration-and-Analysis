@@ -117,7 +117,8 @@ class GlobalGrid:
 
         if GlobalGrid.__wghm_cell_areas and 0<=row<=359: return GlobalGrid.__wghm_cell_areas[row]
         else: return None
-
+    
+    
     @staticmethod
     def get_wghm_cell_info(*cellnums):
         '''
@@ -131,6 +132,14 @@ class GlobalGrid:
             if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
             return GlobalGrid.__wghm_grid_lookup_table[ndx,:]
         else: return np.array([])
+        
+    @staticmethod
+    def get_wghm_grid_info():
+        '''
+        This method returns the entire (lookup) table of all cell info
+        '''
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+        return GlobalGrid.__wghm_grid_lookup_table
 
     @staticmethod
     def get_wghm_grid_rowcolumn():
@@ -215,6 +224,14 @@ class GlobalGrid:
         ndx = np.where((d[:,2]==x)&(d[:,3]==y))[0]
 
         return int(d[ndx, 0][0])
+
+    @staticmethod
+    def lonlat_to_wghm_cellnumber(lonlat:np.ndarray):
+        d = GlobalGrid.__wghm_grid_lookup_table
+
+        ndx = [np.where((x[0]==d[:,2]) & (x[1]==d[:,3]))[0][0] for x in lonlat]
+
+        return GlobalGrid.__wghm_grid_lookup_table[ndx, 0]
 
     @staticmethod
     def get_wghm_centroid(cell_number:int):

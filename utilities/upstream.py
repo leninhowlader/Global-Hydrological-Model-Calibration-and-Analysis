@@ -55,7 +55,10 @@ class Upstream:
         if not direction_datafile:
             if unf_input: direction_datafile = 'data/flow_direction_%s.unf2' % model_version
             else: direction_datafile = 'data/flow_direction%s.asc' % model_version
-            Upstream.flow_direction_file = direction_datafile
+
+        if (Upstream.flow_direction_file == direction_datafile and
+            Upstream.flow_direction_data.shape == (360, 720)): return succeed
+        else: Upstream.flow_direction_file = direction_datafile
 
         datafile_fullpath = Upstream.get_flow_direction_datafile()
 

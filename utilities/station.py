@@ -120,14 +120,15 @@ class Station:
         return selected_stations
 
     @staticmethod
-    def write_stations(stations, filename):
+    def write_stations(stations, filename, id_as_integer=True):
         succeed = False
 
         data = []
         for s in stations: data.append(list(s) + [-99] * (6 - len(s)))
 
         # id as integer
-        for i in range(len(data)): data[i][0] = int(data[i][0])
+        if id_as_integer:
+            for i in range(len(data)): data[i][0] = int(data[i][0])
 
         if data: succeed = write_flat_file(filename, data, separator=' ')
 

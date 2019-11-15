@@ -88,7 +88,8 @@ class WGapOutput:
         return d
     
     @staticmethod
-    def write_unf(filename:str, data:np.ndarray, unf_type=0, file_endian:FileEndian=FileEndian.big_endian):
+    def write_unf(filename:str, data:np.ndarray, unf_type=0, file_endian:FileEndian=FileEndian.big_endian,
+                  append=False):
         '''
         This method writes data into UNF file format.
 
@@ -119,7 +120,8 @@ class WGapOutput:
         else: format_str = '>%s'%format_str
         
         try:
-            f = open(filename, 'wb')
+            if append: f = open(filename, 'ab')
+            else: f = open(filename, 'wb')
             f.write(data.astype(format_str))
         except: succeed = False
         

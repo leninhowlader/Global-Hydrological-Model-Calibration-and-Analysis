@@ -471,6 +471,7 @@ class SimVariable(Variable):
         Variable.__init__(self)
         self.data_source.file_type = FileType.wghm_binary
         self.__basin_outlets_only = False
+        self.__boo_consider_super_basins = False     # only if basin_outlets_only flag is true
         self.basin_cell_list = []           # two-dimensional array
         self.group_stats = False
         self.compute_anomaly = False
@@ -486,6 +487,11 @@ class SimVariable(Variable):
     def basin_outlets_only(self): return self.__basin_outlets_only
     @basin_outlets_only.setter
     def basin_outlets_only(self, flag:bool): self.__basin_outlets_only = flag
+
+    @property
+    def boo_consider_super_basins(self): return self.__boo_consider_super_basins
+    @boo_consider_super_basins.setter
+    def boo_consider_super_basins(self, flag:bool): self.__boo_consider_super_basins = flag
 
     def is_okay(self):
         if not Variable.is_okay(self): return False
@@ -584,6 +590,11 @@ class SimVariable(Variable):
                                 value = value.lower()
                                 if value in ['yes', 'y', '1', 'true', 't']: var.basin_outlets_only = True
                                 else: var.basin_outlets_only = False
+                            elif key in ['consider_super_basins', 'consider super basins']:
+                                # NB: this option will only be used when basin_outlets_only flag is set true
+                                value = value.lower()
+                                if value in ['yes', 'y', '1', 'true', 't']: var.boo_consider_super_basins = True
+                                else: var.boo_consider_super_basins = False
             except: return None
 
     @staticmethod
