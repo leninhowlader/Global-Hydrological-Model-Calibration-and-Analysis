@@ -23,6 +23,15 @@ __author__ = 'mhasan'
 
 import os, numpy as np
 
+try: import pandas as pd
+except:
+    # this garbage code block is necessary to load this module in absence 
+    # of pandas
+    class pd: 
+        DataFrame = None
+# end of try
+
+
 class GlobalGrid:
 
     # wghm grid variables
@@ -598,7 +607,289 @@ class GlobalGrid:
         except: return None
 
         return points
-
+    
+    @staticmethod
+    def compute_vertices_ndarray(lons:np.ndarray, 
+                              lats:np.ndarray, 
+                              resolution_deg=0.5):
+        
+        # step: check inputs
+        if lons.shape[0] == 0 or lons.shape[0] != lats.shape[0]:
+            return np.empty(0)
+        if resolution_deg <= 0: return np.empty(0)
+        # end of step
+        
+        # step: compute lat and lon of vertices
+        dist = resolution_deg/2
+        
+        x1 = (lons - dist).reshape(-1, 1, 1)
+        x2 = (lons + dist).reshape(-1, 1, 1)
+        
+        y1 = (lats - dist).reshape(-1, 1, 1)
+        y2 = (lats + dist).reshape(-1, 1, 1)
+        # end of step
+        
+        # step: create vertices
+        vertex1 = np.concatenate((x1, y1), axis=2)
+        vertex2 = np.concatenate((x1, y2), axis=2)
+        vertex3 = np.concatenate((x2, y2), axis=2)
+        vertex4 = np.concatenate((x2, y1), axis=2)
+        vertex5 = np.concatenate((x1, y1), axis=2)
+        
+        vertices = np.concatenate((vertex1, vertex2, vertex3, vertex4, vertex5),
+                                  axis=1)
+        # end of step
+        
+        return vertices
+    
+    @staticmethod
+    def create_shapefile_df(dataframe:pd.DataFrame, 
+                            filename:str,
+                            resolution_deg:float=0.5,
+                            fields:list=[],
+                            prj_string:str=''):
+        
+        # inner function to generate fields
+        def generate_field_info(df:pd.DataFrame):
+            fields = []
+            
+            for i in range(df.shape[1]):
+                f = [df.columns[i]]
+                
+                onevalue = df.iloc[0, i]
+                
+                if type(onevalue) in [np.int, np.int32, int]:
+                    f += ['N', 15]
+                elif type(onevalue) in [np.int64]:
+                    f += ['N', 30]
+                elif type(onevalue) is np.float64:
+                    f += ['N', 50, 15]
+                elif type(onevalue) in [np.float, np.float32, float]:
+                    f += ['N', 22, 8]
+                #elif type(onevalue) is np.datetime64:
+                #    f += ['N', 22, 8]
+                else: f += ['C', 50]
+                
+                fields.append(f)
+            
+            return fields
+        # end of inner function
+        
+        
+        # step: find longitude and latitude information
+        columns = list(dataframe.columns)
+        for i in range(len(columns)): columns[i] = columns[i].lower()
+        
+        lons, lats = None, None
+        if 'lon' in columns:
+            ic = columns.index('lon')
+            lons = dataframe.iloc[:,ic].values
+        elif 'longitude' in columns: 
+            ic = columns.index('longitude')
+            lons = dataframe.iloc[:,ic].values
+        else: return False
+            
+        if 'lat' in columns:
+            ic = columns.index('lat')
+            lats = dataframe.iloc[:,ic].values
+        elif 'latitude' in columns:
+            ic = columns.index('latitude')
+            lats = dataframe.iloc[:,ic].values
+        else: return False
+        # end of step
+        
+        # step: import shapefile library
+        try:
+            import shapefile as shp
+            version = int(shp.__version__[0])
+        except: return False
+        # end of steps
+        
+        # step: compute cell vertices
+        vertices = GlobalGrid.compute_vertices_ndarray(lons=lons, 
+                                                       lats=lats,
+                                                       resolution_deg=resolution_deg)
+        if vertices.shape[0] == 0: return False
+        # end of step
+        
+        # step: open shape or create shape
+        sf = None
+        if version == 1: sf = shp.Writer(shp.POLYGON)
+        elif version == 2: sf = shp.Writer(filename, shapeType=shp.POLYGON)
+        else: return False
+        sf.autoBalance = True
+        # end of step
+        
+        # step: add shape fields
+        if not fields: fields = generate_field_info(dataframe)
+        
+        for i in range(len(fields)): sf.field(*fields[i])
+        # end of step
+        
+        # step: create shape polygons
+        try:
+            for i in range(vertices.shape[0]):
+                v = vertices[i]
+                r = dataframe.iloc[i, :].values
+                
+                sf.poly([v])
+                sf.record(*r)
+        except: return False
+        # end of step
+        
+        # step: close or save shape object
+        if version == 1: sf.save(filename)
+        else: sf.close()
+        # end of step
+        
+        # step: create projection string
+        filename = filename[:-4] + '.prj'
+        try:
+            f = open(filename, 'w')
+            if not prj_string:
+                prj_string = ('GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",' +
+                              'SPHEROID["WGS_1984",6378137.0,298.257223563]],' +
+                              'PRIMEM["Greenwich",0.0],UNIT["Degree",' +
+                              '0.0174532925199433]]')
+            f.write(prj_string)
+            f.close()
+        except: pass
+        # end of step    
+    
+        return True
+        
+    @staticmethod
+    def create_shapefile_ndarray(data:np.ndarray, 
+                                 filename:str,
+                                 columns:list,
+                                 resolution_deg:float=0.5,
+                                 fields:list=[],
+                                 prj_string:str=''):
+        
+        # inner function to generate fields
+        def generate_field_info(d:np.ndarray, columns:list):
+            fields = []
+            
+            for i in range(d.shape[1]):
+                f = [columns[i]]
+                
+                onevalue = d[0, i]
+                
+                if type(onevalue) in [np.int, np.int32, int]:
+                    f += ['N', 15]
+                elif type(onevalue) in [np.int64]:
+                    f += ['N', 30]
+                elif type(onevalue) is np.float64:
+                    f += ['N', 50, 15]
+                elif type(onevalue) in [np.float, np.float32, float]:
+                    f += ['N', 22, 8]
+                #elif type(onevalue) is np.datetime64:
+                #    f += ['N', 22, 8]
+                else: f += ['C', 50]
+                
+                fields.append(f)
+            
+            return fields
+        # end of inner function
+        
+        
+        # step: check input data
+        if data.ndim != 2: return False
+        if data.shape[0] == 0: return False
+        if data.shape[1] == 0 or data.shape[1] != len(columns): return False            
+        # end of step
+        
+        # step: find longitude and latitude information
+        for i in range(len(columns)): columns[i] = columns[i].lower()
+        
+        lons, lats = None, None
+        if 'lon' in columns:
+            ic = columns.index('lon')
+            lons = data[:,ic]
+        elif 'longitude' in columns: 
+            ic = columns.index('longitude')
+            lons = data[:,ic]
+        else: return False
+            
+        if 'lat' in columns:
+            ic = columns.index('lat')
+            lats = data[:,ic]
+        elif 'latitude' in columns:
+            ic = columns.index('latitude')
+            lats = data[:,ic]
+        else: return False
+        # end of step
+        
+        # step: import shapefile library
+        try:
+            import shapefile as shp
+            version = int(shp.__version__[0])
+        except: return False
+        # end of steps
+        
+        # step: compute cell vertices
+        vertices = GlobalGrid.compute_vertices_ndarray(lons=lons, 
+                                                       lats=lats,
+                                                       resolution_deg=resolution_deg)
+        if vertices.shape[0] == 0: return False
+        # end of step
+        
+        # step: open shape or create shape
+        sf = None
+        if version == 1: sf = shp.Writer(shp.POLYGON)
+        elif version == 2: sf = shp.Writer(filename, shapeType=shp.POLYGON)
+        else: return False
+        sf.autoBalance = True
+        # end of step
+        
+        # step: add shape fields
+        if not fields: fields = generate_field_info(data, columns)
+        
+        for i in range(len(fields)): sf.field(*fields[i])
+        # end of step
+        
+        # step: create shape polygons
+        try:
+            if version == 1:
+                for i in range(vertices.shape[0]):
+                    v = vertices[i].tolist()
+                    r = data[i, :]
+                    
+                    sf.poly([v], shapeType=shp.POLYGON)
+                    sf.record(*r)
+            else:
+                for i in range(vertices.shape[0]):
+                    v = vertices[i]
+                    r = data[i, :]
+                    
+                    sf.poly([v])
+                    sf.record(*r)
+        except Exception as ex:
+            print(str(ex))
+            return False
+        # end of step
+        
+        # step: close or save shape object
+        if version == 1: sf.save(filename)
+        else: sf.close()
+        # end of step
+        
+        # step: create projection string
+        filename = filename[:-4] + '.prj'
+        try:
+            f = open(filename, 'w')
+            if not prj_string:
+                prj_string = ('GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",' +
+                              'SPHEROID["WGS_1984",6378137.0,298.257223563]],' +
+                              'PRIMEM["Greenwich",0.0],UNIT["Degree",' +
+                              '0.0174532925199433]]')
+            f.write(prj_string)
+            f.close()
+        except: pass
+        # end of step    
+    
+        return True
+        
     @staticmethod
     def create_wghm_grid_shape(filename:str='', cell_info:np.ndarray=np.array([]), data:np.ndarray=np.array([])):
         '''

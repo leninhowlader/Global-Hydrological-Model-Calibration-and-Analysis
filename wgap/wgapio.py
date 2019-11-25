@@ -427,7 +427,10 @@ class WaterGapIO:
         return True
 
     @staticmethod
-    def find_cellnumber_GCRC(lons, lats, gcrcfile='GCRC.UNF4', inputdirectory='', resolution_deg=0.5):
+    def find_cellnumber_GCRC(lons, lats, 
+                             gcrcfile='GCRC.UNF4', 
+                             inputdirectory='', 
+                             resolution_deg=0.5):
         if lons.shape != lats.shape: return np.empty(0)
         if lons.max() > 180 or lons.min() < -180: return np.empty(0)
         if lats.max() > 90 or lats.min() < -90: return np.empty(0)
@@ -592,9 +595,7 @@ class WaterGapIO:
             
             try: sws_frac_years = np.concatenate((sws_frac_years, temp), axis=1)
             except: sws_frac_years = temp
-            print(f)
         
-        print(sws_frac_years.shape)
         #print(reservoir_frac_files)
         # end of step
         
