@@ -1,7 +1,7 @@
 
-import os, sys, numpy as np
+import sys, numpy as np
 sys.path.append('..')
-from postprocessing.storagecontribution import StorageContribution as sc
+from analyses.storagecontribution import StorageContribution as sc
 
 basin = 'mississippi'
 start_year = 2003
@@ -23,8 +23,8 @@ def storage_change(d:np.ndarray):
     t1 = basin_sum(d)
     t2 = shift(t1, 1, cval=np.NaN)
     return t1 - t2
-# succeed = sc.storage_contribution(model_output_directory, target_cells_from_file, start_year, end_year, output_directory,
-#                                   output_filename_prefix='vicksburg_contribution', output_format='binary', contribution_type='both')
+succeed = sc.storage_contribution(model_output_directory, target_cells_from_file, start_year, end_year, output_directory,
+                                  output_filename_prefix='vicksburg_contribution', output_format='binary', contribution_type='both')
 
 contrib_file = 'F:/mhasan/experiments/GlobalCDA/calibration_mississippi/output/contrib_map/summary/%s_contrib_summary.csv'%basin
 summary_file = 'F:/mhasan/experiments/GlobalCDA/calibration_mississippi/output/contrib_map/summary/%s_contrib_summary.txt'%basin

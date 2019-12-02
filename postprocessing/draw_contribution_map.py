@@ -9,11 +9,10 @@ important links:
     https://towardsdatascience.com/mapping-geograph-data-in-python-610a963d2d7f
 """
 
-import os, sys, numpy as np, shapefile as shp, pandas as pd, seaborn as sns
-from matplotlib import pyplot as plt
-from collections import OrderedDict
+import os, sys, numpy as np
+
 sys.path.append('..')
-from postprocessing.storagecontribution import StorageContribution as scon
+from analyses.storagecontribution import StorageContribution as scon
 
 
 data_directory = 'F:/mhasan/private/temp/contribution_map_test'

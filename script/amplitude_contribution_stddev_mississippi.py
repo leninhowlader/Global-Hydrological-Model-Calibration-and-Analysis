@@ -5,9 +5,10 @@ Created on Thu Jun 13 16:52:46 2019
 @author: mhasan
 """
 
-import os, sys, numpy as np
+import sys
+
 sys.path.append('..')
-from postprocessing.storagecontribution import StorageContribution as scon
+from analyses.storagecontribution import StorageContribution as scon
 
 data_directory = 'F:/mhasan/private/temp/contribution_map_test'
 filename_prefix = 'mississippi_contribution'

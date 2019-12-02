@@ -1,23 +1,30 @@
 # Author: H.M. Mehedi Hasan
 # Date: April, 2016
 
-# The grid class provides supplementary functions for mapping WGHM 0.5-degree cells to absolute
-# geo-corrdinates, grouping WGHM cells according to GRACE 1-degree cell, finding cell centroids, finding grid row and
-# column for specific cell and transforming row and columns between two spatial resolutions.
+# The grid class provides supplementary functions for mapping WGHM 0.5-degree 
+# cells to absolute geo-corrdinates, grouping WGHM cells according to 
+# GRACE 1-degree cell, finding cell centroids, finding grid row and column for 
+# specific cell and transforming row and columns between two spatial
+# resolutions.
 #
-# For mapping WGHM cells to geo-coordinates of the cell centroid, mapping data must be provided into 'wghm_grid.csv'
-# file. wghm_grid.csv contains WGHM cell numbers, corresponding ArcIds, and longitudes and latitudes of the centroids of the
-# corresponding WGHM cells.
+# For mapping WGHM cells to geo-coordinates of the cell centroid, mapping data 
+# must be provided into 'wghm_grid.csv' file. wghm_grid.csv contains WGHM cell 
+# numbers, corresponding ArcIds, and longitudes and latitudes of the centroids 
+# of the corresponding WGHM cells.
 #
-# The grid class is static in nature and thus, all functions and variables are static.
+# The grid class is static in nature and thus, all functions and variables are 
+# static.
 #
-# In this class the geo-locations are plotted on an imaginary grid situated within -180 to 180 degree longitude and
-# within 90 to -90 degree latitude. The number of rows and columns of the imaginary grid depends on the grid-resolution.
-# In order to find the reference cell number of a geo-location within a grid with specified resolution, one has to find
-# the corresponding row and column numbers. Cell reference number within the imaginary grid is different than that
-# of WGHM grid. In the imaginary grid the cell number starts from zero at the left-top corner of the grid (-180 degree
-# longitude, 90 degree latitude) and increases first from left to right and then top to bottom. However, most of
-# function works with row and column number.
+# In this class the geo-locations are plotted on an imaginary grid situated 
+# within -180 to 180 degree longitude and within 90 to -90 degree latitude. The
+# number of rows and columns of the imaginary grid depends on the
+# grid-resolution. In order to find the reference cell number of a geo-location 
+# within a grid with specified resolution, one has to find the corresponding 
+# row and column numbers. Cell reference number within the imaginary grid is 
+# different than that of WGHM grid. In the imaginary grid the cell number starts
+# from zero at the left-top corner of the grid (-180 degree  longitude, 
+# 90 degree latitude) and increases first from left to right and then top to 
+# bottom. However, most of function works with row and column number.
 
 __author__ = 'mhasan'
 
@@ -35,18 +42,19 @@ except:
 class GlobalGrid:
 
     # wghm grid variables
-    __wghm_version = 'wghm22b'
+    __wghm_version = 'wghm22d'
     __wghm_cell_areas = []
     __wghm_cell_area_file = 'data/GAREA.UNF0'
     __wghm_grid_lookup_table = np.array([])
-    __wghm_grid_lookup_table_filename = 'data/grid_wghm22b.txt'
+    __wghm_grid_lookup_table_filename = 'data/grid_wghm22d.txt'
     __grid_resolution = 0.5     # grid resolution in degrees
 
     @staticmethod
     def get_grid_resolution(): return GlobalGrid.__grid_resolution
 
     @staticmethod
-    def set_grid_resolution(resolution_deg): GlobalGrid.__grid_resolution = resolution_deg
+    def set_grid_resolution(resolution_deg): 
+        GlobalGrid.__grid_resolution = resolution_deg
 
     @staticmethod
     def get_current_model_version():
@@ -62,14 +70,18 @@ class GlobalGrid:
         '''
         This method sets WGHM model version
 
-        :param model_version: (string) WGHM version. parameter value should be either 'wghm22b' or 'wghm22d'
+        :param model_version: (string) WGHM version. parameter value should be 
+                        either 'wghm22b' or 'wghm22d'
         :return: None
         '''
 
         if model_version != GlobalGrid.__wghm_version:
             GlobalGrid.__wghm_version = model_version
             GlobalGrid.__wghm_grid_lookup_table = np.array([])
-            GlobalGrid.__wghm_grid_lookup_table_filename = 'data/grid_%s.txt' % model_version
+            
+            GlobalGrid.__wghm_grid_lookup_table_filename \
+            = 'data/grid_%s.txt' % model_version
+            
             GlobalGrid.read_wghm_grid_lookup_table()
 
     @staticmethod
@@ -97,7 +109,9 @@ class GlobalGrid:
         :return: (int) total number of WGHM cells in current model version
         '''
 
-        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
+            GlobalGrid.read_wghm_grid_lookup_table()
+        
         return len(GlobalGrid.__wghm_grid_lookup_table)
     
     @staticmethod
@@ -107,7 +121,8 @@ class GlobalGrid:
 
         :return: (string) cell area filename
         '''
-        return os.path.join(os.path.dirname(__file__), GlobalGrid.__wghm_cell_area_file)
+        return os.path.join(os.path.dirname(__file__), 
+                            GlobalGrid.__wghm_cell_area_file)
 
     @staticmethod
     def get_wghm_grid_lookup_table_filename():
@@ -116,15 +131,18 @@ class GlobalGrid:
 
         :return: (string) WGHM grid lookup table filename
         '''
-        return os.path.join(os.path.dirname(__file__), GlobalGrid.__wghm_grid_lookup_table_filename)
+        return os.path.join(os.path.dirname(__file__),
+                            GlobalGrid.__wghm_grid_lookup_table_filename)
 
     @staticmethod
     def find_wghm_cellarea(row, base_resolution=0.5):
         if not GlobalGrid.__wghm_cell_areas: GlobalGrid.read_wghm_cell_area()
 
-        if base_resolution != 0.5: row = GlobalGrid.transform_row_number(row, base_resolution, 0.5)
+        if base_resolution != 0.5: 
+            row = GlobalGrid.transform_row_number(row, base_resolution, 0.5)
 
-        if GlobalGrid.__wghm_cell_areas and 0<=row<=359: return GlobalGrid.__wghm_cell_areas[row]
+        if GlobalGrid.__wghm_cell_areas and 0<=row<=359: 
+            return GlobalGrid.__wghm_cell_areas[row]
         else: return None
     
     
@@ -138,7 +156,8 @@ class GlobalGrid:
         '''
         if cellnums:
             ndx = np.array([cellnums], dtype=np.int32).flatten() - 1
-            if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+            if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
+                GlobalGrid.read_wghm_grid_lookup_table()
             return GlobalGrid.__wghm_grid_lookup_table[ndx,:]
         else: return np.array([])
         
@@ -147,12 +166,14 @@ class GlobalGrid:
         '''
         This method returns the entire (lookup) table of all cell info
         '''
-        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
+            GlobalGrid.read_wghm_grid_lookup_table()
         return GlobalGrid.__wghm_grid_lookup_table
 
     @staticmethod
     def get_wghm_grid_rowcolumn():
-        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0:
+            GlobalGrid.read_wghm_grid_lookup_table()
 
         ndx = np.argsort(GlobalGrid.__wghm_grid_lookup_table[:,0])
         coords = GlobalGrid.__wghm_grid_lookup_table[ndx][:,[2,3]]
@@ -166,21 +187,26 @@ class GlobalGrid:
         '''
         Returns all WGHM cell centroids of the current model version.
 
-        :return: (np.ndarray) all WGHM cell centroids. the first column contains latitudes and second contains longitude
+        :return: (np.ndarray) all WGHM cell centroids. the first column 
+                        contains latitudes and second contains longitude
         '''
         centriods = []
 
-        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
+            GlobalGrid.read_wghm_grid_lookup_table()
 
         centriods = GlobalGrid.__wghm_grid_lookup_table[:, [3, 2]]
-        # Note that the first column is latitude and the second column is longitude
+        # Note that the first column is latitude and the second column 
+        # is longitude
 
         return centriods
 
     @staticmethod
     def read_wghm_cell_area():
         '''
-        This method reads the area for each 0.5 degree WGHM grid cell from UNF binary file
+        This method reads the area for each 0.5 degree WGHM grid cell from UNF 
+        binary file
+        
         :return: None
         '''
         GlobalGrid.__wghm_cell_areas = []
@@ -195,8 +221,8 @@ class GlobalGrid:
     @staticmethod
     def read_wghm_grid_lookup_table():
         '''
-        This method reads lookup table from file. The lookup table contains following columns: 'Cell Number', 'Arc ID',
-        'Longitude', 'Latitude'
+        This method reads lookup table from file. The lookup table contains 
+        following columns: 'Cell Number', 'Arc ID', 'Longitude', 'Latitude'
 
         :return: None
         '''
@@ -236,12 +262,28 @@ class GlobalGrid:
 
     @staticmethod
     def lonlat_to_wghm_cellnumber(lonlat:np.ndarray):
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
+            GlobalGrid.read_wghm_grid_lookup_table()
+            
         d = GlobalGrid.__wghm_grid_lookup_table
 
         ndx = [np.where((x[0]==d[:,2]) & (x[1]==d[:,3]))[0][0] for x in lonlat]
 
         return GlobalGrid.__wghm_grid_lookup_table[ndx, 0]
+    
+    @staticmethod
+    def wghm_cellnumber_to_centroid_lonlat(cellnum:np.ndarray):
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
+            GlobalGrid.read_wghm_grid_lookup_table()
+        
+        d = GlobalGrid.__wghm_grid_lookup_table
 
+        ndx = [np.where(d[:,0]==x)[0][0] for x in cellnum]
+        
+        lonlat = d[np.array(ndx)][:, [2, 3]]
+                
+        return lonlat
+    
     @staticmethod
     def get_wghm_centroid(cell_number:int):
         '''
@@ -250,7 +292,8 @@ class GlobalGrid:
         :param cell_number: (int) WGHM cell number
         :return: (tuple of float) Geo-coordinate of corresponding WGHM cell.
         '''
-        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+        if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
+            GlobalGrid.read_wghm_grid_lookup_table()
 
         d = GlobalGrid.__wghm_grid_lookup_table
         ndx = np.where(d[:,0] == cell_number)[0]
@@ -580,19 +623,24 @@ class GlobalGrid:
     @staticmethod
     def cell_vertices(centroids, degree_resolution=0.5):
         '''
-        This method finds the vertices of a given cell. Cell vertices are used for drawing the cell.
+        This method finds the vertices of a given cell. Cell vertices are used 
+        for drawing the cell.
 
         Parameters:
-        :param centroids: (list of tuples of latitude and longitude) cell centroids of target cells
-        :param degree_resolution: (float; optional; default value = 0.05) resolution (in degree) of the global grid.
+        :param centroids: (list of tuples of latitude and longitude) cell 
+                        centroids of target cells
+        :param degree_resolution: (float; optional; default value = 0.05) 
+                        resolution (in degree) of the global grid.
 
         Returns:
         :return: (list of list) list of cell vertices of each input cell.
 
         Examples:
         >>> GlobalGrid.cell_vertices([(49.0, 81.0)])
-        [[[80.75, 48.75], [80.75, 49.25], [81.25, 49.25], [81.25, 48.75], [80.75, 48.75]]]
-        >>> GlobalGrid.cell_vertices(centroids=[(49.0, 81.0)], degree_resolution=2.0)
+        [[[80.75, 48.75], [80.75, 49.25], [81.25, 49.25], [81.25, 48.75], 
+        [80.75, 48.75]]]
+        >>> GlobalGrid.cell_vertices(centroids=[(49.0, 81.0)], 
+                                    degree_resolution=2.0)
         [[[80.0, 48.0], [80.0, 50.0], [82.0, 50.0], [82.0, 48.0], [80.0, 48.0]]]
         '''
 
@@ -706,9 +754,11 @@ class GlobalGrid:
         # end of steps
         
         # step: compute cell vertices
-        vertices = GlobalGrid.compute_vertices_ndarray(lons=lons, 
-                                                       lats=lats,
-                                                       resolution_deg=resolution_deg)
+        vertices = GlobalGrid.compute_vertices_ndarray(
+                                    lons=lons, 
+                                    lats=lats,
+                                    resolution_deg=resolution_deg)
+        
         if vertices.shape[0] == 0: return False
         # end of step
         
@@ -828,9 +878,11 @@ class GlobalGrid:
         # end of steps
         
         # step: compute cell vertices
-        vertices = GlobalGrid.compute_vertices_ndarray(lons=lons, 
-                                                       lats=lats,
-                                                       resolution_deg=resolution_deg)
+        vertices = GlobalGrid.compute_vertices_ndarray(
+                                    lons=lons, 
+                                    lats=lats,
+                                    resolution_deg=resolution_deg)
+        
         if vertices.shape[0] == 0: return False
         # end of step
         
@@ -891,24 +943,35 @@ class GlobalGrid:
         return True
         
     @staticmethod
-    def create_wghm_grid_shape(filename:str='', cell_info:np.ndarray=np.array([]), data:np.ndarray=np.array([])):
+    def create_wghm_grid_shape(
+            filename:str='', 
+            cell_info:np.ndarray=np.array([]), 
+            data:np.ndarray=np.array([])):
         '''
-        This method create shape a shape file with all WGHM cells. Additional data can be added in standard shape.
+        This method create shape a shape file with all WGHM cells. Additional
+        data can be added in standard shape.
 
         :param filename: (string, optional, default = '') output shape filename
-        :param cell_info: (np.ndarray, optional, default = empty array) WGHM cell information. cell info must have four
-                            columns (i.e., WGHM Cell Num, Arc ID, Longitude, Latitude) as in the lookup table. If this
-                            parameter is omitted, output shapefile will include all WGHM cells
-        :param data: (np.ndarray, optional, default = empty array) additional data
+        :param cell_info: (np.ndarray, optional, default = empty array) WGHM 
+                        cell information. cell info must have four columns 
+                        (i.e., WGHM Cell Num, Arc ID, Longitude, Latitude) as 
+                        in the lookup table. If this parameter is omitted, 
+                        output shapefile will include all WGHM cells
+        :param data: (np.ndarray, optional, default = empty array) additional 
+                        data to be added
         :return: (boolean) True on success, False otherwise
         '''
         succeed = True
         try: import shapefile as shp
         except: succeed = False
-
+        
+        version = int(shp.__version__[0])
+        
         d = np.array([])
         if succeed:
-            if len(GlobalGrid.__wghm_grid_lookup_table) == 0: GlobalGrid.read_wghm_grid_lookup_table()
+            if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
+                GlobalGrid.read_wghm_grid_lookup_table()
+            
             d = GlobalGrid.__wghm_grid_lookup_table
 
             if len(cell_info) > 0:
@@ -921,7 +984,13 @@ class GlobalGrid:
                 else: succeed = False
 
         if succeed:
-            g = shp.Writer(shp.POLYGON)
+            if not filename: filename = 'grid_%s.shp' % GlobalGrid.__wghm_version
+            elif filename[:-4].lower() != '.shp': filename += '.shp'
+
+            if version == 1: g = shp.Writer(shp.POLYGON)
+            elif version == 2: g = shp.Writer(filename, shp.POLYGON)
+            else: return False
+            
             g.autoBalance = 1
 
             g.field('ArcID', 'N', 8)
@@ -933,22 +1002,33 @@ class GlobalGrid:
                 nfield = data.shape[1]
                 for i in range(nfield): g.field('VALUE%d'%i, 'N', decimal=10)
 
+            if version == 1:
+                try:
+                    for row in d:
+                        x, y = row[2], row[3]
+                        v = GlobalGrid.cell_vertices([(y, x)])
+                        g.poly(v, shapeType=shp.POLYGON)
+                        g.record(*row)
+                except: succeed = False
+            else:
+                try:
+                    for row in d:
+                        x, y = row[2], row[3]
+                        v = GlobalGrid.cell_vertices([(y, x)])
+                        g.poly(v)
+                        g.record(*row)
+                except: succeed = False
+            
             try:
-                for row in d:
-                    x, y = row[2], row[3]
-                    v = GlobalGrid.cell_vertices([(y, x)])
-                    g.poly(v, shapeType=shp.POLYGON)
-                    g.record(*row)
-            except: succeed = False
-
-            if not filename: filename = 'grid_%s.shp' % GlobalGrid.__wghm_version
-            elif filename[:-4].lower() != '.shp': filename += '.shp'
-
-            try:
-                g.save(filename)
+                if version == 1: g.save(filename)
+                else: g.close()
+                
                 filename = filename[:-4] + '.prj'
                 f = open(filename, 'w')
-                prj_string = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]'
+                prj_string = ('GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",' + 
+                              'SPHEROID["WGS_1984",6378137.0,298.257223563]],' +
+                              'PRIMEM["Greenwich",0.0],UNIT["Degree",' + 
+                              '0.0174532925199433]]')
                 f.write(prj_string)
                 f.close()
             except: succeed = False

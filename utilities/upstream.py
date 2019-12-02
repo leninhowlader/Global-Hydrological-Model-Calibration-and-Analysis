@@ -11,7 +11,7 @@ from utilities.enums import FileEndian
 
 class Upstream:
     # default flow-direction file
-    flow_direction_file = 'data/flow-direction.asc'          # flow-direction file
+    flow_direction_file = 'data/flow-direction_wghm22b.asc'          # flow-direction file
 
     # static variables
     flow_direction_data = np.array([])
@@ -41,19 +41,23 @@ class Upstream:
         Upstream.read_flow_data(filename)
 
     @staticmethod
-    def read_flow_data(direction_datafile='', unf_input=False, model_version='wghm22b'):
+    def read_flow_data(direction_datafile='', unf_input=True, model_version='wghm22d'):
         '''
         The method reads flow-direction data from file
 
         Parameters:
         :param direction_datafile: (string; optional; default = '') name of flow-direction map file
-        :param model_version: (string; optional; default = 'wghm22b') model version
+        :param model_version: (string; optional; default = 'wghm22d') model version
         :return: None
         '''
         succeed = True
-
+        
+        if GlobalGrid.get_current_model_version() != model_version:
+            GlobalGrid.set_model_version(model_version)
+        
         if not direction_datafile:
-            if unf_input: direction_datafile = 'data/flow_direction_%s.unf2' % model_version
+            if unf_input: 
+                direction_datafile = 'data/flow_direction_%s.unf2' % model_version
             else: direction_datafile = 'data/flow_direction%s.asc' % model_version
 
         if (Upstream.flow_direction_file == direction_datafile and
@@ -61,15 +65,17 @@ class Upstream:
         else: Upstream.flow_direction_file = direction_datafile
 
         datafile_fullpath = Upstream.get_flow_direction_datafile()
-
+        
         if not os.path.exists(datafile_fullpath): succeed = False
         else:
             Upstream.flow_direction_data = np.array([])
-
-            if unf_input: succeed = Upstream.construct_flow_data_from_unf(datafile_fullpath)
+            
+            if unf_input: 
+                succeed = Upstream.construct_flow_data_from_unf(datafile_fullpath)
             else: succeed = Upstream.read_flow_data_from_ascii(datafile_fullpath)
-
-            if not (succeed and Upstream.flow_direction_data.shape == (360, 720)): succeed = False
+            
+            if not (succeed and Upstream.flow_direction_data.shape == (360, 720)): 
+                succeed = False
 
         return succeed
 
@@ -660,9 +666,14 @@ class Upstream:
 
             # step-4: create shapefile and export the file
             import shapefile as shp
+            version = int(shp.__version__[0])
+            
             try:
                 # create shape object
-                shp_basin = shp.Writer(shp.POLYGON)
+                if version == 1: shp_basin = shp.Writer(shp.POLYGON)
+                elif version == 2: shp_basin = shp.Writer(filename, shp.POLYGON)
+                else: return False
+            
                 shp_basin.autoBalance = 1
 
                 # add shape attributes
@@ -673,25 +684,48 @@ class Upstream:
                 if not basin_ids: basin_ids = list(range(len(list_of_basins)))
 
                 # create shape for each basin
-                for i in range(len(list_of_basins)):
-                    basin = list_of_basins[i]
-                    points = geopoints[i]
-
-                    basin_id = basin_ids[i]
-
-                    # add cells and their attributes to basin shape
-                    if add_wghm_cnum:
-                        for j in range(len(basin)):
-                            cnum = GlobalGrid.get_wghm_cell_number(basin[j][0], basin[j][1], base_resolution=0.5)
-                            shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
-                            shp_basin.record(basin_id, cnum)
-                    else:
-                        for j in range(len(basin)):
-                            shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
-                            shp_basin.record(basin_id)
+                if version == 1:
+                    for i in range(len(list_of_basins)):
+                        basin = list_of_basins[i]
+                        points = geopoints[i]
+    
+                        basin_id = basin_ids[i]
+    
+                        # add cells and their attributes to basin shape
+                        if add_wghm_cnum:
+                            for j in range(len(basin)):
+                                cnum = GlobalGrid.get_wghm_cell_number(basin[j][0],
+                                                                       basin[j][1],
+                                                                       base_resolution=0.5)
+                                shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
+                                shp_basin.record(basin_id, cnum)
+                        else:
+                            for j in range(len(basin)):
+                                shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
+                                shp_basin.record(basin_id)
+                else: # version == 2
+                    for i in range(len(list_of_basins)):
+                        basin = list_of_basins[i]
+                        points = geopoints[i]
+    
+                        basin_id = basin_ids[i]
+    
+                        # add cells and their attributes to basin shape
+                        if add_wghm_cnum:
+                            for j in range(len(basin)):
+                                cnum = GlobalGrid.get_wghm_cell_number(basin[j][0], 
+                                                                       basin[j][1], 
+                                                                       base_resolution=0.5)
+                                shp_basin.poly([points[j]])
+                                shp_basin.record(basin_id, cnum)
+                        else:
+                            for j in range(len(basin)):
+                                shp_basin.poly([points[j]])
+                                shp_basin.record(basin_id)
 
                 # save shapefile
-                shp_basin.save(filename)
+                if version == 1: shp_basin.save(filename)
+                else: shp_basin.close()
 
                 # create a projection file
                 ndx = filename.lower().find('.shp')

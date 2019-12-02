@@ -90,7 +90,72 @@ class BasinInfo:
             
             return basin_info
         #end of function
+        
+        @staticmethod
+        def Amazon_level0(with_upstream=False, 
+                          wghm_cell_number=True,
+                          include_arcid=False, 
+                          include_cellarea=False, 
+                          include_only_basin_area=False):
+            
+            basin_info = OrderedDict()
+            basin_info['amazonas'] = {'station_id': '3623100', 'lon': -50.25, 'lat': 0.25, 'cellnum': 53829}
 
+            if with_upstream: 
+                BasinInfo.include_basin_property_upstream(
+                                            basin_info,
+                                            wghm_cell_number=wghm_cell_number)
+            
+            BasinInfo.GlobalCDA.include_basin_properties(
+                                basin_info,
+                                include_arcid=include_arcid,
+                                include_cellarea=include_cellarea,
+                                include_only_basin_area=include_only_basin_area)
+            
+            return basin_info
+        #end of function
+        
+        @staticmethod
+        def Amazon_level1(with_upstream=False, 
+                          wghm_cell_number=True,
+                          include_arcid=False, 
+                          include_cellarea=False, 
+                          include_only_basin_area=False):
+            basin_info = OrderedDict()
+            basin_info['olivenca'] = {'station_id': '3623100', 'lon': -69.25, 'lat': -3.25, 'cellnum': 55134}
+            basin_info['negro_river'] = {'station_id': '3623100', 'lon': -60.75, 'lat': -2.75, 'cellnum': 54942}
+            basin_info['manicore'] = {'station_id': '3627030', 'lon': -61.25, 'lat': -5.75, 'cellnum': 56135}
+            basin_info['obidos'] = {'station_id': '3629000', 'lon': -55.75, 'lat': -1.75, 'cellnum': 54549}
+            basin_info['amazonas'] = {'station_id': '3623100', 'lon': -50.25, 'lat': 0.25, 'cellnum': 53829}
+            
+            if with_upstream:
+                BasinInfo.include_basin_property_upstream(
+                                            basin_info, 
+                                            wghm_cell_number=wghm_cell_number)
+                
+                # remove upstream basins from amazonas
+                basin_info['amazonas']['upstream'] = list(
+                        set(basin_info['amazonas']['upstream'])
+                        - set(basin_info['obidos']['upstream'])
+                        )
+                
+                # remove upstream basins from obidos
+                basin_info['obidos']['upstream'] = list(
+                        set(basin_info['obidos']['upstream'])
+                        - set(basin_info['negro_river']['upstream'])
+                        - set(basin_info['manicore']['upstream'])
+                        - set(basin_info['olivenca']['upstream'])
+                        )
+                
+                
+            BasinInfo.GlobalCDA.include_basin_properties(
+                                basin_info,
+                                include_arcid=include_arcid,
+                                include_cellarea=include_cellarea,
+                                include_only_basin_area=include_only_basin_area)
+            
+            return basin_info
+        # end of function
         
         @staticmethod
         def include_basin_properties(basin_info,

@@ -1,4 +1,4 @@
-import os, sys, numpy as np
+import os, sys, numpy as np, pandas as pd
 sys.path.append('..')
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -652,6 +652,111 @@ class WaterGapIO:
         
         return continental_area_frac/100
 
-
+    
+    
+    class Precipitation:
+        from collections import OrderedDict
+        
+        
+        __forcing_data_directory = ''
+        
+        @staticmethod
+        def set_forcing_data_directory(d):
+            WaterGapIO.Precipitation.__forcing_data_directory = d
+        
+        @staticmethod
+        def get_forcing_data_directory():
+            return WaterGapIO.Precipitation.__forcing_data_directory
+        
+        @staticmethod
+        def weighted_sum(data31, weights): 
+            return (data31 * weights).sum(axis=0)
+        
+        @staticmethod
+        def weighted_mean(data31, weights):
+            return (data31 * weights).sum(axis=0) / weights.sum()
+        
+        @staticmethod
+        def read_basin_precipitation_total(start_year:int, 
+                              end_year:int, 
+                              basin_info:OrderedDict,
+                              filename_out=''):
+            
+            # step: check input
+            e = np.empty(0)
+            
+            input_directory = WaterGapIO.Precipitation.__forcing_data_directory
+            if not input_directory or not os.path.exists(input_directory):
+                return e
+            
+            if start_year < 1901 or end_year < 1901 or start_year > end_year:
+                return e
+            
+            if not basin_info: return e
+            
+            for basin in basin_info.keys():
+                if 'upstream' not in basin_info[basin].keys(): return e
+                if len(basin_info[basin]['upstream']) == 0: return e
+                if 'area' not in basin_info[basin].keys(): return e
+                if (len(basin_info[basin]['upstream']) !=
+                    len(basin_info[basin]['area'])): return e
+            # end of step
+            
+            # step: computing basin cell indices from cell numbers and reshaping
+            # areas as necessary for the next step
+            for basin in basin_info.keys():
+                cellnum = np.array(basin_info[basin]['upstream'])
+                cellindex = cellnum - 1
+                
+                basin_info[basin]['cellindex'] = cellindex
+                area = np.array(basin_info[basin]['area']).reshape(-1, 1)
+                basin_info[basin]['area'] = area
+            # end of step
+            
+            # step: read daily precipitation data (from GPREC_YYYY_MM.31.UNF0)
+            #       (each file contains 31 daily values in 31 columns for all
+            #       model cells in rows. the values are precipitation amounts in
+            #       mm/day)
+            fun = WaterGapIO.Precipitation.weighted_sum
+            
+            records = {'year': [], 'month': []}
+            for basin in basin_info.keys(): records[basin] = []
+            
+            for year in range(start_year, end_year + 1):
+                records['year'] += [year] * 12
+                records['month'] += list(range(1, 12+1))
+                
+                for month in range(1, 12 + 1):
+                    f = os.path.join(input_directory,
+                                     'GPREC_%d_%d.31.UNF0'%(year, month))
+                    d = WaterGapIO.read_unf(f)
+                    if d.shape[0] == 0: return e
+                    
+                    for basin in basin_info.keys():
+                        cellindex = basin_info[basin]['cellindex']
+                        
+                        data31 = d[cellindex]
+                        weights = basin_info[basin]['area']
+                        
+                        records[basin].append(fun(data31, weights).sum())
+            # end of step
+            
+            # step: apply unit conversion
+            unit_conversion_factor = 10**-6    # mm*km2 to km3
+            
+            for basin in basin_info.keys():
+                d = np.array(records[basin]) * unit_conversion_factor
+                records[basin] = d
+            # end of step
+            
+            
+            # step: create dataframe and save data if necessary       
+            df = pd.DataFrame(records)
+            if filename_out: 
+                df.to_csv(filename_out, index=False)
+                return None
+            # end of step
+            
+            return df
 
 
