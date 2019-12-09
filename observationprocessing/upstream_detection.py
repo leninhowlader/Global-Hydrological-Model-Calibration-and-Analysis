@@ -88,7 +88,7 @@ output_file_area = 'output/ganges_areas_hardinge_bridge.txt'                    
 import os, sys
 sys.path.append('..')
 from utilities.globalgrid import GlobalGrid
-from utilities.fileio import read_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.upstream import Upstream
 
 
@@ -166,7 +166,7 @@ if output_cell_area and area_mapping_datafile: GlobalGrid.__wghm_cell_area_file 
 
 # method of finding stations from the station file
 def find_stations_from_file(station_file):
-    headers, records = read_flat_file(station_file, separator=' ', header=False)
+    headers, records = io.read_flat_file(station_file, separator=' ', header=False)
 
     stations = []
     if records:

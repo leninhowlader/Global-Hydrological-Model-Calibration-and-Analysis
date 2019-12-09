@@ -5,7 +5,7 @@ sys.path.append('..')
 from calibration.variable import ObsVariable, SimVariable, DerivedVariable
 from wgap.watergap import WaterGAP
 from calibration.parameter import Parameter
-from utilities.fileio import read_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.station import Station
 from utilities.upstream import Upstream
 from utilities.globalgrid import GlobalGrid as gg
@@ -260,7 +260,7 @@ class Configuration:
             # check the sample file and load samples
             if not self.sample_file: return False
             elif not self.samples:
-                header, dt = read_flat_file(self.sample_file, separator=',')
+                header, dt = io.read_flat_file(self.sample_file, separator=',')
                 if dt:
                     for d in dt:
                         if len(d) != len(self.parameters): return False

@@ -11,7 +11,7 @@ from netCDF4 import Dataset
 import numpy as np, sys, os
 sys.path.append('..')
 from utilities.globalgrid import GlobalGrid
-from utilities.fileio import write_flat_file
+from utilities.fileio import FileInputOutput as io
 
 from datetime import datetime, timedelta
 
@@ -146,6 +146,6 @@ def main():
     year_month = np.array([find_year_month(base_date, x) for x in time])
     dt = np.concatenate((year_month, sums), axis=1)
 
-    write_flat_file(output_file, dt, data_headers=['year', 'month', 'twsa'])
+    io.write_flat_file(output_file, dt, data_headers=['year', 'month', 'twsa'])
 
 if __name__ == '__main__': main()

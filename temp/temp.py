@@ -1,7 +1,7 @@
 import sys, numpy as np, os, struct
 sys.path.append('..')
-from calibration.predstat import SeasonalStatistics as ps
-from utilities.fileio import read_flat_file
+from calibration.seasonalstats import SeasonalStatistics as ps
+from utilities.fileio import FileInputOutput as io
 from calibration.configuration import Configuration
 
 import csv
@@ -69,7 +69,7 @@ for key in results.keys(): print(key, results[key], sep=': ')
 if True: exit(0)
 
 filename = 'discharge_km3pm.csv'
-h, data = read_flat_file(filename, separator=',', header=False)
+h, data = io.read_flat_file(filename, separator=',', header=False)
 data = np.array(data)
 # dt = data[:,[1,2,3]]
 #

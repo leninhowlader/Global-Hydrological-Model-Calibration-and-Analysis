@@ -1,9 +1,9 @@
 import sys, os, numpy as np
 sys.path.append('..')
 from utilities.globalgrid import GlobalGrid
-from utilities.fileio import write_flat_file, read_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.upstream import Upstream
-from wgap.wgapoutput import WGapOutput
+from wgap.wgapio import WaterGapIO
 from utilities.station import Station
 
 succeed = False
@@ -15,7 +15,7 @@ if succeed:
     for d in dt:
         row  = GlobalGrid.find_row_number(d[-1])
         d.append(GlobalGrid.find_wghm_cellarea(row))
-    succeed = write_flat_file('wghm_grid.csv', dt, data_headers=headers, separator=',')
+    succeed = io.write_flat_file('wghm_grid.csv', dt, data_headers=headers, separator=',')
     print(succeed)
     #66896	66042	147.75	-38.25 'cell_num', 'arc_id', 'longitude', 'latitude'
 
@@ -48,7 +48,7 @@ if succeed:
 succeed = False
 if succeed:
     filename = 'F:/mhasan/private/TestGISGeoDB/salameh_etal_2017_ganges_basin_properties.txt'
-    headers, data = read_flat_file(filename, separator=',', header=True)
+    headers, data = io.read_flat_file(filename, separator=',', header=True)
     # headers = ['FID', 'longitude', 'latitude', 'cell_num', 'cell_area', 'gpcp_cid']
     data = np.array(data)
 
@@ -74,7 +74,7 @@ if succeed:
 succeed = False
 if succeed:
     filename = 'F:/mhasan/experiments/Calibration2.0/temp/observations/ganges_hardinge_bridge_mean_SWS_Papa2017.csv'
-    headers, data = read_flat_file(filename, separator=',', header=True)
+    headers, data = io.read_flat_file(filename, separator=',', header=True)
     mean = 0
     for d in data: mean += d[3]
     mean /= len(data)
@@ -82,14 +82,14 @@ if succeed:
     for d in data: d[3] -= mean
     filename = 'F:/mhasan/experiments/Calibration2.0/temp/observations/ganges_hardinge_bridge_mean_sws_variation_Papa2017.csv'
     headers[3] = 'sws_variation_km3'
-    succeed = write_flat_file(filename, data, data_headers=headers, separator=',')
+    succeed = io.write_flat_file(filename, data, data_headers=headers, separator=',')
     print(succeed)
 
 succeed = False
 if succeed:
     filename = 'F:/mhasan/experiments/Calibration2.0/temp/observations/ganges_hardinge_bridge_discharge_km3pmon.csv'
-    headers, data = read_flat_file(filename, separator=',', header=True)
-    succeed = write_flat_file(filename, data, data_headers=headers, separator=',')
+    headers, data = io.read_flat_file(filename, separator=',', header=True)
+    succeed = io.write_flat_file(filename, data, data_headers=headers, separator=',')
 
 succeed = False
 if succeed:
@@ -109,7 +109,7 @@ if succeed:
     nanpvals = param_dt[ndx]
 
     filename = 'F:/mhasan/experiments/Calibration2.0/output/gan_cal2p0_15/nan_param_values.csv'
-    write_flat_file(filename, np.round(nanpvals.astype('float'),4), separator=',')
+    io.write_flat_file(filename, np.round(nanpvals.astype('float'),4), separator=',')
     # np.savetxt(filename, np.round(nanpvals.astype('float'),4), delimiter=',')
 
     ndx = np.where(np.isnan(fval_dt[:, 1]) == False)
@@ -119,7 +119,7 @@ if succeed:
     nanpvals = param_dt[ndx]
 
     filename = 'F:/mhasan/experiments/Calibration2.0/output/gan_cal2p0_15/non_nan_param_values.csv'
-    write_flat_file(filename, np.round(nanpvals.astype('float'), 4), separator=',')
+    io.write_flat_file(filename, np.round(nanpvals.astype('float'), 4), separator=',')
 
 succeed = False
 if succeed:
@@ -202,7 +202,7 @@ succeed = False
 if succeed:
     # filename = 'F:/mhasan/experiments/WaterGAP_EET_v2p0/output/efficiencies_eet_v2_x.txt'
     filename = 'F:/mhasan/Experiments/SENSITIVITY_DATASET_GB/WaterGAP_EET/output/efficiencies_eet_x.txt'
-    h, data = read_flat_file(filename, separator=',', header=False)
+    h, data = io.read_flat_file(filename, separator=',', header=False)
 
     discharge_gan, discharge_brh = [], []
     for d in data:
@@ -220,22 +220,22 @@ if succeed:
     nan_samples = x[ndx.astype('int32'),:]
 
     filename = 'F:/mhasan/Experiments/SENSITIVITY_DATASET_GB/WaterGAP_EET/output/nan_samples.csv'
-    write_flat_file(filename, nan_samples, separator=',')
+    io.write_flat_file(filename, nan_samples, separator=',')
 
 succeed = False
 if succeed:
     filename = 'F:/mhasan/data/GlobalCDA/wghm_22d_gcid.txt'
-    h,d = read_flat_file(filename, separator=',')
+    h,d = io.read_flat_file(filename, separator=',')
     data = []
     for i in range(len(d[0])):
         row = [d[0][i], d[1][i]]
         data.append(row)
 
     filename = 'F:/mhasan/data/GlobalCDA/wghm_22d_gcid1.txt'
-    succeed = write_flat_file(filename, data, separator=',')
+    succeed = io.write_flat_file(filename, data, separator=',')
 
     filename = 'F:/mhasan/data/GlobalCDA/wghm22d_grid.txt'
-    h, d = read_flat_file(filename, separator=',', header=True)
+    h, d = io.read_flat_file(filename, separator=',', header=True)
     grid22d = np.array(d)
 
     GlobalGrid.read_wghm_grid_lookup_table()
@@ -260,16 +260,16 @@ match_data = []
 succeed = False
 if succeed:
     filename = 'F:/mhasan/Code&Script/ProjectWGHM/utilities/data/GAREA.UNF0'
-    b_area = WGapOutput.read_unf(filename)
+    b_area = WaterGapIO.read_unf(filename)
 
     filename = 'F:/mhasan/Code&Script/wgap22d_home/INPUT/GAREA.UNF0'
-    d_area = WGapOutput.read_unf(filename)
+    d_area = WaterGapIO.read_unf(filename)
 
     filename = 'F:/mhasan/Code&Script/wgap22d_home/INPUT/GCRC.UNF4'
-    d_gcrc = WGapOutput.read_unf(filename)
+    d_gcrc = WaterGapIO.read_unf(filename)
 
     filename = 'F:/mhasan/Code&Script/wgap_home/INPUT/GCRC.UNF4'
-    b_gcrc = WGapOutput.read_unf(filename)
+    b_gcrc = WaterGapIO.read_unf(filename)
 
     diff = []
     for row in match_data:
@@ -317,7 +317,7 @@ if succeed:
             #fname = os.path.join(dir_name, filename + '_%d.UNF0' % (year))
             try:
                 if not os.path.exists(fname): print('%f not exists'%fname)
-                d = WGapOutput.read_unf(fname)
+                d = WaterGapIO.read_unf(fname)
                 if type(d) is np.ndarray:
                     nfile += 1
                     if not d.shape == (67420, ): print('%s' % os.path.split(fname)[-1])
@@ -334,7 +334,7 @@ if succeed:
     for file in onlyfiles:
         fname = os.path.join(dir_name, file)
         try:
-            d = WGapOutput.read_unf(fname)
+            d = WaterGapIO.read_unf(fname)
             if type(d) is np.ndarray:
                 nfile += 1
                 if not d.shape == (67420, 31): print('%s' % os.path.split(fname)[-1])
@@ -350,11 +350,11 @@ if succeed:
 
     files = [f for f in os.listdir(output_directory) if os.path.isfile(os.path.join(output_directory, f))]
     for file in files:
-        d = WGapOutput.read_unf(os.path.join(output_directory, file))
+        d = WaterGapIO.read_unf(os.path.join(output_directory, file))
         print('%s\tNan Count: %d' %(file, sum(np.isnan(d[:, 3]))))
 
     filename = 'GlobalWetlandBRH_km3.15.unf0'
-    d = WGapOutput.read_unf(os.path.join(output_directory, filename))
+    d = WaterGapIO.read_unf(os.path.join(output_directory, filename))
 
     ndx = np.isnan(d[:,3])
     dnan = d[ndx]

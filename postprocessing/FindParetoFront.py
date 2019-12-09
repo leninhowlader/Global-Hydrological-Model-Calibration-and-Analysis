@@ -2,7 +2,7 @@ import sys, os
 sys.path.append('..')
 import numpy as np
 from postprocessing.ParetoFront import ParetoDominance
-from utilities.fileio import write_flat_file
+from utilities.fileio import FileInputOutput as io
 
 
 result_directory = 'F:/mhasan/experiments/Calibration3.0/output/new output gan 11'
@@ -31,11 +31,11 @@ for i in range(1, 16):
     ndx = np.where(p[:,0]==ids)[1]
     results = np.concatenate((ids, pareto_front, p[ndx]), axis=1)
     filename = os.path.join(result_directory, 'pareto_front', 'PF_Ebox_%s.csv'%calid)
-    write_flat_file(filename, results, separator=',', append=False)
+    io.write_flat_file(filename, results, separator=',', append=False)
 
     funname = 'pareto dominance'
     pareto_front, ndces = ParetoDominance.ParetoFront(fx, epsilons=epsilon, funname=funname)
     ids = d[ndces,0:1]
     results = np.append(ids, pareto_front, axis=1)
     filename = os.path.join(result_directory, 'pareto_front', 'PF_%s.csv' % calid)
-    write_flat_file(filename, results, separator=',', append=False)
+    io.write_flat_file(filename, results, separator=',', append=False)

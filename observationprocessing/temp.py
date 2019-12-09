@@ -4,7 +4,6 @@ sys.path.append('..')
 from utilities.station import Station
 from utilities.globalgrid import GlobalGrid
 from utilities.upstream import Upstream
-from utilities.fileio import write_flat_file
 
 
 

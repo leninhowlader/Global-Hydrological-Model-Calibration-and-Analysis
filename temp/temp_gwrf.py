@@ -4,7 +4,7 @@ sys.path.append('..')
 from utilities.globalgrid import GlobalGrid
 GlobalGrid.set_model_version('wghm22d')
 from utilities.upstream import Upstream
-from wgap.wgapoutput import WGapOutput
+from wgap.wgapio import WaterGapIO
 
 
 upstream_filename = 'F:/mhasan/experiments/GlobalCDA/SA_mississippi/replication_one/input/mississippi_subbasin_1234a4b45_upstream.txt'
@@ -55,7 +55,7 @@ basin_names = ['Hermann', 'Alton', 'Metropolis', 'Little Rock', 'Vicksburg', 'Li
 
 
 
-# arid_humid = WGapOutput.read_unf('INPUT/G_ARID_HUMID.UNF2')
+# arid_humid = WaterGapIO.read_unf('INPUT/G_ARID_HUMID.UNF2')
 # basin = np.array(basins[-1])
 # filename = 'F:/mhasan/data/GlobalCDA/input_data/arid_humid.shp'
 # succeed = Upstream.create_shape_with_data(filename, basin_id=5, data=arid_humid[basin-1], wghm_cnum_list=basin)
@@ -71,7 +71,7 @@ basin_names = ['Hermann', 'Alton', 'Metropolis', 'Little Rock', 'Vicksburg', 'Li
 
 
 filename = 'F:/mhasan/Code&Script/wgap22d_home/INPUT/G_LANDCOVER.UNF1'
-land_cover = WGapOutput.read_unf(filename)
+land_cover = WaterGapIO.read_unf(filename)
 
 # for basin_id in [1,2,3,4,5,7]:
 #     basin = np.array(basins[basin_id-1])
@@ -97,7 +97,7 @@ land_cover = WGapOutput.read_unf(filename)
 # d, c = np.histogram(land_cover[basin-1])
 
 filename = 'F:/mhasan/Code&Script/wgap22d_home/INPUT/G_TAWC.UNF0'
-tawc = WGapOutput.read_unf(filename)
+tawc = WaterGapIO.read_unf(filename)
 
 basin = np.array(basins[-1])
 tawc_mis = tawc[basin-1]

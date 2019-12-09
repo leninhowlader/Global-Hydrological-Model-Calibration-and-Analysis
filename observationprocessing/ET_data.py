@@ -12,7 +12,7 @@ sys.path.append('..')
 from utilities.upstream import Upstream
 from utilities.station import Station
 from utilities.globalgrid import GlobalGrid
-from utilities.fileio import write_flat_file
+from utilities.fileio import FileInputOutput as io
 
 def ncdump(nc_fid, verb=True):
     '''
@@ -198,6 +198,6 @@ def main():
                 year = time[j] // 100
                 month = time[j] % 100
                 data.append([basin_id, year, month, month_sum[j]])
-            write_flat_file(output_filename, data, separator=',', append=True)
+            io.write_flat_file(output_filename, data, separator=',', append=True)
 
 if __name__ == '__main__': main()

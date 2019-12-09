@@ -827,10 +827,10 @@ class Upstream:
         if not wghm_upstreams_cnum: return False
 
         # step: read wghm predictions
-        from wgap.wgapoutput import WGapOutput
+        from wgap.wgapio import WaterGapIO
         import numpy as np
 
-        d = WGapOutput.read_unf(filename_wghm_prediction, file_endian=prediction_file_endian)
+        d = WaterGapIO.read_unf(filename_wghm_prediction, file_endian=prediction_file_endian)
         if type(d) is not np.ndarray: return False
 
         data = []

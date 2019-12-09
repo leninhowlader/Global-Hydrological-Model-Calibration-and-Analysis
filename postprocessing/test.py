@@ -2,8 +2,6 @@ import sys
 sys.path.append('..')
 import numpy as np
 from postprocessing.ParetoFront import ParetoDominance
-from utilities.fileio import write_flat_file
-
 
 
 

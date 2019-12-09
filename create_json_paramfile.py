@@ -8,7 +8,7 @@ Created on Fri Jan 18 21:10:30 2019
 from calibration.configuration import Configuration
 import numpy as np, pandas as pd, os
 from wgap.watergap import WaterGAP
-from wgap.wgapoutput import WGapOutput
+from wgap.wgapio import WaterGapIO
 from utilities.globalgrid import GlobalGrid
 
 
@@ -72,7 +72,7 @@ et_gan = None
 for year in range(start_year, end_year+1, 1):
     filename = os.path.join(output_directory, 'G_CELL_AET_%d.12.UNF0'%year)
     
-    d = WGapOutput.read_unf(filename)
+    d = WaterGapIO.read_unf(filename)
     d_gan = d[wcell_gan-1]
     
     et = d_gan * area_gan / 10**6
@@ -89,7 +89,7 @@ q_gan = None
 for year in range(start_year, end_year+1, 1):
     filename = os.path.join(output_directory, 'G_RIVER_AVAIL_%d.12.UNF0'%year)
     
-    d = WGapOutput.read_unf(filename)
+    d = WaterGapIO.read_unf(filename)
     d_gan = d[discharge_cell-1]
     
 #    q = d_gan * area_gan / 10**6
@@ -106,7 +106,7 @@ dtws_gan = None
 for year in range(start_year, end_year+1, 1):
     filename = os.path.join(output_directory, 'G_TOTAL_STORAGES_km3_%d.12.UNF0'%year)
     
-    d = WGapOutput.read_unf(filename)
+    d = WaterGapIO.read_unf(filename)
     d_gan = d[wcell_gan-1]
     
     dtws = d_gan.sum(axis=0)
@@ -132,7 +132,7 @@ et_brh = None
 for year in range(start_year, end_year+1, 1):
     filename = os.path.join(output_directory, 'G_CELL_AET_%d.12.UNF0'%year)
     
-    d = WGapOutput.read_unf(filename)
+    d = WaterGapIO.read_unf(filename)
     d_gan = d[wcell_brh-1]
     
     et = d_gan * area_brh / 10**6
@@ -149,7 +149,7 @@ q_brh = None
 for year in range(start_year, end_year+1, 1):
     filename = os.path.join(output_directory, 'G_RIVER_AVAIL_%d.12.UNF0'%year)
     
-    d = WGapOutput.read_unf(filename)
+    d = WaterGapIO.read_unf(filename)
     d_brh = d[discharge_cell-1]
     
     q = d_brh * area_brh / 10**6
@@ -167,7 +167,7 @@ dtws_brh = None
 for year in range(start_year, end_year+1, 1):
     filename = os.path.join(output_directory, 'G_TOTAL_STORAGES_km3_%d.12.UNF0'%year)
     
-    d = WGapOutput.read_unf(filename)
+    d = WaterGapIO.read_unf(filename)
     d_brh = d[wcell_brh-1]
     
     dtws = d_brh.sum(axis=0)

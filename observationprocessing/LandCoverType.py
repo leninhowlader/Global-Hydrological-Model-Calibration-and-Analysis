@@ -1,12 +1,12 @@
 
 import sys
 sys.path.append('..')
-from utilities.fileio import read_flat_file, write_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid
 
 filename = '/media/sf_mhasan/private/month_data/ET_STD_WGAP_OUTPUT/Landcover/LCT_Brahmaputra.csv'
 
-headers, data = read_flat_file(filename, separator=',', header=True)
+headers, data = io.read_flat_file(filename, separator=',', header=True)
 
 land_cover_types = []
 cell_groups = []
@@ -40,4 +40,4 @@ GlobalGrid.write_cell_info(output_filename, cell_groups, mode='w')
 output_filename = 'LCT_areas_' + filename
 GlobalGrid.write_cell_info(output_filename, group_areas, mode='w')
 output_filename = 'LC_Types_' + filename
-write_flat_file(output_filename, [land_cover_types], separator=',')
+io.write_flat_file(output_filename, [land_cover_types], separator=',')

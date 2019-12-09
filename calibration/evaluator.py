@@ -6,9 +6,9 @@ import os, sys
 # sys.path.append('..')
 from calibration.configuration import Configuration
 # from calibration.variable import SimVariable, ObsVariable, DerivedVariable
-from calibration.predstat import SeasonalStatistics
+from calibration.seasonalstats import SeasonalStatistics
 from wgap.watergap import WaterGAP
-from utilities.fileio import *
+from utilities.fileio import FileInputOutput as io
 # from mpi4py import MPI
 from copy import deepcopy
 from collections import OrderedDict
@@ -17,7 +17,7 @@ def read_iter_number():
     iter_no = 0
     lockname = '_ITER.LOCK'
     fd = open(lockname, 'w')
-    if acquire_lock(fd):
+    if io.acquire_lock(fd):
 
         f = None
         try:
@@ -37,7 +37,7 @@ def read_iter_number():
             try: f.close()
             except: pass
 
-        release_lock(fd)
+        io.release_lock(fd)
     else: iter_no = -9999
 
     return iter_no

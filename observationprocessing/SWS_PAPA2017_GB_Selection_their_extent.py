@@ -1,6 +1,6 @@
 import sys, numpy as np
 sys.path.append('..')
-from utilities.fileio import read_flat_file, write_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.station import Station
 from utilities.globalgrid import GlobalGrid
 from utilities.upstream import Upstream
@@ -23,7 +23,7 @@ def read_area_fraction_dataset():
 
     data_area_frc = {}
 
-    header, data = read_flat_file(filename_grid_intersect, separator=',', header=True)
+    header, data = io.read_flat_file(filename_grid_intersect, separator=',', header=True)
 
     ndx_wcn, ndx_ecn, ndx_af = 3, 6, 10  # ndx_wcn = index for wghm cell num;
                                         # ndx_ecn = index for EAG cell num,
@@ -60,7 +60,7 @@ def read_SWS_data():
     global filename_data, data_sws
 
     data_sws = {}
-    h, data = read_flat_file(filename_data, separator=' ')
+    h, data = io.read_flat_file(filename_data, separator=' ')
 
     for d in data: data_sws[d[0]] = d[5:]
 
@@ -83,9 +83,9 @@ def save_basin_total(basin_id, basin_totals):
             year += 1
             month = 1
     if flag_header:
-        succeed = write_flat_file(filename_output, data, data_headers=headers, separator=',', append=True)
+        succeed = io.write_flat_file(filename_output, data, data_headers=headers, separator=',', append=True)
         flag_header = False
-    else: succeed = write_flat_file(filename_output, data, separator=',', append=True)
+    else: succeed = io.write_flat_file(filename_output, data, separator=',', append=True)
 
     return succeed
 

@@ -3,7 +3,6 @@ sys.path.append('..')
 
 import numpy as np
 from postprocessing.ParetoFront import ParetoDominance
-from utilities.fileio import write_flat_file
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm

@@ -1,6 +1,6 @@
 import os, math, sys
 sys.path.append('..')
-from utilities.fileio import read_flat_file, write_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid
 
 
@@ -30,7 +30,7 @@ def read_data(data_directory):
         except: break
 
         filename = os.path.join(data_directory, filename)
-        h, d = read_flat_file(filename, separator=' ', header=False, skiplines=0)
+        h, d = io.read_flat_file(filename, separator=' ', header=False, skiplines=0)
         for i in reversed(range(len(d))):
             if math.isnan(d[i][2]): d.pop(i)
             # else: d[i] = [year, month] + d[i]
@@ -50,7 +50,7 @@ def read_upstream_file(filename): return GlobalGrid.read_cell_info(filename)
 def read_upstream_area(filename): return GlobalGrid.read_cell_info(filename, data_type=float)
 
 def read_basin_extent(filename):
-    h, d = read_flat_file(filename, separator=',', header=True)
+    h, d = io.read_flat_file(filename, separator=',', header=True)
 
     if d:
         for i in range(len(d)): d[i] = (d[i][1], d[i][0])
@@ -106,7 +106,7 @@ def main():
             print('Basin extent (Papa et al. 2015) could not be generated. [Data Error]')
             exit(-203)
         else:
-            write_flat_file(basin_extent_filename, papa_etal_extent)
+            io.write_flat_file(basin_extent_filename, papa_etal_extent)
 
     print('[done]')
 
@@ -228,7 +228,7 @@ def main():
     # writing datafile
     print('Printing data into output file..'.ljust(50, ' '), end='', flush=True)
     data_out.sort()
-    write_flat_file(output_datafile, data_out, data_headers=headers_out, separator=',')
+    io.write_flat_file(output_datafile, data_out, data_headers=headers_out, separator=',')
 
     # writing sub-basin cells
     if output_subbasin_filename:

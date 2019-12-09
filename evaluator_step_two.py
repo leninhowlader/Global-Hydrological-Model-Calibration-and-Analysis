@@ -52,9 +52,9 @@ flag_compute_anomaly = True
 # import required modules and classes
 import os, numpy as np
 from calibration.configuration import Configuration
-from wgap.wgapoutput import WGapOutput
+from wgap.wgapio import WaterGapIO
 from wgap.watergap import WaterGAP
-from utilities.fileio import write_flat_file
+from utilities.fileio import FileInputOutput as io
 from datetime import datetime
 
 
@@ -146,7 +146,7 @@ def main():
         filename = os.path.join(data_directory, filename)
 
         # step: read binary data from the data-file
-        data = WGapOutput.read_unf(filename, file_endian=file_endian)
+        data = WaterGapIO.read_unf(filename, file_endian=file_endian)
         if not type(data) is np.ndarray: return False
 
         # step: check if the number of basins (or cells) is consistent with variable properties
@@ -200,7 +200,7 @@ def main():
         if flag_compute_anomaly: filename = os.path.join(output_directory, 'anomaly_%s_rmsd.csv' % var.varname.lower())
         else: filename = os.path.join(output_directory, '%s_rmsd.csv' % var.varname.lower())
         # np.savetxt(filename, results_rmsd, delimiter=',')
-        succeed = write_flat_file(filename, results_rmsd, separator=',')
+        succeed = io.write_flat_file(filename, results_rmsd, separator=',')
     return True
 
 if __name__ == '__main__': main()

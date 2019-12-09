@@ -14,7 +14,8 @@ class SeasonalStatistics(stats):
         Author: H.M. Mehedi Hasan
         Date: April 2017
 
-        Description: This class is primarily designed for calculating seasonal statistics.
+        Description: This class is primarily designed for calculating seasonal 
+        statistics.
         """
         print(text_lines)
 

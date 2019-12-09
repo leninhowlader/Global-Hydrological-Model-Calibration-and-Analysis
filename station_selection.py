@@ -36,7 +36,7 @@ output_file = 'STATIONS.DAT'                                    # output filenam
 
 # IMPORT STATEMENTS
 import os, sys
-from utilities.fileio import read_flat_file, write_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid
 from utilities.station import Station
 
@@ -50,7 +50,7 @@ def read_stations(station_file=''):
     if not station_file: station_file = station_datafile
     if stations: stations.clear()
 
-    headers, temp_data = read_flat_file(station_file, separator='')
+    headers, temp_data = io.read_flat_file(station_file, separator='')
     if temp_data:
         for i in reversed(range(len(temp_data))):
             if len(temp_data[i]) < 3 or not (-180<=temp_data[i][1]<=180) or not (-90<=temp_data[i][2]<=90):

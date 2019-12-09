@@ -1,6 +1,6 @@
 import sys, numpy as np
 sys.path.append('..')
-from utilities.fileio import read_flat_file
+from utilities.fileio import FileInputOutput as io
 
 
 class BorgOutput:
@@ -8,7 +8,7 @@ class BorgOutput:
     def read_borg_output(filename, separator=' '):
         result_set = []
 
-        h, result_set = read_flat_file(filename, separator=separator, header=False)
+        h, result_set = io.read_flat_file(filename, separator=separator, header=False)
 
         return result_set
 

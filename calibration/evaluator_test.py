@@ -5,7 +5,7 @@ import os, sys
 sys.path.append('..')
 from calibration.configuration import Configuration
 from wgap.watergap import WaterGAP
-from utilities.fileio import *
+from utilities.fileio import FileInputOutput as io
 from copy import deepcopy
 from datetime import datetime
 
@@ -14,7 +14,7 @@ def read_iter_number():
     iter_no = 0
     lockname = '_ITER.LOCK'
     fd = open(lockname, 'w')
-    if acquire_lock(fd):
+    if io.acquire_lock(fd):
 
         f = None
         try:
@@ -34,7 +34,7 @@ def read_iter_number():
             try: f.close()
             except: pass
 
-        release_lock(fd)
+        io.release_lock(fd)
     else: iter_no = -9999
 
     return iter_no
@@ -44,7 +44,7 @@ def increment_done_count():
 
     lockname = '_DONE.LOCK'
     fd = open(lockname, 'w')
-    if acquire_lock(fd):
+    if io.acquire_lock(fd):
         done_count = 0
         f = None
         try:
@@ -64,7 +64,7 @@ def increment_done_count():
             finally:
                 try: f.close()
                 except: pass
-        release_lock(fd)
+        io.release_lock(fd)
     else: succeed = False
 
     return succeed
@@ -73,7 +73,7 @@ def read_done_count():
     done_count = 0
     lockname = '_DONE.LOCK'
     fd = open(lockname, 'w')
-    if acquire_lock(fd):
+    if io.acquire_lock(fd):
         f = None
         try:
             f = open('_DONE.COUNT', 'r')
@@ -83,7 +83,7 @@ def read_done_count():
         finally:
             try: f.close()
             except: pass
-        release_lock(fd)
+        io.release_lock(fd)
     else: done_count = -9999
 
     return done_count
@@ -135,19 +135,19 @@ def process_parameter_sample(config, iter_no=0, execute_model=False):
         lines = []
         for key in pred_stat.keys():
             for v in pred_stat[key]: lines.append(separator.join(map(str, [iter_no, key] + v)))
-        if lines: print_on_file(lines, config.prediction_summary_filename, '_STAT_OS.LOCK', sleep_time=0.3)
+        if lines: io.print_on_file(lines, config.prediction_summary_filename, '_STAT_OS.LOCK', sleep_time=0.3)
 
         lines = []
         for key in month_stat.keys():
             var_stat = month_stat[key]
             for vk in var_stat.keys(): lines.append(separator.join(map(str, [iter_no, key, separator.join(map(str, vk))] + var_stat[vk])))
-        if lines: print_on_file(lines, config.monthly_prediction_summary_filename, '_STAT_MS.LOCK', sleep_time=0.5)
+        if lines: io.print_on_file(lines, config.monthly_prediction_summary_filename, '_STAT_MS.LOCK', sleep_time=0.5)
 
         lines = []
         for key in year_stat.keys():
             var_stat = year_stat[key]
             for vk in var_stat.keys(): lines.append(separator.join(map(str, [iter_no, key, separator.join(map(str, vk))] + var_stat[vk])))
-        if lines: print_on_file(lines, config.yearly_prediction_summary_filename, '_STAT_YS.LOCK', sleep_time=0.5)
+        if lines: io.print_on_file(lines, config.yearly_prediction_summary_filename, '_STAT_YS.LOCK', sleep_time=0.5)
 
     # calculate efficiencies
     for var in sim_vars: var.compute_anomalies()
@@ -173,7 +173,7 @@ def process_parameter_sample(config, iter_no=0, execute_model=False):
         lines.append(separator.join(map(str, [iter_no, key, efficiencies[key]])))
         print(separator.join(map(str, [iter_no, key, efficiencies[key]])))
     if lines:
-        print_on_file(lines, config.prediction_efficiency_filename, '__PREDEFF.LOCK', sleep_time=0.1)
+        io.print_on_file(lines, config.prediction_efficiency_filename, '__PREDEFF.LOCK', sleep_time=0.1)
 
 
     # remove files
@@ -186,14 +186,14 @@ def main(argv):
     a = datetime.now()
     print(a)
     if len(argv) != 2:
-        print_on_screen('Usages:\n%s <configuration config_filename>' %os.path.split(argv[0])[-1])
+        io.print_on_screen('Usages:\n%s <configuration config_filename>' %os.path.split(argv[0])[-1])
         exit(os.EX_NOINPUT)
 
     # read configuration file
     filename = argv[1]
     config = Configuration.read_configuration_file(filename)
     if not (config.is_okay() and WaterGAP.is_okay()):
-        print_on_screen('(Error) Configuration file could not be read successfully. Check %s.' % filename)
+        io.print_on_screen('(Error) Configuration file could not be read successfully. Check %s.' % filename)
         exit(os.EX_DATAERR)
 
     # print(config.prediction_efficiency_filename)
@@ -216,12 +216,12 @@ def main(argv):
     succeed = process_parameter_sample(config, execute_model=False, iter_no=5)
 
     if succeed:
-        print_on_screen('The process has been successfully completed.')
+        io.print_on_screen('The process has been successfully completed.')
         b = datetime.now()
         print(b)
         print((b-a).seconds)
         exit(os.EX_OK)
-    else: print_on_screen('The evaluation was not successful!!')
+    else: io.print_on_screen('The evaluation was not successful!!')
     exit(os.EX_CONFIG)
 
 main(sys.argv)

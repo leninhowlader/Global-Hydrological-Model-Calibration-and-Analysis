@@ -5,9 +5,9 @@ __author__ = 'mhasan'
 import os, sys
 sys.path.append('..')
 from calibration.configuration import Configuration
-from calibration.predstat import SeasonalStatistics
+from calibration.seasonalstats import SeasonalStatistics
 from wgap.watergap import WaterGAP
-from utilities.fileio import *
+from utilities.fileio import FileInputOutput as io
 # from mpi4py import MPI
 from copy import deepcopy
 from collections import OrderedDict
@@ -16,7 +16,7 @@ def read_iter_number():
     iter_no = 0
     lockname = '_ITER.LOCK'
     fd = open(lockname, 'w')
-    if acquire_lock(fd):
+    if io.acquire_lock(fd):
 
         f = None
         try:
@@ -36,7 +36,7 @@ def read_iter_number():
             try: f.close()
             except: pass
 
-        release_lock(fd)
+        io.release_lock(fd)
     else: iter_no = -9999
 
     return iter_no
@@ -102,7 +102,7 @@ def process_parameter_sample(config, iter_no):
                 data += [None] * 6 * 12     # 6 statistics of 12 monthly behaviors
             lines.append(separator.join(str(x) for x in data))
 
-        if lines: print_on_file(lines, filename, '_STAT_SUMMARY.LOCK', sleep_time=0.2)
+        if lines: io.print_on_file(lines, filename, '_STAT_SUMMARY.LOCK', sleep_time=0.2)
 
         # --------------------- old code ------------------------
         # funs = ['mean', 'std', 'min', 'max', 'q1', 'median', 'q3']
@@ -138,7 +138,7 @@ def process_parameter_sample(config, iter_no):
             results += [iter_no, var.varname, var.counter_variable] + [None] * 12   # 12 statistics (i.e. error or efficiency)
     lines = []
     for d in results: lines.append(separator.join(map(str, d)))
-    if lines: print_on_file(lines, config.prediction_efficiency_filename, '__PREDEFF.LOCK', sleep_time=0.1)
+    if lines: io.print_on_file(lines, config.prediction_efficiency_filename, '__PREDEFF.LOCK', sleep_time=0.1)
     # ------ end of step-x.x --------
 
     # remove files
@@ -161,14 +161,14 @@ def main(argv):
     # check program arguments
     # this program needs one argument as the address of configuration file
     if len(argv) != 2:
-        if iter_no == 0: print_on_screen('Usages:\n%s <configuration config_filename>' %os.path.split(argv[0])[-1])
+        if iter_no == 0: io.print_on_screen('Usages:\n%s <configuration config_filename>' %os.path.split(argv[0])[-1])
         exit(os.EX_NOINPUT)
 
     # read the configuration file and check if required information is provided into the file
     filename = argv[1]
     config = Configuration.read_configuration_file(filename)
     if not (config.is_okay() and WaterGAP.is_okay()):
-        if iter_no == 0: print_on_screen('Error!! Configuration file could not be read successfully. Check configuration file: %s.' % filename)
+        if iter_no == 0: io.print_on_screen('Error!! Configuration file could not be read successfully. Check configuration file: %s.' % filename)
         exit(os.EX_DATAERR)
 
     # step-x.x: calculate (seasonal) summary statistics from the observables
@@ -190,7 +190,7 @@ def main(argv):
                    'nov_mean', 'nov_median', 'nov_std', 'nov_min', 'nov_max', 'nov_range', 'dec_mean', 'dec_median', 'dec_std', 'dec_min', 'dec_max', 'dec_range']
 
         lines = [','.join(headers)]
-        print_on_file(lines, filename, '_STAT_SUMMARY.LOCK', sleep_time=0.2)
+        io.print_on_file(lines, filename, '_STAT_SUMMARY.LOCK', sleep_time=0.2)
 
         lines = []
         for var in config.obs_variables:
@@ -205,18 +205,18 @@ def main(argv):
                 for key in result.keys(): data += list(result[key])
             lines.append(','.join(str(x) for x in data))
 
-        if lines: print_on_file(lines, filename, '_STAT_SUMMARY.LOCK', sleep_time=0.2)
+        if lines: io.print_on_file(lines, filename, '_STAT_SUMMARY.LOCK', sleep_time=0.2)
     # end of step-x.x
 
 
     # continue iterating following steps until the last sample is being processed
-    if iter_no == 0: print_on_screen('Sample processing [begin]')
+    if iter_no == 0: io.print_on_screen('Sample processing [begin]')
 
     iter_limit = len(config.samples)
 
     while iter_no < iter_limit:
         # process current sample
-        print_on_screen('\tProcessing of sample no. %d has been started.' % iter_no)
+        io.print_on_screen('\tProcessing of sample no. %d has been started.' % iter_no)
         temp_bool = process_parameter_sample(config, iter_no)
 
         # break the sample processing if iter no is more than the sample size
@@ -228,8 +228,8 @@ def main(argv):
             if iter_no >= 0: break
 
     if iter_no == iter_limit:
-        print_on_screen('Sample processing [end]')
-        print_on_screen('The process has been successfully completed.')
+        io.print_on_screen('Sample processing [end]')
+        io.print_on_screen('The process has been successfully completed.')
     exit(os.EX_OK)
 
 if __name__ == '__main__': main(sys.argv)

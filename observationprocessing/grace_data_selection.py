@@ -134,7 +134,7 @@ import sys, tarfile, os
 sys.path.extend('..')
 from utilities.globalgrid import GlobalGrid
 from datetime import datetime
-from utilities.fileio import write_flat_file, read_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.upstream import Upstream
 from utilities.station import Station
 
@@ -274,7 +274,7 @@ def read_grace_unzipped_file(filename, start_year=2003, end_year=2016, skip_line
 def read_correction_factors(correction_datafile, target_cells=[]):
     correction_factors = {}
 
-    headers, temp = read_flat_file(correction_datafile, separator='', skiplines=6)
+    headers, temp = io.read_flat_file(correction_datafile, separator='', skiplines=6)
     if temp:
         for i in reversed(range(len(temp))):
             if len(temp[i]) != 3 or temp[i][2] == 32767.0:
@@ -654,7 +654,7 @@ def main():
 
             if data and headers:
                 # write data into files
-                if write_flat_file(output_file, data, headers, separator=','):
+                if io.write_flat_file(output_file, data, headers, separator=','):
                     print('[success]')
                 else:
                     message = '[Error]\n\t\tdata could not be saved. Check weather the output config_filename is correct.'

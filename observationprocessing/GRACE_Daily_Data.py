@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append('..')
 from utilities.globalgrid import GlobalGrid
-from utilities.fileio import read_flat_file, write_flat_file
+from utilities.fileio import FileInputOutput as io
 from datetime import datetime
 
 
@@ -32,12 +32,12 @@ def main():
             succeed = False
             f = os.path.join(sd, str(f))
             date = datetime.strptime(f[-14:-4], '%Y-%m-%d').date()
-            headers, data = read_flat_file(f, separator=' ', header=False, skiplines=10)
+            headers, data = io.read_flat_file(f, separator=' ', header=False, skiplines=10)
             for d in data: d.append(date)
             if data: succeed = True
 
             filename = os.path.join(directory, output_filename + '_' + str(date.year) + '.csv')
-            succeed = write_flat_file(filename, data, separator=',', append=True)
+            succeed = io.write_flat_file(filename, data, separator=',', append=True)
             if succeed: print('[done]')
             else: print('[failed]')
     print(dlist)

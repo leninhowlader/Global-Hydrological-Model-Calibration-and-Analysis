@@ -45,12 +45,12 @@ output_file = 'brahmaputra_discharge.txt'                # output config_filenam
 import os, sys
 sys.path.append('..')
 from datetime import datetime
-from utilities.fileio import read_flat_file, write_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid
 
 # method of finding stations along with their coordinates
 def find_stations_from_file(station_file):
-    headers, records = read_flat_file(station_file, separator=' ', header=False)
+    headers, records = io.read_flat_file(station_file, separator=' ', header=False)
 
     stations = {}       # structure: {station_id: (latitude, longitude), station_2: (latitude, longitude), ..}
     if records:
@@ -116,7 +116,7 @@ def main():
                 data = []
                 for filename in file_list:
                     filename = os.path.join(grdc_data_directory, filename)
-                    headers, temp_data = read_flat_file(filename, separator='')
+                    headers, temp_data = io.read_flat_file(filename, separator='')
                     if temp_data: data += temp_data
 
                 if not data:
@@ -141,7 +141,7 @@ def main():
             exit(os.EX_DATAERR)
         else:
             headers = ['station', 'wcnum', 'year', 'month', 'discharge']
-            if write_flat_file(output_file, station_data, headers, separator=' '):
+            if io.write_flat_file(output_file, station_data, headers, separator=' '):
                 message = '%d data was successfully stored in %s'%(len(station_data), output_file)
                 print(message)
             else:

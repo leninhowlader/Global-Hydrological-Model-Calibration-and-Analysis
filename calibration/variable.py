@@ -3,11 +3,11 @@ __author__ = 'mhasan'
 import sys, numpy as np, os
 sys.path.append('..')
 from utilities.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
-from utilities.fileio import read_flat_file, write_flat_file, acquire_lock, release_lock
+from utilities.fileio import FileInputOutput as io
 from calibration.stats import stats
 from calendar import isleap
 from collections import OrderedDict
-from wgap.wgapoutput import WGapOutput
+from wgap.wgapio import WaterGapIO
 
 class DataSource:
     def __init__(self):
@@ -276,7 +276,7 @@ class DataCloud:
         d = []
         for i in range(self.data_length()):
             d.append(self.data_indices[i]+[self.data[i]])
-        if d: succeed = write_flat_file(filename, d, separator=separator, append=append)
+        if d: succeed = io.write_flat_file(filename, d, separator=separator, append=append)
         return succeed
 
 class Variable:
@@ -400,7 +400,7 @@ class ObsVariable(Variable):
                     dt = []
                     if ds.data_column_num > 0 or ds.data_column_name:
                         if ds.file_type == FileType.flat:
-                            headers, dt = read_flat_file(ds.filename, ds.separator, ds.header, ds.skip_lines)
+                            headers, dt = io.read_flat_file(ds.filename, ds.separator, ds.header, ds.skip_lines)
                             column_nums = []
                             column_names = []
                             if ds.data_column_num > 0:
@@ -645,7 +645,7 @@ class SimVariable(Variable):
                             ndx = file_name.lower().find('[year]')
                             if ndx > 0:
                                 file_name = file_name[:ndx] + str(year) + file_name[ndx + 6:]
-                                year_dt = WGapOutput.read_unf(file_name, file_endian=ds.file_endian)
+                                year_dt = WaterGapIO.read_unf(file_name, file_endian=ds.file_endian)
 
                                 if year_dt:
                                     for var in sim_vars:
@@ -659,7 +659,7 @@ class SimVariable(Variable):
                                                         weights = []
                                                         if var.cell_weights: weights = var.cell_weights[j]
 
-                                                        summary = WGapOutput.summarize(year_dt, basin=basin, weights=weights)
+                                                        summary = WaterGapIO.summarize(year_dt, basin=basin, weights=weights)
 
                                                         group_ndx = j + 1
                                                         data_indices = var.data_cloud.data_indices
@@ -688,7 +688,7 @@ class SimVariable(Variable):
                                                             var.data_cloud.data_indices.append([group_ndx, year])
                                                 else:  # no basin info available
                                                     data_indices = var.data_cloud.data_indices
-                                                    summary = WGapOutput.summarize(year_dt)
+                                                    summary = WaterGapIO.summarize(year_dt)
                                                     if len(summary) == 365:  # daily data
                                                         # add indices
                                                         for day in range(1, 60): data_indices.append([year, day])
@@ -775,7 +775,7 @@ class SimVariable(Variable):
                         file_name = filename[:ndx] + str(year) + filename[ndx + 6:]
                         if prediction_directory: file_name = os.path.join(prediction_directory, file_name)
 
-                        data = WGapOutput.read_unf(file_name, file_endian=file_endian)
+                        data = WaterGapIO.read_unf(file_name, file_endian=file_endian)
 
                         if not type(data) is np.ndarray: return False
 
@@ -921,7 +921,7 @@ class SimVariable(Variable):
                 file_name = prediction_filename[:ndx] + str(year) + prediction_filename[ndx + 6:]
                 if prediction_directory: file_name = os.path.join(prediction_directory, file_name)
 
-                pred = WGapOutput.read_unf(file_name, file_endian=self.data_source.file_endian)
+                pred = WaterGapIO.read_unf(file_name, file_endian=self.data_source.file_endian)
                 if not type(pred) is np.ndarray or len(pred) == 0: return False
 
                 if self.group_stats and not self.basin_outlets_only:
@@ -1033,7 +1033,7 @@ class SimVariable(Variable):
         if lock_name:
             fd = open(lock_name, 'w')
             sleep_time = round(np.random.uniform(0.1, 0.3), 3)
-            if acquire_lock(fd, sleep_time=sleep_time):
+            if io.acquire_lock(fd, sleep_time=sleep_time):
                 try:
                     f = open(filename, 'ab')
                     f.write(data_bytes)
@@ -1041,7 +1041,7 @@ class SimVariable(Variable):
                 finally:
                     try: f.close()
                     except: pass
-                    release_lock(fd)
+                    io.release_lock(fd)
             fd.close()
         else:
             try:

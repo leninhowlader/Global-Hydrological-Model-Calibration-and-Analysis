@@ -1,6 +1,6 @@
 import sys, shapefile as shp
 sys.path.append('..')
-from utilities.fileio import read_flat_file
+from utilities.fileio import FileInputOutput as io
 
 grid_data_filename = '/media/sf_mhasan/private/month_data/equal_area_grid/cell_lat_lon_width'
 grid_data = None
@@ -14,7 +14,7 @@ def read_grid_info(filename=''):
         filename = grid_data_filename
 
     if filename:
-        headers, data = read_flat_file(filename, separator=' ')
+        headers, data = io.read_flat_file(filename, separator=' ')
         if data:
             grid_data = data
         else: succeed = False

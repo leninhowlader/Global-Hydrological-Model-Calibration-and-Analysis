@@ -20,7 +20,7 @@ end_year = 2005
 import sys, numpy as np, os, shapefile as shp
 sys.path.append('..')
 from utilities.upstream import Upstream
-from wgap.wgapoutput import WGapOutput
+from wgap.wgapio import WaterGapIO
 from utilities.globalgrid import GlobalGrid
 from copy import deepcopy
 from utilities.station import Station
@@ -165,7 +165,7 @@ def main():
         for year in range(start_year, end_year+1):
             # read WaterGAP prediction for outflow
             filename = os.path.join(home_directory, output_directory, prediction_filename.replace('[YEAR]', str(year)))
-            data = WGapOutput.read_unf(filename, file_endian=file_endian)
+            data = WaterGapIO.read_unf(filename, file_endian=file_endian)
 
             if data and len(data) == len(wgmap_RowColumn):
 

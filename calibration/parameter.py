@@ -2,7 +2,7 @@ __author__ = 'mhasan'
 
 import sys
 sys.path.append('..')
-from utilities.fileio import read_flat_file
+from utilities.fileio import FileInputOutput as io
 
 class Parameter:
     def __init__(self, pname='', lbound=None, ubound=None):
@@ -50,7 +50,7 @@ class Parameter:
     def read_parameter_list(filename, separator=',', header=False, skip_lines=0):
         param_list = []
 
-        headers, data = read_flat_file(filename, separator, header, skip_lines)
+        headers, data = io.read_flat_file(filename, separator, header, skip_lines)
 
         if data:
             nndx, lndx, undx = 0, 1, 2

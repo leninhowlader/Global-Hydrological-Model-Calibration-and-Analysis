@@ -2,7 +2,7 @@ __author__ = 'mhasan'
 
 import sys, os, numpy as np
 sys.path.append('..')
-from utilities.fileio import read_flat_file, write_flat_file
+from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid as gg
 
 class Station:
@@ -130,6 +130,6 @@ class Station:
         if id_as_integer:
             for i in range(len(data)): data[i][0] = int(data[i][0])
 
-        if data: succeed = write_flat_file(filename, data, separator=' ')
+        if data: succeed = io.write_flat_file(filename, data, separator=' ')
 
         return succeed

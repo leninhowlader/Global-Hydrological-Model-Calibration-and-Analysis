@@ -1,6 +1,6 @@
 import sys
 sys.path.append('..')
-from utilities.fileio import read_UNF_file
+from wgap.wgapio import WaterGapIO as wio
 from utilities.globalgrid import GlobalGrid
 import shapefile as shp, numpy as np
 
@@ -31,14 +31,14 @@ def main():
         # read land-cover class
         land_cover_class = []
         if filename_landcover:
-            temp = read_UNF_file(filename_landcover)
+            temp = wio.read_UNF_file(filename_landcover)
             if temp and len(temp) == ng: land_cover_class = temp
         if not land_cover_class: land_cover_class = [0] * ng
 
         # read elevation dataset
         elevation = []
         if filename_elevation:
-            temp = read_UNF_file(filename_elevation, ncol=101)
+            temp = wio.read_UNF_file(filename_elevation, ncol=101)
             if temp and len(temp) == ng:
                 for item in temp: elevation.append(item[0])
         if not elevation: elevation = [0] * ng
@@ -46,16 +46,16 @@ def main():
         # read Total Available Water Capacity
         tawc = []
         if filename_TAWC:
-            temp  = read_UNF_file(filename_TAWC)
+            temp  = wio.read_UNF_file(filename_TAWC)
             if temp and len(temp) == ng: tawc = temp
         if not tawc: tawc = [0] * ng
 
         # read lake and wetland fraction and find the total lake and wetland fraction
 
-        glake = read_UNF_file(filename_GLakeFrc)
-        gwetland = read_UNF_file(filename_GWetLandFrc)
-        llake = read_UNF_file(filename_LLakeFrc)
-        lwetland = read_UNF_file(filename_LWetLandFrc)
+        glake = wio.read_UNF_file(filename_GLakeFrc)
+        gwetland = wio.read_UNF_file(filename_GWetLandFrc)
+        llake = wio.read_UNF_file(filename_LLakeFrc)
+        lwetland = wio.read_UNF_file(filename_LWetLandFrc)
 
         total_LWFrc = []
         if glake and gwetland and llake and lwetland:
