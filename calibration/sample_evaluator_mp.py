@@ -138,7 +138,7 @@ def process_parameter_sample(config, iter_no):
             results += [iter_no, var.varname, var.counter_variable] + [None] * 12   # 12 statistics (i.e. error or efficiency)
     lines = []
     for d in results: lines.append(separator.join(map(str, d)))
-    if lines: io.print_on_file(lines, config.prediction_efficiency_filename, '__PREDEFF.LOCK', sleep_time=0.1)
+    if lines: io.print_on_file(lines, config.prediction_efficiency_output_filename, '__PREDEFF.LOCK', sleep_time=0.1)
     # ------ end of step-x.x --------
 
     # remove files

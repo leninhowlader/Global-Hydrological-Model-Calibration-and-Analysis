@@ -66,15 +66,16 @@ class SensitivityAnalysis:
                 WaterGAP.remove_files(arguments)
                 return False
 
-            # step: read the model output and dump the prediction summary
+            # step: read the model output and dump predictions
             succeed = True
             dumping_directory = config.output_directory
             output_directory_name = os.path.join(
                                             WaterGAP.home_directory,
                                             WaterGAP.dir_info.output_directory)
-            attribs = [iter_no]
-            for var in config.sim_variables:
-                succeed = var.dump_time_series_from_model_prediction(
+            if config.dump_model_prediction:
+                attribs = [iter_no]
+                for var in config.sim_variables:
+                    succeed = var.dump_time_series_from_model_prediction(
                                     WaterGAP.start_year,
                                     WaterGAP.end_year,
                                     additional_attributes=attribs,
@@ -82,7 +83,7 @@ class SensitivityAnalysis:
                                     dumping_directory=dumping_directory,
                                     prefix_filename=str(node_id))
 
-                if not succeed: break
+                    if not succeed: break
 
             # step: remove model output files
             WaterGAP.remove_files(arguments)

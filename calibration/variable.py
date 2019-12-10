@@ -857,8 +857,14 @@ class SimVariable(Variable):
 
         return succeed
 
-    def dump_time_series_from_model_prediction(self, start_year, end_year, additional_attributes=[], dumping_directory='',
-                                               prediction_directory='', prefix_filename=''):
+    def dump_time_series_from_model_prediction(
+            self,
+            start_year,
+            end_year,
+            additional_attributes=[],
+            dumping_directory='',
+            prediction_directory='',
+            prefix_filename=''):
         '''
         This function will read model predictions and (usually) calculates basin average time-series. Finally
         the timeseries will be dumped as binary files. To avoid unnecessary dumping of large data, the function
