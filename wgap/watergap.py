@@ -68,6 +68,8 @@ class WaterGAP:
     end_year = 2100
     output_endian_type = FileEndian.little_endian
 
+    __system_arguments = ''
+
     model_version = ''
     ngc = -1
 
@@ -75,6 +77,14 @@ class WaterGAP:
     dir_info = None
 
     station_filename = ''
+
+    @staticmethod
+    def set_system_arguments(argument_str):
+        WaterGAP.__system_arguments = argument_str
+
+    @staticmethod
+    def get_argument_string(): return WaterGAP.__system_arguments
+
     @staticmethod
     def set_model_version(version):
         if version in ['wghm22b', 'wghm22d']:
@@ -187,7 +197,12 @@ class WaterGAP:
                     if len(temp) == 2:
                         key, value = temp[0].strip().lower(), temp[1].strip()
 
-                        if key in ['home_directory', 'home output_directory']: WaterGAP.home_directory = value
+                        if key in ['home_directory', 'home output_directory']:
+                            WaterGAP.home_directory = value
+
+                        elif key in ['system_arguments', 'arguments']:
+                            WaterGAP.set_system_arguments(value)
+
                         elif key in ['parameter_file', 'parameter_filename', 'parameter file',
                                      'parameter config_filename']: WaterGAP.json_parameter_file = value
                         elif key in ['start_year', 'start year']:

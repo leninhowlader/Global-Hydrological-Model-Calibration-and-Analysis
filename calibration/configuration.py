@@ -11,60 +11,72 @@ from utilities.upstream import Upstream
 from utilities.globalgrid import GlobalGrid as gg
 
 class Configuration:
+    '''
+    [B] mode [calibration or sensitivity]
+    [B] parameter_info_filename/parameter_info_input_filename
+
+    [S] input_sample_filename/sample_filename
+
+    [B] parallel_evaluation/do_parallel_evaluation
+    [C] maximum_iteration
+
+    [B] compute_upstream_from_station_file/upstream_from_station_file
+    [B] disjoint_basin_extent
+
+    [B] output_directory
+    [C] calibration_output_filename/output_filename
+
+    [C] save_parameter_values
+    [C] parameter_value_output_filename
+
+
+    [B] dump_model_prediction/save_model_prediction
+
+    [B] compute_prediction_efficiency/compute_model_efficiency
+    [B] model_efficiency_output_filename/prediction_efficiency_output_filename
+
+    [B] compute_prediction_statistics/prediction_statistics
+    [B] prediction_summary_statistics_filename/summary_statistics_output_filename
+    [B] annual_statistics_output_filename/annual_statistics_filename
+    [B] monthly_statistics_output_filename/monthly_statistics_filename
+
+    [B] compute_seasonal_statistics/seasonal_statistics
+    [B] seasonal_statistics_output_filename
+    '''
+
     def __init__(self, mode='sensitivity'):
         self.__mode = mode
-        self.__target_cells_from_station_file = True
-        self.__disjoint_basin_extent = True
-
-        self.__dump_model_prediction = True
-        self.__compute_prediction_efficiency = False
-        self.__compute_prediction_statistics = False
-        self.__compute_seasonal_statistics = False
-        # NB: Prediction statistics and seasonal statistics will be merged
-        # together in the future
-
-        # input parameter info file
         self.__parameter_info_input_filename = ''
-        # [mode: sensitivity] input sample filename
         self.__input_sample_filename = ''
 
-        # output filename(s) of prediction statistics
-        # [used only when compute_prediction_statistics flag is true]
+        self.__do_parallel_evaluation = False
+        self.__max_iterations = 0
+
+        self.__compute_upstream_from_station_file = True
+        self.__disjoint_basin_extent = True
+
+        self.__output_directory = 'output'
+        self.__calibration_result_output_filename = ''
+
+        self.__save_parameter_values = False
+        self.__parameter_value_output_filename = ''
+
+        self.__dump_model_prediction = True
+
+        self.__compute_prediction_efficiency = False
+        self.__prediction_efficiency_output_filename = 'efficiency.dat'
+
+        self.__compute_prediction_statistics = False
         self.__prediction_summary_monthly_output_filename = ''
         self.__prediction_summary_annual_output_filename = ''
         self.__prediction_summary_output_filename = ''
 
-        # output filename of seasonal statistics
-        # [used only when compute_seasonal_statistics flag is set true]
+        self.__compute_seasonal_statistics = False
         self.__seasonal_statistics_output_filename = 'seasonal_statistics.csv'
+
         # NB: Prediction statistics and seasonal statistics will be merged
         # together in the future
 
-
-        # output directory
-        self.__output_directory = 'output'
-
-        # variables for calibration-mode
-        self.__executable_name = ''
-        self.__system_arguments = []
-        self.__max_iterations = 0
-        #self.__prediction_output_filename = ''
-        #self.__iteration_paramvalue_filename = ''
-
-        # output filename of prediction efficiency
-        # [used only when compute_prediction_efficiency flag is set true]
-        self.__prediction_efficiency_output_filename = 'prediction_efficiency.dat'
-
-        # [mode-calibration] output filename of parameter values
-        self.__parameter_value_output_filename = ''
-
-        # [mode-calibration] output filename of calibration results
-        self.__calibration_result_output_filename = ''
-
-
-        self.__do_parallel_evaluation = False
-
-        # common variables
         self.obs_variables = []
         self.sim_variables = []
         self.derived_variables = []
@@ -98,47 +110,11 @@ class Configuration:
         self.__input_sample_filename = filename
 
     @property
-    def dump_model_prediction(self):
-        return self.__dump_model_prediction
-    @dump_model_prediction.setter
-    def dump_model_prediction(self, flag):
-        self.__dump_model_prediction = flag
-
-    @property
-    def compute_prediction_efficiency(self):
-        return self.__compute_prediction_efficiency
-    @compute_prediction_efficiency.setter
-    def compute_prediction_efficiency(self, flag):
-        self.__compute_prediction_efficiency = flag
-
-    @property
-    def compute_prediction_statistics(self):
-        return self.__compute_prediction_statistics
-    @compute_prediction_statistics.setter
-    def compute_prediction_statistics(self, flag):
-        self.__compute_prediction_statistics = flag
-
-    @property
-    def compute_seasonal_statistics(self):
-        return self.__compute_seasonal_statistics
-    @compute_seasonal_statistics.setter
-    def compute_seasonal_statistics(self, flag):
-        self.__compute_seasonal_statistics = flag
-
-    @property
-    def output_directory(self):
-        return self.__output_directory
-    @output_directory.setter
-    def output_directory(self, directory):
-        self.__output_directory = directory
-
-    @property
-    def prediction_efficiency_output_filename(self):
-        return os.path.join(self.__output_directory,
-                            self.__prediction_efficiency_output_filename)
-    @prediction_efficiency_output_filename.setter
-    def prediction_efficiency_output_filename(self, filename):
-        self.__prediction_efficiency_output_filename = filename
+    def save_parameter_values(self):
+        return self.__save_parameter_values
+    @save_parameter_values.setter
+    def save_parameter_values(self, flag):
+        self.__save_parameter_values = flag
 
     @property
     def parameter_value_output_filename(self):
@@ -147,6 +123,41 @@ class Configuration:
     @parameter_value_output_filename.setter
     def parameter_value_output_filename(self, filename):
         self.__parameter_value_output_filename = filename
+
+
+    @property
+    def dump_model_prediction(self):
+        return self.__dump_model_prediction
+    @dump_model_prediction.setter
+    def dump_model_prediction(self, flag):
+        self.__dump_model_prediction = flag
+
+    @property
+    def maximum_iteration(self): return self.__max_iterations
+    @maximum_iteration.setter
+    def maximum_iteration(self, max_itarations):
+        self.__max_iterations = max_itarations
+
+    @property
+    def compute_upstream_from_station_file(self):
+        return self.__compute_upstream_from_station_file
+    @compute_upstream_from_station_file.setter
+    def compute_upstream_from_station_file(self, flag:bool):
+        self.__compute_upstream_from_station_file = flag
+
+    @property
+    def disjoint_basin_extent(self):
+        return self.__disjoint_basin_extent
+    @disjoint_basin_extent.setter
+    def disjoint_basin_extent(self, flag):
+        self.__disjoint_basin_extent = flag
+
+    @property
+    def output_directory(self):
+        return self.__output_directory
+    @output_directory.setter
+    def output_directory(self, directory):
+        self.__output_directory = directory
 
     @property
     def calibration_result_output_filename(self):
@@ -157,12 +168,41 @@ class Configuration:
         self.__calibration_result_output_filename = filename
 
     @property
+    def compute_prediction_efficiency(self):
+        return self.__compute_prediction_efficiency
+    @compute_prediction_efficiency.setter
+    def compute_prediction_efficiency(self, flag):
+        self.__compute_prediction_efficiency = flag
+
+    @property
+    def prediction_efficiency_output_filename(self):
+        return os.path.join(self.__output_directory,
+                            self.__prediction_efficiency_output_filename)
+    @prediction_efficiency_output_filename.setter
+    def prediction_efficiency_output_filename(self, filename):
+        self.__prediction_efficiency_output_filename = filename
+
+    @property
+    def compute_seasonal_statistics(self):
+        return self.__compute_seasonal_statistics
+    @compute_seasonal_statistics.setter
+    def compute_seasonal_statistics(self, flag):
+        self.__compute_seasonal_statistics = flag
+
+    @property
     def seasonal_statistics_output_filename(self):
         return os.path.join(self.__output_directory,
                             self.__seasonal_statistics_output_filename)
     @seasonal_statistics_output_filename.setter
     def seasonal_statistics_output_filename(self, filename):
         self.__seasonal_statistics_output_filename = filename
+
+    @property
+    def compute_prediction_statistics(self):
+        return self.__compute_prediction_statistics
+    @compute_prediction_statistics.setter
+    def compute_prediction_statistics(self, flag):
+        self.__compute_prediction_statistics = flag
 
     @property
     def prediction_summary_output_filename(self):
@@ -187,39 +227,6 @@ class Configuration:
     @prediction_summary_monthly_output_filename.setter
     def prediction_summary_monthly_output_filename(self, filename):
         self.__prediction_summary_monthly_output_filename = filename
-
-    @property
-    def target_cells_from_station_file(self):
-        return self.__target_cells_from_station_file
-    @target_cells_from_station_file.setter
-    def target_cells_from_station_file(self, flag:bool):
-        self.__target_cells_from_station_file = flag
-
-    @property
-    def disjoint_basin_extent(self):
-        return self.__disjoint_basin_extent
-    @disjoint_basin_extent.setter
-    def disjoint_basin_extent(self, flag):
-        self.__disjoint_basin_extent = flag
-
-    def set_executable_name(self, executable_name): self.__executable_name = executable_name
-    def set_system_arguments(self, args): self.__system_arguments = args
-    def set_max_iterations(self, max_iter): self.__max_iterations = max_iter
-    #def set_prediction_output_filename(self, filename): self.__prediction_output_filename = filename
-    #def set_paramvalue_filename(self, filename): self.__iteration_paramvalue_filename = filename
-    # def set_model_efficiency_filename(self, filename): self.__prediction_efficiency_output_filename = filename
-    #def set_calibration_output_filename(self, filename): self.__calibration_result_output_filename = filename
-    #def set_parallel_evaluation_flag(self, flag): self.__do_parallel_evaluation = flag
-    def set_mode(self, mode): self.__mode = mode
-    def get_executable_name(self): return self.__executable_name
-    def get_system_arguments(self): return self.__system_arguments
-    def get_max_iterations(self): return self.__max_iterations
-    #def get_prediction_output_filename(self): return self.__prediction_output_filename
-    #def get_paramvalue_filename(self): return self.__iteration_paramvalue_filename
-    #def get_model_efficiency_filename(self): return self.__prediction_efficiency_output_filename
-    #def get_calibraiton_output_filename(self): return self.__calibration_result_output_filename
-    #def get_parallel_evaluation_flag(self): return self.__do_parallel_evaluation
-    def get_mode(self): return self.__mode
 
     def obs_var_count(self): return len(self.obs_variables)
     def sim_var_count(self): return len(self.sim_variables)
@@ -256,280 +263,153 @@ class Configuration:
                     if len(temp) == 2:
                         key, value = temp[0], temp[1]
                         if key == 'begin':
-                            if value == 'sa-settings': Configuration.read_sensitivity_settings(lines, config)
-                            elif value == 'settings': Configuration.read_calibration_settings(lines, config)
-                            elif value == 'parameter' and len(config.parameters) == 0: # config.get_mode() == 'calibration':
+                            if value == 'settings':
+                                Configuration.read_settings(lines, config)
+
+                            elif value == 'model-options':
+                                WaterGAP.read_model_settings(lines)
+
+                            elif (value == 'parameter' and
+                                  len(config.parameters) == 0):
                                 param_list = Parameter.read_parameters(lines)
                                 if param_list: config.parameters = param_list
-                            elif value == 'obs-variable': config.obs_variables = ObsVariable.read_variables(lines)
-                            elif value == 'sim-variable': config.sim_variables = SimVariable.read_variables(lines)
-                            elif value == 'model-options': WaterGAP.read_model_settings(lines)
-                            elif value == 'derived-variable': config.derived_variables = DerivedVariable.read_variables(lines)
+
+                            elif value == 'obs-variable':
+                                config.obs_variables \
+                                = ObsVariable.read_variables(lines)
+
+                            elif value == 'sim-variable':
+                                config.sim_variables \
+                                = SimVariable.read_variables(lines)
+
+                            elif value == 'derived-variable':
+                                config.derived_variables \
+                                    = DerivedVariable.read_variables(lines)
         except: config = None
 
         return config
 
     @staticmethod
-    def read_sensitivity_settings(lines, config):
-        config.set_mode('sensitivity')
-
+    def read_settings(lines, config):
         while lines:
             line = lines.pop(0).strip()
             if line:
                 temp = line.strip().split()
                 temp[0] = temp[0].strip().lower()
+
                 if temp[0] == 'end': return True
                 else:
                     temp = line.split('=')
                     for i in range(len(temp)): temp[i] = temp[i].strip()
+
                     if len(temp) == 2:
                         key, value = temp[0], temp[1]
+
+                        while key.find('  ') != -1: key = key.replace('  ', ' ')
+                        while key.find(' ') != -1: key = key.replace(' ', '_')
+
                         if not (key and value): continue
 
+                        if key in ['mode']: config.mode = value
 
-                        if key in ['parallel_evaluation',
-                                     'parallel evaluation']:
+                        elif key in ['parameter_info_input_filename',
+                                     'parameter_info_filename']:
+                            config.parameter_info_filename = value
+
+                        elif key in ['input_sample_filename',
+                                     'sample_filename']:
+                            config.input_sample_filename = value
+
+                        elif key in ['parallel_evaluation',
+                                     'do_parallel_evaluation']:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']:
                                 config.parallel_evaluation = True
                             else: config.parallel_evaluation = False
 
-                        elif key in ['parameter_info_filename',
-                                     'parameter info filename',
-                                     'parameter_info_input_filename',
-                                     'parameter info input filename']:
-                            config.parameter_info_filename = value
+                        elif key in ['maximum_iteration']:
+                            try: max_iter = int(value)
+                            except: max_iter = 0
 
-                        elif key in ['summary_statistics_filename', 'summary_statistics', 'stat_summary', 'summary statistics filename',
-                                     'summary statistics', 'stat summary']:
-                            config.summary_statistics_filename = value
+                            config.maximum_iteration(max_iter)
 
-                        elif key in ['output_directory', 'output directory']:
+                        elif key in ['compute_upstream_from_station_file',
+                                     'upstream_from_station_file']:
+                            if value.lower() in ['y', 'yes', 'true', 't', '1']:
+                                config.compute_upstream_from_station_file = True
+                            else:
+                                config.compute_upstream_from_station_file \
+                                = False
+
+                        elif key in ['disjoint_basin_extent']:
+                            if value.lower() in ['y', 'yes', 'true', 't', '1']:
+                                config.disjoint_basin_extent = True
+                            else: config.disjoint_basin_extent = False
+
+                        elif key in ['output_directory']:
                             config.output_directory = value
 
+                        elif key in ['calibration_output_filename',
+                                     'output_filename']:
+                            config.calibration_result_output_filename = value
+
+                        elif key in ['save_parameter_values']:
+                            if value.lower() in ['y', 'yes', 'true', 't', '1']:
+                                config.save_parameter_values = True
+                            else: config.save_parameter_values = False
+
+                        elif key in ['parameter_value_output_filename']:
+                            config.parameter_value_output_filename = value
+
                         elif key in ['dump_model_prediction',
-                                     'dump model prediction',
-                                     'save_model_prediction',
-                                     'save model prediction']:
+                                     'save_model_prediction']:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']:
                                 config.dump_model_prediction = True
                             else: config.dump_model_prediction = False
 
-                        elif key in ['compute_prediction_efficiency',
-                                     'compute prediction efficiency',
-                                     'compute_model_efficiency',
-                                     'compute model efficiency']:
+                        elif key in ['compute_prediction_efficiency'
+                                     'compute_model_efficiency']:
                             value = value.lower()
                             if value in ['true', 't', '1', 'yes', 'y']:
                                 config.compute_prediction_efficiency = True
                             else: config.compute_prediction_efficiency = False
 
-                        elif key in ['model_efficiency_filename',
-                                     'model efficiency filename',
-                                     'prediction_efficiency_filename',
-                                     'prediction efficiency filename']:
+                        elif key in ['model_efficiency_output_filename'
+                                     'prediction_efficiency_output_filename']:
                             config.prediction_efficiency_output_filename = value
                             config.compute_prediction_efficiency = True
 
-                        elif key in ['input_sample_filename',
-                                     'input sample filename',
-                                     'sample_filename',
-                                     'sample filename']:
-                            config.input_sample_filename = value
-
-                        elif key in ['compute_prediction_statistics',
-                                     'compute prediction statistics',
-                                     'prediction_statistics',
-                                     'predictionstatistics']:
+                        elif key in ['compute_prediction_statistics'
+                                     'prediction_statistics']:
                             if value.lower() in ['true', 't', '1', 'yes', 'y']:
                                 config.compute_prediction_statistics = True
                             else: config.compute_prediction_statistics = False
 
                         elif key in ['prediction_summary_statistics_filename',
-                                     'summary_statistics_output_filename',
-                                     'prediction summary statistics filename',
-                                     'summary statistics output filename']:
+                                     'summary_statistics_output_filename']:
                             config.prediction_summary_output_filename = value
                             config.compute_prediction_statistics = True
 
-                        elif key in ['annual_summary_statistics_output_filename',
-                                     'annual_summary_statistics_filename',
-                                     'annual summary statistics output filename',
-                                     'annual summary statistics filename']:
+                        elif key in ['annual_statistics_output_filename',
+                                     'annual_statistics_filename']:
                             config.prediction_summary_annual_output_filename \
                             = value
 
                             config.compute_prediction_statistics = True
 
-                        elif key in ['monthly_summary_statistics_output_filename',
-                                     'monthly_summary_statistics_filename',
-                                     'monthly summary statistics output filename',
-                                     'monthly summary statistics filename']:
+                        elif key in ['monthly_statistics_output_filename',
+                                     'monthly_statistics_filename']:
                             config.prediction_summary_monthly_output_filename \
                             = value
 
                             config.compute_prediction_statistics = True
 
                         elif key in ['compute_seasonal_statistics',
-                                     'seasonal_statistics',
-                                     'compute seasonal statistics',
-                                     'seasonal statistics']:
+                                     'seasonal_statistics']:
                             if value.lower() in ['true', 't', '1', 'yes', 'y']:
                                 config.compute_seasonal_statistics = True
                             else: config.compute_seasonal_statistics = False
 
-                        elif key in ['seasonal_statistics_output_filename',
-                                     'seasonal_statistics_filename',
-                                     'seasonal statistics output filename',
-                                     'seasonal statistics filename']:
-                            config.seasonal_statistics_output_filename = value
-                            config.compute_seasonal_statistics = True
-
-                        elif key in ['target_cells_from_station_file', 'target_cell_from_station_file',
-                                     'target cells from station file', 'target cell from station file']:
-                            if value.lower() in ['y', 'yes', 'true', 't', '1']: config.target_cells_from_station_file = True
-                            else: config.target_cells_from_station_file = False
-                        elif key in ['disjoint_basin_extent', 'disjoint basin extent']:
-                            if value.lower() in ['y', 'yes', 'true', 't', '1']: config.disjoint_basin_extent = True
-                            else: config.disjoint_basin_extent = False
-        return False
-
-    @staticmethod
-    def read_calibration_settings(lines, config):
-        config.set_mode('calibration')
-
-        # set default values
-        config.compute_prediction_efficiency = True
-        config.dump_model_prediction = False
-        config.compute_seasonal_statistics = False
-        config.compute_prediction_statistics = False
-
-        while lines:
-            line = lines.pop(0).strip()
-            if line:
-                temp = line.strip().split()
-                temp[0] = temp[0].strip().lower()
-                if temp[0] == 'end':
-                    return True
-                else:
-                    temp = line.split('=')
-                    for i in range(len(temp)): temp[i] = temp[i].strip()
-                    if len(temp) == 2:
-                        key, value = temp[0], temp[1]
-                        if not (key and value): continue
-
-                        if key in ['executable_name',
-                                   'executable name',
-                                   'executable']:
-                            config.set_executable_name(value)
-
-                        elif key in ['system_arguments',
-                                     'system arguments',
-                                     'arguments']:
-                            value = value.split(',')
-                            for i in range(len(value)): value[i] = value[i].strip()
-                            config.set_system_arguments(value)
-
-                        elif key in ['maximum_iteration',
-                                     'maximum iteration',
-                                     'max iter',
-                                     'max_iter']:
-                            config.set_max_iterations(value)
-
-                        elif key in ['parallel_evaluation',
-                                     'parallel evaluation']:
-                            if value.lower() in ['y', 'yes', 'true', 't', '1']:
-                                config.parallel_evaluation = True
-                            else: config.parallel_evaluation = False
-
-                        elif key in ['parameter_info_filename',
-                                     'parameter info filename',
-                                     'parameter_info_input_filename',
-                                     'parameter info input filename']:
-                            config.parameter_info_filename = value
-
-                        elif key in ['output_directory', 'output directory']:
-                            config.output_directory = value
-
-                        elif key in ['model_efficiency_filename',
-                                     'model efficiency filename',
-                                     'prediction_efficiency_filename',
-                                     'prediction efficiency filename']:
-                            config.prediction_efficiency_output_filename = value
-                            config.compute_prediction_efficiency = True
-
-                        elif key in ['parameter_value_output_filename',
-                                     'parameter value output filename']:
-                            config.parameter_value_output_filename = value
-
-                        elif key in ['dump_model_prediction',
-                                     'dump model prediction',
-                                     'save_model_prediction',
-                                     'save model prediction']:
-                            if value.lower() in ['y', 'yes', 'true', 't', '1']:
-                                config.dump_model_prediction = True
-                            else: config.dump_model_prediction = False
-
-                        elif key in ['calibration_result_output_filename',
-                                     'calibration_result_filename',
-                                     'calibration result output filename',
-                                     'calibration result filename']:
-                            config.calibration_result_output_filename = value
-
-
-                        elif key in ['target_cells_from_station_file', 'target_cell_from_station_file',
-                                     'target cells from station file', 'target cell from station file']:
-                            if value.lower() in ['y', 'yes', 'true', 't', '1']: config.target_cells_from_station_file = True
-                            else: config.target_cells_from_station_file = False
-                        elif key in ['disjoint_basin_extent', 'disjoint basin extent']:
-                            if value.lower() in ['y', 'yes', 'true', 't', '1']: config.disjoint_basin_extent = True
-                            else: config.disjoint_basin_extent = False
-
-                        elif key in ['compute_prediction_statistics',
-                                     'compute prediction statistics',
-                                     'prediction_statistics',
-                                     'predictionstatistics']:
-                            value = value.lower()
-                            if value in ['true', 't', '1', 'yes', 'y']:
-                                config.compute_prediction_statistics = True
-                            else: config.compute_prediction_statistics = False
-
-                        elif key in ['prediction_summary_statistics_filename',
-                                     'summary_statistics_output_filename',
-                                     'prediction summary statistics filename',
-                                     'summary statistics output filename']:
-                            config.prediction_summary_output_filename = value
-                            config.compute_prediction_statistics = True
-
-                        elif key in ['annual_summary_statistics_output_filename',
-                                     'annual_summary_statistics_filename',
-                                     'annual summary statistics output filename',
-                                     'annual summary statistics filename']:
-                            config.prediction_summary_annual_output_filename \
-                            = value
-
-                            config.compute_prediction_statistics = True
-
-                        elif key in ['monthly_summary_statistics_output_filename',
-                                     'monthly_summary_statistics_filename',
-                                     'monthly summary statistics output filename',
-                                     'monthly summary statistics filename']:
-                            config.prediction_summary_monthly_output_filename \
-                            = value
-
-                            config.compute_prediction_statistics = True
-
-                        elif key in ['compute_seasonal_statistics',
-                                     'seasonal_statistics',
-                                     'compute seasonal statistics',
-                                     'seasonal statistics']:
-                            if value.lower() in ['true', 't', '1', 'yes', 'y']:
-                                config.compute_seasonal_statistics = True
-                            else: config.compute_seasonal_statistics = False
-
-                        elif key in ['seasonal_statistics_output_filename',
-                                     'seasonal_statistics_filename',
-                                     'seasonal statistics output filename',
-                                     'seasonal statistics filename']:
+                        elif key in ['seasonal_statistics_output_filename']:
                             config.seasonal_statistics_output_filename = value
                             config.compute_seasonal_statistics = True
 
@@ -537,19 +417,19 @@ class Configuration:
 
     def is_okay(self, skip_observation=False):
         '''
-        This function checks the completeness of the configuration object. During the check, all variables'
-        completeness is also being checked. If the configuration object has observation variable(s), observation
-        data will be read hear. In case of sensitivity analysis, samples will be loaded during this check.
-        The parameters' completeness will be checked as well.
-        Finally, model executable name and address is tested.
+        This function checks the completeness of the configuration object. If
+        the configuration object has observation variable(s), observation data
+        will be read hear if skip observation flag is not set True. In case of
+        sensitivity analysis, samples will be loaded.
 
-        :return: (bool) True : if all checks succeed
-                        False : otherwise
+        :return: (bool) true on completeness of the object;
+                        false otherwise
         '''
 
         # step: check whether or not the station file is available when 'target cell from station file' flag is set ON
         if not (WaterGAP.station_filename and
-                os.path.exists(os.path.join(WaterGAP.home_directory, WaterGAP.station_filename))):
+                os.path.exists(os.path.join(WaterGAP.home_directory,
+                                            WaterGAP.station_filename))):
             self.target_cells_from_station_file = False
             self.disjoint_basin_extent = False
 
@@ -604,14 +484,6 @@ class Configuration:
         else:
             for param in self.parameters:
                 if not param.is_okey(): return False
-
-        # step: check model executable name and address. [this check could be omitted]
-        if not WaterGAP.executable:
-            executable_name = self.get_executable_name()
-            if WaterGAP.home_directory:
-                if executable_name.find(WaterGAP.home_directory) == -1: executable_name = os.path.join(WaterGAP.home_directory, executable_name)
-            WaterGAP.executable = executable_name
-        if not WaterGAP.executable: return False
 
         return True
 

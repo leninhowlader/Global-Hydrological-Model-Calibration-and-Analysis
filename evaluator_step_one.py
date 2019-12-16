@@ -7,7 +7,7 @@ from wgap.watergap import WaterGAP
 from utilities.fileio import FileInputOutput as io
 from analyses.sensitivity import SensitivityAnalysis
 
-evaluate_sample = SensitivityAnalysis.SampleEval_ModelRun.evaluate_sample
+evaluate_sample = SensitivityAnalysis.SampleEvaluation.evaluate_sample
 
 def main(argv):
     # step: read iteration number; the first iteration number will be considered

@@ -1,4 +1,4 @@
-upstream_filename = 'input/brahmaputra_upstreams_bahadurabad.txt'
+upstream_filename = 'observationprocessing/input/brahmaputra_upstreams_bahadurabad.txt'
 station_filename = ''
 data_filename = 'F:/mhasan/private/ET_Mueller2013/LandFluxEVAL.merged.89-05.monthly.all.nc'
 output_filename = 'output/brahmaputra_bahadurabad_ET_Mueller2013_iqr_mm_daily.csv'
@@ -7,12 +7,13 @@ output_filename = 'output/brahmaputra_bahadurabad_ET_Mueller2013_iqr_mm_daily.cs
 stat_name = 'ET_mean'
 
 from netCDF4 import Dataset
-import numpy as np, sys, os
+import os, sys, numpy as np
 sys.path.append('..')
 from utilities.upstream import Upstream
 from utilities.station import Station
 from utilities.globalgrid import GlobalGrid
 from utilities.fileio import FileInputOutput as io
+from wgap.wgapio import WaterGapIO
 
 def ncdump(nc_fid, verb=True):
     '''
@@ -81,6 +82,63 @@ def ncdump(nc_fid, verb=True):
                 print_ncattr(var)
     return nc_attrs, nc_dims, nc_vars
 
+class EvapoTranspiration:
+    @staticmethod
+    def read_LandFluxEVAL_dataset(
+            data_filename:str,
+            output_filename:str,
+            waterGap_cells:np.ndarray,
+            stat_name:str='ET_mean',
+            compute_basin_average:bool=True):
+        '''
+        This method reads LandFluxEVAL merged ET data product (Mueller et al.,
+        2013) for given WaterGAP cells.
+
+        :param data_filename: (string) filename of LandFluxEVAL data product
+        :param output_filename: (string) output filename
+        :param waterGap_cells: (numpy 1-d array or 1-d list) List of WaterGAP
+                        cell numbers [within a single basin]
+        :param stat_name: (string) name of the statistics to be used from the
+                        data product. data contains mean as 'ET_mean', median as
+                        'ET_median', inter quartile range as 'ET_IQR', first
+                        quartile as 'ET_25', third quartile as 'ET_75', minimum
+                        as 'ET_min', maximum as 'ET_max' and standard deviation
+                        as 'ET_sd' of available ET products for a given 1-deg
+                        cell. (optional; default is 'ET_mean')
+        :param compute_basin_average: (bool; optional; default = True) flag that
+                        determines whether or not the basin average needs to be
+                        computed
+        :return: (bool) 'True' on success; 'False' otherwise.
+        '''
+        succeed = True
+
+        # step: check inputs
+        if not (data_filename and os.path.exists(data_filename) and
+                output_filename and len(waterGap_cells)):
+            return False
+
+        if stat_name not in ['ET_mean', 'ET_median', 'ET_IQR', 'ET_25',
+                             'ET_75', 'ET_min', 'ET_max', 'ET_sd']:
+            return False
+        # end of step
+
+        # step: find cell centroids of WaterGAP cells
+        cellnum = np.array(waterGap_cells)
+        lonlat = GlobalGrid.wghm_cellnumber_to_centroid_lonlat(cellnum)
+        lonlat_1deg = GlobalGrid.nearest_centroid_ndarray(
+                                    lonlat,
+                                    degree_resolution=1.0)
+        
+        d = WaterGapIO.read_netcdf(
+                filename=data_filename,
+                cells_xy=lonlat_1deg,
+                varname_data=stat_name,
+                varname_lon='lon',
+                varname_lat='lat',
+                varname_time='time')
+        # end of step
+
+        return succeed
 
 def main():
     global station_filename, upstream_filename, data_filename, output_filename, stat_name

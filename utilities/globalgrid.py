@@ -351,6 +351,23 @@ class GlobalGrid:
         return lat, lon
 
     @staticmethod
+    def nearest_centroid_ndarray(
+            lonlat:np.ndarray,
+            degree_resolution:float=0.5):
+        lon, lat = lonlat[:, 0], lonlat[:, 1]
+        lon = (((180 + lon) // degree_resolution) * degree_resolution
+               + float(degree_resolution) / 2 - 180)
+        ii = np.where(lon > 180)
+        lon[ii] = lon[ii] - 360
+
+        lat = (((90 + lat) // degree_resolution) * degree_resolution
+               + float(degree_resolution) / 2 - 90)
+        ii = np.where(lat > 90)
+        lat[ii] = lat[ii] - degree_resolution
+
+        return np.concatenate((lon.reshape(-1, 1), lat.reshape(-1, 1)), axis=1)
+
+    @staticmethod
     def find_column_number(longitude, degree_resolution=0.5):
         '''
         This method finds column number of a given longitude in a specified global grid.

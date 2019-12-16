@@ -5,14 +5,17 @@
 import os, sys, numpy as np
 from datetime import datetime
 from collections import OrderedDict
+from copy import deepcopy
 
 sys.path.append('..')
 from wgap.wgapio import WaterGapIO
 from wgap.watergap import WaterGAP
 from calibration.configuration import Configuration
+from calibration.seasonalstats import SeasonalStatistics
+from utilities.fileio import FileInputOutput as io
 
 class SensitivityAnalysis:
-    class SampleEval_ModelRun:
+    class SampleEvaluation:
         @staticmethod
         def evaluate_sample(
                 config:Configuration,
@@ -84,6 +87,133 @@ class SensitivityAnalysis:
                                     prefix_filename=str(node_id))
 
                     if not succeed: break
+
+            if (config.compute_prediction_efficiency or
+                config.compute_prediction_statistics or
+                config.compute_seasonal_statistics):
+
+                sim_vars = deepcopy(config.sim_variables)
+                der_vars = deepcopy(config.derived_variables)
+                obs_vars = config.obs_variables
+
+                # read model output
+                if not WaterGAP.read_predictions(sim_vars):
+                    WaterGAP.remove_files(arguments)
+                    return False
+
+                # derive data for derived variables
+                for var in der_vars: var.derive_data(simvars=sim_vars,
+                                                     obsvars=obs_vars)
+
+                separator = ','
+                if config.compute_prediction_statistics:
+                    funs = ['mean', 'std', 'min', 'max', 'q1', 'median', 'q3']
+                    pred_stat, month_stat, year_stat \
+                    = WaterGAP.prediction_statistics(sim_vars, funs=funs)
+
+                    # writing basic prediction statistics
+                    filename = config.prediction_summary_output_filename
+                    if filename:
+                        lines = []
+                        for key in pred_stat.keys():
+                            for v in pred_stat[key]:
+                                lines.append(separator.join(
+                                                map(str, [iter_no, key] + v)))
+
+                        if lines:
+                            io.print_on_file(lines, filename, '_STAT_OS.LOCK',
+                                          sleep_time=0.3)
+
+                    filename = config.prediction_summary_monthly_output_filename
+                    if filename:
+                        lines = []
+                        for key in month_stat.keys():
+                            var_stat = month_stat[key]
+
+                            for vk in var_stat.keys():
+                                lines.append(separator.join(
+                                    map(str, [iter_no, key,
+                                              separator.join(map(str, vk))] +
+                                        var_stat[vk])))
+
+                        if lines:
+                            io.print_on_file(lines, filename, '_STAT_MS.LOCK',
+                                             sleep_time=0.5)
+                    filename = config.prediction_summary_annual_output_filename
+                    if filename:
+                        lines = []
+                        for key in year_stat.keys():
+                            var_stat = year_stat[key]
+                            for vk in var_stat.keys():
+                                lines.append(separator.join(
+                                            map(str, [iter_no, key,
+                                                separator.join(map(str, vk))] +
+                                                var_stat[vk])))
+
+                        if lines:
+                            io.print_on_file(lines, filename, '_STAT_YS.LOCK',
+                                             sleep_time=0.5)
+
+                if config.compute_seasonal_statistics:
+                    filename = config.seasonal_statistics_output_filename
+                    if not filename: succeed = False
+                    else:
+                        lines = []
+
+                        for var in sim_vars+der_vars:
+                            var_name = 'sim_%s'%var.varname.lower()
+                            data = [iter_no, var_name]
+                            try:
+                                snames, results \
+                                = SeasonalStatistics.seasonal_summary(
+                                                                var.data_cloud)
+
+                                if results:
+                                    for key in results.keys():
+                                        data += list(results[key])
+                            except: data += [None] * 10 * 7
+
+                            try:
+                                snames, results \
+                                = SeasonalStatistics.monthly_summary(
+                                                                var.data_cloud)
+
+                                if results:
+                                    for key in results.keys():
+                                        data += list(results[key])
+                            except: data += [None] * 6 * 12
+                            lines.append(separator.join(str(x) for x in data))
+
+                        if lines:
+                            io.print_on_file(lines,
+                                             filename,
+                                             '_STAT_SUMMARY.LOCK',
+                                             sleep_time=0.2)
+
+                if config.compute_prediction_efficiency:
+                    filename = config.prediction_efficiency_output_filename
+                    if not filename: succeed = False
+                    else:
+                        for var in sim_vars: var.compute_anomalies()
+                        for var in der_vars: var.compute_anomalies()
+
+                        try:
+                            results = WaterGAP.prediction_efficiency(
+                                            sim_vars=sim_vars+der_vars,
+                                            obs_vars=obs_vars,
+                                            iter_no=iter_no)
+                        except:
+                            results = []
+                            for var in obs_vars+der_vars:
+                                results += [iter_no, var.varname,
+                                            var.counter_variable] + [None] * 12
+                        lines = []
+                        for d in results:
+                            lines.append(separator.join(map(str, d)))
+
+                        if lines:
+                            io.print_on_file(lines, filename, '__PREDEFF.LOCK',
+                                             sleep_time=0.1)
 
             # step: remove model output files
             WaterGAP.remove_files(arguments)
