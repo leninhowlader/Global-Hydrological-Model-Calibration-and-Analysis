@@ -310,8 +310,8 @@ class WaterGapIO:
 
 
     @staticmethod
-    def read_netcdf(filename:str, cells_xy:np.ndarray, varname_data:str, varname_lon:str='lon', varname_lat:str='lat',
-                    varname_time='time'):
+    def read_netcdf(filename:str, cells_xy:np.ndarray, varname_data:str, dimname_lon:str= 'lon', dimname_lat:str= 'lat',
+                    dimname_time='time'):
 
         d = np.array([])
         if not os.path.exists(filename): return d
@@ -322,9 +322,9 @@ class WaterGapIO:
         # read data for all dimensions
         times, lats, lons = None, None, None
         try:
-            times = ds.variables[varname_time][:]
-            lons = ds.variables[varname_lon][:]
-            lats = ds.variables[varname_lat][:]
+            times = ds.variables[dimname_time][:]
+            lons = ds.variables[dimname_lon][:]
+            lats = ds.variables[dimname_lat][:]
         except: return d
 
         # create nd-index-array

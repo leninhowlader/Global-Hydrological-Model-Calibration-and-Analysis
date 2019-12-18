@@ -144,7 +144,12 @@ class GlobalGrid:
         if GlobalGrid.__wghm_cell_areas and 0<=row<=359: 
             return GlobalGrid.__wghm_cell_areas[row]
         else: return None
-    
+
+    @staticmethod
+    def find_wghm_cellarea_ndarray(rows:np.ndarray):
+        if not GlobalGrid.__wghm_cell_areas: GlobalGrid.read_wghm_cell_area()
+
+        return np.array(GlobalGrid.__wghm_cell_areas)[rows]
     
     @staticmethod
     def get_wghm_cell_info(*cellnums):
@@ -450,6 +455,29 @@ class GlobalGrid:
         '''
 
         return GlobalGrid.find_row_number(latitude, degree_resolution), GlobalGrid.find_column_number(longitude, degree_resolution)
+
+    @staticmethod
+    def find_rowcol_ndarray(lons, lats, resolution_deg=0.5):
+        if lons.shape != lats.shape: return np.empty(0)
+        if lons.max() > 180 or lons.min() < -180: return np.empty(0)
+        if lats.max() > 90 or lats.min() < -90: return np.empty(0)
+
+        rr = (np.abs(lats - 90) // resolution_deg).astype(int)
+        cc = ((lons + 180) // resolution_deg).astype(int)
+
+        rmax = int(180//resolution_deg)
+        ii = np.where(rr==rmax)
+        rr[ii] -= 1
+
+        cmax = int(360//resolution_deg)
+        ii = np.where(cc==cmax)
+        cc[ii] -= 1
+
+        rr = rr.reshape(-1, 1)
+        cc = cc.reshape(-1, 1)
+
+        return np.concatenate((rr, cc), axis=1)
+
 
     @staticmethod
     def transform_column_number(column_number:int, resolution_from:float, resolution_to:float):
