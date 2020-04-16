@@ -3,7 +3,11 @@ sys.path.append('..')
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
-from netCDF4 import Dataset
+
+try: from netCDF4 import Dataset
+except:
+    class Dataset:
+        def __init__(self): pass
 
 from utilities.globalgrid import GlobalGrid as gg
 from utilities.enums import FileEndian

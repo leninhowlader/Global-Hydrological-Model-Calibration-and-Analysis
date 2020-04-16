@@ -156,7 +156,53 @@ class BasinInfo:
             
             return basin_info
         # end of function
+
+        @staticmethod
+        def GangesBrahmaputra_level0(with_upstream=False,
+                          wghm_cell_number=True,
+                          include_arcid=False,
+                          include_cellarea=False,
+                          include_only_basin_area=False):
+
+            basin_info = OrderedDict()
+            basin_info['ganges'] = {'station_id': '2646200', 'lon': 88.75, 'lat': 24.25, 'cellnum': -1}
+            basin_info['brahmaputra'] = {'station_id': '2651100', 'lon': 89.75, 'lat': 25.25, 'cellnum': -1}
+
+            if with_upstream:
+                BasinInfo.include_basin_property_upstream(
+                                            basin_info,
+                                            wghm_cell_number=wghm_cell_number)
+
+            BasinInfo.GlobalCDA.include_basin_properties(
+                                basin_info,
+                                include_arcid=include_arcid,
+                                include_cellarea=include_cellarea,
+                                include_only_basin_area=include_only_basin_area)
+
+            # [step] add basin outlet (WaterGAP) cell number
+            is_available_outlet_cellnum = True
+            for basin in basin_info.keys():
+                if basin_info[basin]['cellnum'] == -1:
+                    is_available_outlet_cellnum = False
+                    break
+            
+            if (not is_available_outlet_cellnum):
+                BasinInfo.GlobalCDA.include_basin_outlet_cellnumber(basin_info)
+            # [end]
+            
+            return basin_info
+        #end of function
         
+        @staticmethod
+        def include_basin_outlet_cellnumber(basin_info):
+            for basin in basin_info.keys():
+                lat, lon = basin_info[basin]['lat'], basin_info[basin]['lon']
+                row, col = gg.find_row_column(lat, lon)
+                
+                cellnum = gg.get_wghm_cell_number(row, col)
+                basin_info[basin]['cellnum'] = cellnum
+                
+
         @staticmethod
         def include_basin_properties(basin_info,
                                      include_arcid=True,

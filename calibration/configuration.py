@@ -430,11 +430,11 @@ class Configuration:
         if not (WaterGAP.station_filename and
                 os.path.exists(os.path.join(WaterGAP.home_directory,
                                             WaterGAP.station_filename))):
-            self.target_cells_from_station_file = False
+            self.compute_upstream_from_station_file = False
             self.disjoint_basin_extent = False
 
         # step: read the target cells from station file, if applicable
-        if self.target_cells_from_station_file:
+        if self.compute_upstream_from_station_file:
             succeed = self.generate_target_cells_from_station_file()
             if not succeed: return False
 

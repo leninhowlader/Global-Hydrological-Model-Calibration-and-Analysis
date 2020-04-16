@@ -864,7 +864,8 @@ class SimVariable(Variable):
             additional_attributes=[],
             dumping_directory='',
             prediction_directory='',
-            prefix_filename=''):
+            prefix_filename='',
+            use_lock=False):
         '''
         This function will read model predictions and (usually) calculates basin average time-series. Finally
         the timeseries will be dumped as binary files. To avoid unnecessary dumping of large data, the function
@@ -959,10 +960,12 @@ class SimVariable(Variable):
                         if data.ndim == 1: ncol = data.size
                         else: ncol = data.shape[1]
 
-                        dump_filename = self.varname + '%s.%d.unf0' % (prefix_filename, ncol)
+                        dump_filename = self.varname + '.%s.%d.unf0' % (prefix_filename, ncol)
                         if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
 
-                        lock_file = '_%s%s.LOCK' % (self.varname.upper(), prefix_filename)
+                        if use_lock: lock_file = '_%s.%s.LOCK' % (self.varname.upper(), prefix_filename)
+                        else: lock_file = ''
+
                         succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), lock_file)
 
                         if not succeed: break
@@ -1011,10 +1014,12 @@ class SimVariable(Variable):
                     if data.ndim == 1: ncol = data.size
                     else: ncol = data.shape[1]
 
-                    dump_filename = self.varname + '%s.%d.unf0' % (prefix_filename, ncol)
+                    dump_filename = self.varname + '.%s.%d.unf0' % (prefix_filename, ncol)
                     if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
 
-                    lock_file = '_%s%s.LOCK'% (self.varname.upper(), prefix_filename)
+                    if use_lock: lock_file = '_%s.%s.LOCK'% (self.varname.upper(), prefix_filename)
+                    else: lock_file = ''
+
                     succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), lock_file)
 
                 if not succeed: break

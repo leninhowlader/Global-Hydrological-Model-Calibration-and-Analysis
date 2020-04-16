@@ -274,7 +274,7 @@ class SensitivityAnalysis:
         # private variables
         __r = 0                 # No. of trajectories   
         __m = 0                 # No. of parameters
-        __fx = None
+        __fx = None             # function to compute f(x)
         
         __anomaly_flag = False  # flag to determine if anomalies would be 
                                 # computed before applying f(x)
@@ -328,7 +328,8 @@ class SensitivityAnalysis:
             :return: (float) root of mean squared deviation
             '''
             return np.sqrt(np.mean((ts1-ts2)**2))
-        
+
+        @staticmethod
         def construct_time_series(basin_data, sample_id):
             """
             This method constructs 1d time-series from basin data. First it find 
@@ -502,8 +503,8 @@ class SensitivityAnalysis:
             contrib = d_out[:, 1]/tee   # contribution of each parameters
             cum_contrib = np.cumsum(contrib).reshape(-1, 1)
             
-            d_out = np.concatenate((d_out, cum_contrib), axis=1)
-            colnames.append('cumcontrib')
+            d_out = np.concatenate((d_out, contrib.reshape(-1,1)), axis=1)
+            colnames.append('contrib')
             # end of step
             
             # step: select parameters based on (least) contribution threshold

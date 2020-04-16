@@ -1,5 +1,8 @@
-import numpy as np
+import os, numpy as np
 from enum import Enum
+from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D         # required for 3D plotting
+
 
 class Dominance(Enum):
     DOMINATES = -2,
@@ -152,3 +155,95 @@ class ParetoDominance():
                     indices.append(i)
         
         return np.array(pf), indices
+
+class ParetoFrontPlot:
+    @staticmethod
+    def get_index_of_compromised_solutions(fx, threshold):
+        return np.where((fx>threshold).all(axis=1))[0]
+
+    @staticmethod
+    def plot_pareto_front_4d(fx, figsize=(7, 6), xyz_2d_projection=True):
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111, projection='3d')
+        plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=.85,
+                            wspace=None, hspace=None)
+        fig.set_facecolor('white')
+        title = '(a) Ganges'
+        plt.suptitle(title, fontsize=22, style='italic')
+
+        # split data into four dimensions
+        x = fx[:, 0]
+        y = fx[:, 3]
+        z = fx[:, 2]
+        c = fx[:, 1]  # the fourth dimension will be shown as color map
+
+        # plot the scatter diagram
+        p = ax.scatter(x, y, z, c=c, cmap=plt.get_cmap('winter'),
+                       edgecolors='face', s=30, vmin=0.6, vmax=1.0)
+
+        if xyz_2d_projection:
+            ax.plot(x, z, '+', zdir='y', zs=0.4, color='grey', markersize=8,
+                    linewidth=1.3)  # color='blueviolet'
+            ax.plot(y, z, '+', zdir='x', zs=0.4, color='grey', markersize=8,
+                    linewidth=1.3)  # color='peru'
+            ax.plot(x, y, '+', zdir='z', zs=0.4, color='grey', markersize=8,
+                    linewidth=1.3)  # color='magenta')
+
+            utopia = np.array([1.0])
+            ax.plot(utopia, utopia, '+', zdir='y', zs=0.4, color='black',
+                    markersize=8, markeredgewidth=2)  # color='blueviolet'
+            ax.plot(utopia, utopia, '+', zdir='x', zs=0.4, color='black',
+                    markersize=8, markeredgewidth=2)  # color='peru'
+            ax.plot(utopia, utopia, '+', zdir='z', zs=0.4, color='black',
+                    markersize=8, markeredgewidth=2)
+
+        lim_lo, lim_hi = 0.4, 1.05
+
+        ax.set_xlim([lim_lo, lim_hi])
+        ax.set_ylim([lim_lo, lim_hi])
+        ax.set_zlim([lim_lo, lim_hi])
+
+        # set axes ticks
+        ax.xaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.1))
+        ax.yaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.1))
+        ax.zaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.1))
+
+        ax.tick_params(axis='both', which='major', labelsize=15)
+
+        # add axes labels
+        ax.set_xlabel('$f_1$: kge (q)', fontsize=20)
+        ax.set_ylabel('$f_4$: kge (twsv)', fontsize=20)
+        ax.set_zlabel('$f_3$: kge (sws)', fontsize=20)
+
+        ax.xaxis.labelpad = 20
+        ax.yaxis.labelpad = 20
+        ax.zaxis.labelpad = 20
+
+        # draw the colour bar
+        cbar = plt.colorbar(p, ticks=np.arange(0.6, 1.01, 0.1), pad=0.01,
+                            fraction=0.05, aspect=30)
+        cbar.ax.tick_params(labelsize=15)
+        cbar.outline.set_linewidth(0.6)
+        cbar.ax.get_yaxis().labelpad = -50
+        cbar.ax.get_yaxis().set_ticks_position('right')
+
+        cbar.ax.set_ylabel('$f_2$: kge (et)', rotation=270, fontsize=20)
+        # add the optimal (utopia) point and the chosen best point
+        ax.scatter(1, 1, 1, marker='o', edgecolor='face', c='r', zorder=-1,
+                   s=40)
+        ii = ParetoFrontPlot.get_index_of_compromised_solutions(fx, 0.85)
+        bp = fx[ii]
+
+        p1 = bp[:, 0]
+        p2 = bp[:, 3]
+        p3 = bp[:, 2]
+        ax.scatter(p1, p2, p3, marker='o', edgecolor='face', c='black', s=60,
+                   zorder=-1, linewidths=1.5)
+
+        # show or save the graph
+        # ax.view_init(35,-135)                    # adjust viewing angle
+        ax.view_init(27, 25)
+        f = 'pf_Ganges_C15.png'
+        fig.savefig(f)
+        # fig.tight_layout()
+        plt.show()
