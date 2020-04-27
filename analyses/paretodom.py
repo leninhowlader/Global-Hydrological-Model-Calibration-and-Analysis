@@ -158,92 +158,259 @@ class ParetoDominance():
 
 class ParetoFrontPlot:
     @staticmethod
-    def get_index_of_compromised_solutions(fx, threshold):
-        return np.where((fx>threshold).all(axis=1))[0]
+    def draw_paretofront_4d(fx,
+                             figsize=(7, 6),
+                             add_2d_projection=True,
+                             lim_visible=0.5,
+                             lim_compromise=0.7,
+                             axis_labels=[],
+                             title='',
+                             axis_labelfontsize=18,
+                             axis_labelpad=16,
+                             azimuth=30,
+                             elevation=25,
+                             filename_out= ''):
 
-    @staticmethod
-    def plot_pareto_front_4d(fx, figsize=(7, 6), xyz_2d_projection=True):
+        # [step] input validation
+        if fx.shape[0] == 0 or fx.shape[1] != 4: return None
+        if axis_labels and len(axis_labels) != fx.shape[1]: return None
+        if not axis_labels:
+            axis_labels += [r'$f_1$', r'$f_2$', r'$f_3$', r'$f_4$']
+        # end [step]
+
+
+        # [step] screen solutions
+        # screen out solutions outside visible limit
+        ii = np.where((fx > lim_visible).all(axis=1))
+        fx = fx[ii]
+        # end [step]
+
+        # [step] create plot
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111, projection='3d')
-        plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=.85,
+        plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=.90,
                             wspace=None, hspace=None)
         fig.set_facecolor('white')
-        title = '(a) Ganges'
-        plt.suptitle(title, fontsize=22, style='italic')
+        if title: plt.suptitle(title, fontsize=22, style='italic')
+        # end [step]
 
+        # [step] draw point on the plot
         # split data into four dimensions
         x = fx[:, 0]
-        y = fx[:, 3]
+        y = fx[:, 1]
         z = fx[:, 2]
-        c = fx[:, 1]  # the fourth dimension will be shown as color map
+        c = fx[:, 3]  # the fourth dimension will be shown as color map
 
         # plot the scatter diagram
-        p = ax.scatter(x, y, z, c=c, cmap=plt.get_cmap('winter'),
+        p = ax.scatter(x, y, z, c=c, cmap=plt.get_cmap('winter_r'),
                        edgecolors='face', s=30, vmin=0.6, vmax=1.0)
 
-        if xyz_2d_projection:
-            ax.plot(x, z, '+', zdir='y', zs=0.4, color='grey', markersize=8,
-                    linewidth=1.3)  # color='blueviolet'
-            ax.plot(y, z, '+', zdir='x', zs=0.4, color='grey', markersize=8,
-                    linewidth=1.3)  # color='peru'
-            ax.plot(x, y, '+', zdir='z', zs=0.4, color='grey', markersize=8,
-                    linewidth=1.3)  # color='magenta')
+        if add_2d_projection:
+            zs = lim_visible - 0.1
+            color, markersize = 'grey', 7
+            ax.plot(x, z, '+', zdir='y', zs=zs, color=color, markersize=markersize,
+                    linewidth=1.3)
+            ax.plot(y, z, '+', zdir='x', zs=zs, color=color, markersize=markersize,
+                    linewidth=1.3)
+            ax.plot(x, y, '+', zdir='z', zs=zs, color=color, markersize=markersize,
+                    linewidth=1.3)
 
             utopia = np.array([1.0])
-            ax.plot(utopia, utopia, '+', zdir='y', zs=0.4, color='black',
-                    markersize=8, markeredgewidth=2)  # color='blueviolet'
-            ax.plot(utopia, utopia, '+', zdir='x', zs=0.4, color='black',
-                    markersize=8, markeredgewidth=2)  # color='peru'
-            ax.plot(utopia, utopia, '+', zdir='z', zs=0.4, color='black',
-                    markersize=8, markeredgewidth=2)
+            color, markersize = 'red', 7
+            ax.plot(utopia, utopia, '+', zdir='y', zs=zs, color=color,
+                    markersize=markersize, markeredgewidth=2)
+            ax.plot(utopia, utopia, '+', zdir='x', zs=zs, color=color,
+                    markersize=markersize, markeredgewidth=2)
+            ax.plot(utopia, utopia, '+', zdir='z', zs=zs, color=color,
+                    markersize=markersize, markeredgewidth=2)
+        # end [step]
 
-        lim_lo, lim_hi = 0.4, 1.05
+        # [step] set axes, axis ticks, axis labels
+        lim_lo, lim_hi = lim_visible - 0.1, 1.05
 
         ax.set_xlim([lim_lo, lim_hi])
         ax.set_ylim([lim_lo, lim_hi])
         ax.set_zlim([lim_lo, lim_hi])
 
         # set axes ticks
-        ax.xaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.1))
-        ax.yaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.1))
-        ax.zaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.1))
+        ax.xaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
+        ax.yaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
+        ax.zaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
 
-        ax.tick_params(axis='both', which='major', labelsize=15)
+        ax.tick_params(axis='both', which='major', labelsize=13)
 
         # add axes labels
-        ax.set_xlabel('$f_1$: kge (q)', fontsize=20)
-        ax.set_ylabel('$f_4$: kge (twsv)', fontsize=20)
-        ax.set_zlabel('$f_3$: kge (sws)', fontsize=20)
+        ax.set_xlabel(axis_labels[0], fontsize=axis_labelfontsize)
+        ax.set_ylabel(axis_labels[1], fontsize=axis_labelfontsize)
+        ax.set_zlabel(axis_labels[2], fontsize=axis_labelfontsize)
 
-        ax.xaxis.labelpad = 20
-        ax.yaxis.labelpad = 20
-        ax.zaxis.labelpad = 20
+        ax.xaxis.labelpad = axis_labelpad
+        ax.yaxis.labelpad = axis_labelpad
+        ax.zaxis.labelpad = axis_labelpad
+        # end [step]
 
-        # draw the colour bar
-        cbar = plt.colorbar(p, ticks=np.arange(0.6, 1.01, 0.1), pad=0.01,
+        # [step] include 4th objective: draw the colour bar
+        cbar = plt.colorbar(p, ticks=np.arange(lim_lo, 1.01, 0.1), pad=0.01,
                             fraction=0.05, aspect=30)
-        cbar.ax.tick_params(labelsize=15)
+        cbar.ax.tick_params(labelsize=12)
         cbar.outline.set_linewidth(0.6)
-        cbar.ax.get_yaxis().labelpad = -50
-        cbar.ax.get_yaxis().set_ticks_position('right')
+        cbar.ax.get_yaxis().labelpad = 5
+        cbar.ax.get_yaxis().set_ticks_position('left')
 
-        cbar.ax.set_ylabel('$f_2$: kge (et)', rotation=270, fontsize=20)
+        cbar.ax.set_ylabel(axis_labels[3], rotation=90,
+                           fontsize=axis_labelfontsize, labelpad=5)
         # add the optimal (utopia) point and the chosen best point
         ax.scatter(1, 1, 1, marker='o', edgecolor='face', c='r', zorder=-1,
                    s=40)
-        ii = ParetoFrontPlot.get_index_of_compromised_solutions(fx, 0.85)
-        bp = fx[ii]
+        # end [step]
 
-        p1 = bp[:, 0]
-        p2 = bp[:, 3]
-        p3 = bp[:, 2]
-        ax.scatter(p1, p2, p3, marker='o', edgecolor='face', c='black', s=60,
+        # [step] mark compromised solutions
+        ii = np.where((fx >= lim_compromise).all(axis=1))
+        x, y, z = fx[ii][:,0], fx[ii][:,1], fx[ii][:,2]
+
+        ax.scatter(x, y, z, marker='o', edgecolor='face', c='black', s=60,
                    zorder=-1, linewidths=1.5)
 
-        # show or save the graph
-        # ax.view_init(35,-135)                    # adjust viewing angle
-        ax.view_init(27, 25)
-        f = 'pf_Ganges_C15.png'
-        fig.savefig(f)
-        # fig.tight_layout()
-        plt.show()
+        if add_2d_projection:
+            zs = lim_visible - 0.1
+            color, markersize = 'black', 4
+            ax.plot(x, z, '+', zdir='y', zs=zs, color=color, markersize=markersize,
+                    linewidth=1.3)  # color='blueviolet'
+            ax.plot(y, z, '+', zdir='x', zs=zs, color=color, markersize=markersize,
+                    linewidth=1.3)  # color='peru'
+            ax.plot(x, y, '+', zdir='z', zs=zs, color=color, markersize=markersize,
+                    linewidth=1.3)  # color='magenta')
+        # end [step]
+
+        # [step] adjust viewing angle
+        ax.view_init(elev=elevation, azim=azimuth)
+        # end [step]
+
+        # [step] save figure into imagefile
+        if filename_out: fig.savefig(filename_out, dpi=600)
+        # end [step]
+
+        return fig
+
+    @staticmethod
+    def draw_paretofront_3d(fx,
+                            figsize=(7, 6),
+                            add_2d_projection=True,
+                            lim_visible=0.5,
+                            lim_compromise=0.7,
+                            axis_labels=[],
+                            title='',
+                            axis_labelfontsize=18,
+                            axis_labelpad=16,
+                            azimuth=30,
+                            elevation=25,
+                            filename_out=''):
+
+        # [step] input validation
+        if fx.shape[0] == 0 or fx.shape[1] != 3: return None
+        if axis_labels and len(axis_labels) != fx.shape[1]: return None
+        if not axis_labels:
+            axis_labels += [r'$f_1$', r'$f_2$', r'$f_3$']
+        # end [step]
+
+        # [step] screen solutions
+        # screen out solutions outside visible limit
+        ii = np.where((fx > lim_visible).all(axis=1))
+        fx = fx[ii]
+        # end [step]
+
+        # [step] create plot
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111, projection='3d')
+        plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=.95,
+                            wspace=None, hspace=None)
+        fig.set_facecolor('white')
+        if title: plt.suptitle(title, fontsize=22, style='italic')
+        # end [step]
+
+        # [step] draw point on the plot
+        x = fx[:, 0]
+        y = fx[:, 1]
+        z = fx[:, 2]
+        # plot the scatter diagram
+        p = ax.scatter(x, y, z, color='red', edgecolors='face', s=20,
+                       vmin=0.6, vmax=1.0, zorder=1)
+
+        if add_2d_projection:
+            zs = lim_visible - 0.1
+            color, markersize = 'grey', 7
+            ax.plot(x, z, '+', zdir='y', zs=zs, color=color,
+                    markersize=markersize,
+                    linewidth=1.3)
+            ax.plot(y, z, '+', zdir='x', zs=zs, color=color,
+                    markersize=markersize,
+                    linewidth=1.3)
+            ax.plot(x, y, '+', zdir='z', zs=zs, color=color,
+                    markersize=markersize,
+                    linewidth=1.3)
+
+            utopia = np.array([1.0])
+            color, markersize = 'red', 7
+            ax.plot(utopia, utopia, '+', zdir='y', zs=zs, color=color,
+                    markersize=markersize, markeredgewidth=2)
+            ax.plot(utopia, utopia, '+', zdir='x', zs=zs, color=color,
+                    markersize=markersize, markeredgewidth=2)
+            ax.plot(utopia, utopia, '+', zdir='z', zs=zs, color=color,
+                    markersize=markersize, markeredgewidth=2)
+        # end [step]
+
+        # [step] set axes, axis ticks, axis labels
+        lim_lo, lim_hi = lim_visible - 0.1, 1.05
+
+        ax.set_xlim([lim_lo, lim_hi])
+        ax.set_ylim([lim_lo, lim_hi])
+        ax.set_zlim([lim_lo, lim_hi])
+
+        # set axes ticks
+        ax.xaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
+        ax.yaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
+        ax.zaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
+
+        ax.tick_params(axis='both', which='major', labelsize=13)
+
+        # add axes labels
+        ax.set_xlabel(axis_labels[0], fontsize=axis_labelfontsize)
+        ax.set_ylabel(axis_labels[1], fontsize=axis_labelfontsize)
+        ax.set_zlabel(axis_labels[2], fontsize=axis_labelfontsize)
+
+        ax.xaxis.labelpad = axis_labelpad
+        ax.yaxis.labelpad = axis_labelpad
+        ax.zaxis.labelpad = axis_labelpad
+        # end [step]
+
+        # [step] mark compromised solutions
+        ii = np.where((fx >= lim_compromise).all(axis=1))
+        x, y, z = fx[ii][:, 0], fx[ii][:, 1], fx[ii][:, 2]
+
+        ax.scatter(x, y, z, marker='o',
+                   facecolors=(0,0,0,0), edgecolor='black', s=30,
+                   linewidths=1.5, zorder=0)
+
+        if add_2d_projection:
+            zs = lim_visible - 0.1
+            color, markersize = 'black', 4
+            ax.plot(x, z, '+', zdir='y', zs=zs, color=color,
+                    markersize=markersize,
+                    linewidth=1.3)  # color='blueviolet'
+            ax.plot(y, z, '+', zdir='x', zs=zs, color=color,
+                    markersize=markersize,
+                    linewidth=1.3)  # color='peru'
+            ax.plot(x, y, '+', zdir='z', zs=zs, color=color,
+                    markersize=markersize,
+                    linewidth=1.3)  # color='magenta')
+        # end [step]
+
+        # [step] adjust viewing angle
+        ax.view_init(elev=elevation, azim=azimuth)
+        # end [step]
+
+        # [step] save figure into imagefile
+        if filename_out: fig.savefig(filename_out, dpi=600)
+        # end [step]
+
+        return fig
