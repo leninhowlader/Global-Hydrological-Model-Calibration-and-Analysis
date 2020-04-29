@@ -1,10 +1,11 @@
 import sys, os, numpy as np, pandas as pd
 from matplotlib import pyplot as plt
+from collections import OrderedDict
+from datetime import datetime
+from calendar import monthrange
+
 sys.path.append('..')
-
-
-#from utilities.fileio import FileInputOutput as io
-
+from wgap.wgapio import WaterGapIO as wio
 
 class BorgOutput:
     @staticmethod
@@ -455,7 +456,6 @@ class RuntimeDynamicReport:
         return True
 
 class BorgSolutionEvaluation:
-
     @staticmethod
     def prediction_time_series(data: np.ndarray, prediction_id: int):
         # extract prediction of single model run
@@ -570,3 +570,222 @@ class BorgSolutionEvaluation:
         data_out = np.concatenate((ind, storage_sum), axis=1)
 
         return wio.write_unf(filename_out, data=data_out)
+
+    @staticmethod
+    def plot_predictions_with_solutions(
+            prediction_dumpfile,
+            solution_ids,
+            observation_filename='',
+            standard_model_dumpfile='',
+            compute_anomaly=False,
+            solution_fx:np.ndarray=np.empty(0),
+            accept_lim=0.4,
+            show_top_solutions=0,
+            top_selection_method='euclid',    # options: 'rmse', 'euclid'
+            figsize = (14, 5),
+            filename_out = '',
+            title='',
+            apply_tightlayout=False,
+            ylim=(), yticks=(), ylabel='',
+            xlim=(), xticks=(), xlabel=''
+    ):
+
+        # inner function
+        def monthenddate(years: np.ndarray, months: np.ndarray):
+            def enddate(year, month):
+                return datetime(year, month, monthrange(year, month)[1])
+
+            dates = np.array([enddate(int(years[i]), int(months[i])) for i
+                              in range(len(years))], dtype=np.datetime64)
+
+            return dates.reshape(-1, 1)
+        # end of inner function
+
+        # inner function
+        def generate_year_month_pair(start_year, end_year):
+            years = np.repeat(np.arange(start_year, end_year + 1), 12).reshape(
+                -1, 1)
+            months = np.repeat(np.arange(1, 12 + 1)[np.newaxis, :],
+                               (end_year-start_year+1), axis=0).reshape(-1,1)
+            yrmon = pd.DataFrame(data=np.concatenate((years, months), axis=1),
+                                 columns=['year', 'month'])
+            return yrmon
+        # end of inner function
+
+        # inner function
+        def find_start_and_end_year():
+            yrs = np.unique(data_sim[:, 2]).astype(int)
+            return yrs.min(), yrs.max()
+        # end of inner function
+
+        # inner function
+        def extract_predictions_multiple(sids):
+            predicts = np.empty(0)
+
+            for sid in sids:
+                p = BorgSolutionEvaluation.prediction_time_series(
+                    data_sim, sid).prediction.values.reshape(-1, 1)
+
+                try: predicts = np.concatenate((predicts, p), axis=1)
+                except: predicts = p
+
+            return predicts
+        # end of inner function
+
+        # inner function
+        def rmse(sim, obs):
+            try: return np.sqrt(np.mean((obs - sim) ** 2))
+            except: return np.nan
+        # end of inner function
+
+        # [step] read simulation dump file
+        data_sim = wio.read_unf(prediction_dumpfile)
+        if data_sim.shape[0] == 0: return None
+        # end [step]
+
+        # [step] prepare data that would be plotted
+        data_plot = OrderedDict()
+
+        if len(solution_ids) == 0: return None
+
+        # x-axis data: dates
+        start_year, end_year = find_start_and_end_year()
+        yrmon = generate_year_month_pair(start_year, end_year)
+        x = monthenddate(yrmon.iloc[:, 0].values, yrmon.iloc[:, 1].values)
+
+        # prediction with borg solutions
+        if solution_fx.shape[0] == len(solution_ids):
+            if solution_fx.ndim == 1: ii = np.where(solution_fx>=accept_lim)
+            else: ii = np.where((solution_fx>=accept_lim).all(axis=1))
+
+            y = extract_predictions_multiple(solution_ids[ii])
+            if compute_anomaly: y = y - y.mean(axis=0)
+            data_plot['Acceptable Solutions'] = {'data': y,
+                                                 'linestyle': (1, ()),
+                                                 'color': 'silver'}
+
+        else:
+            y = extract_predictions_multiple(solution_ids)
+            if compute_anomaly: y = y - y.mean(axis=0)
+            data_plot['Borg Solutions'] = {'data': y,
+                                           'linestyle': (1, ()),
+                                           'color': 'silver'}
+
+        # prediction of top solutions
+        obs = pd.DataFrame()
+        if show_top_solutions > 0:
+            nsol = show_top_solutions
+            if top_selection_method == 'euclid' and solution_fx.shape[0]>0:
+                if solution_fx.ndim ==1: ed = np.power(1-solution_fx, 2)
+                else: ed = np.power(1-solution_fx, 2).sum(axis=1)
+
+                ii = np.argsort(ed)[:nsol]
+                y = extract_predictions_multiple(solution_ids[ii])
+                if compute_anomaly: y = y - y.mean(axis=0)
+                data_plot['Top %d Solution(s)'%nsol] = {'data': y,
+                                                        'linestyle': (1, ()),
+                                                        'color': 'green'}
+
+            if top_selection_method == 'rmse' and observation_filename:
+                obs = BorgSolutionEvaluation.observation_time_series(
+                                                    observation_filename)
+
+                if compute_anomaly: obs.observation -= obs.observation.mean()
+
+                errors = []
+                for sid in solution_ids:
+                    pred = BorgSolutionEvaluation.prediction_time_series(data_sim, sid)
+
+                    if compute_anomaly:
+                        pred.prediction -= pred.prediction.mean()
+
+                    s, o = BorgSolutionEvaluation.couple_prediction_observation(pred, obs)
+                    errors.append(rmse(s, o))
+
+                errors = np.array(errors)
+                ii = np.argsort(errors)[:nsol]
+                y = extract_predictions_multiple(solution_ids[ii])
+                if compute_anomaly: y = y - y.mean(axis=0)
+                data_plot['Top %d Solution(s)' % nsol] = {'data': y,
+                                                          'linestyle': (1, ()),
+                                                          'color': 'green'}
+
+        # observations
+        if observation_filename:
+            if obs.shape[0] == 0:
+                obs = BorgSolutionEvaluation.observation_time_series(
+                                                observation_filename)
+            obs = yrmon.merge(right=obs, how='left', on=['year', 'month'])
+            if compute_anomaly: obs.observation -= obs.observation.mean()
+            data_plot['Observations'] = {'data': obs.observation.values,
+                                         'linestyle': (1, ()),
+                                         'color': 'blue'}
+
+        # standard model prediction
+        if standard_model_dumpfile:
+            std = wio.read_unf(standard_model_dumpfile)
+
+            if std.shape[0] > 0:
+                std = BorgSolutionEvaluation.prediction_time_series(std, 0)
+                std = yrmon.merge(right=std, how='left', on=['year', 'month'])
+                if compute_anomaly: std.prediction -= std.prediction.mean()
+                data_plot['Standard WGHM'] = {'data': std.prediction.values,
+                                              'linestyle': (1, (5, 5)),
+                                              'color': 'red'}
+        # end [step]
+
+        # [step] create canvas
+        fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9,
+                            wspace=None, hspace=None)
+        # end [step]
+
+        # [step] add plot and set visibility of spines
+        ax = fig.add_subplot(1, 1, 1)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        # end [step]
+
+        # [step] plot data
+        for key, value in data_plot.items():
+            ax.plot(x, value['data'], color=value['color'],
+                    linestyle=value['linestyle'], label=key)
+        # end [step]
+
+        # [step] set axes properties
+        if len(ylim) == 2: ax.set_ylim(ylim[0], ylim[1])
+        if yticks: ax.yaxis.set_ticks(yticks)
+        ax.yaxis.set_ticks_position('left')
+        ax.yaxis.set_tick_params(direction='out', which='both', labelsize=15)
+        ax.set_ylabel(ylabel, fontsize=20, labelpad=15)
+        ax.yaxis.grid(which='major', linestyle='--', color='silver', zorder=-1)
+
+        if len(xlim) == 2: ax.set_xlim(xlim[0], xlim[1])
+        if xticks: ax.xaxis.set_ticks(xticks)
+        if xlabel: ax.set_xlabel(xlabel, fontsize=20, labelpad=15)
+
+        ax.xaxis.set_tick_params(direction='out', which='both', labelsize=15)
+        # end [step]
+
+        # [step] add legend
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys(), frameon=False,
+                  fontsize=15)
+        # end [step]
+
+        # [step] set plot title
+        ax.set_title(title, fontsize=20, fontweight='bold')
+        # end [step]
+
+        # [step] apply tight layout
+        if apply_tightlayout: fig.tight_layout()
+        # end [step]
+
+        # [step] save figure into image file
+        if filename_out: fig.savefig(filename_out, dpi=600)
+        # end [step]
+
+        return fig
