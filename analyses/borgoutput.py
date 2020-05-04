@@ -1,5 +1,5 @@
 import sys, os, numpy as np, pandas as pd
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, patches
 from collections import OrderedDict
 from datetime import datetime
 from calendar import monthrange
@@ -586,8 +586,13 @@ class BorgSolutionEvaluation:
             filename_out = '',
             title='',
             apply_tightlayout=False,
-            ylim=(), yticks=(), ylabel='',
-            xlim=(), xticks=(), xlabel=''
+            ylim=(), yticks=(), yticklabels=[], ylabel='',
+            xlim=(), xticks=(), xticklabels=[], xlabel='',
+            color_allsolution='silver', color_topsolution = 'lime',
+            color_observation='dodgerblue', color_stdpmodel = 'red',
+            linestyle_allsolution = '-', linestyle_topsolution = '-',
+            linestyle_observation = '-', linestyle_stdmodel = '--',
+            show_month_averages=False
     ):
 
         # inner function
@@ -619,15 +624,25 @@ class BorgSolutionEvaluation:
         # end of inner function
 
         # inner function
-        def extract_predictions_multiple(sids):
+        def extract_predictions_multiple(sids, monthly_average=False):
             predicts = np.empty(0)
 
-            for sid in sids:
-                p = BorgSolutionEvaluation.prediction_time_series(
-                    data_sim, sid).prediction.values.reshape(-1, 1)
+            if monthly_average:
+                for sid in sids:
+                    p = BorgSolutionEvaluation.prediction_time_series(
+                                                                data_sim, sid)
+                    p = p.iloc[:, -2:].groupby(by='month').mean().\
+                        prediction.values.reshape(-1, 1)
 
-                try: predicts = np.concatenate((predicts, p), axis=1)
-                except: predicts = p
+                    try: predicts = np.concatenate((predicts, p), axis=1)
+                    except: predicts = p
+            else:
+                for sid in sids:
+                    p = BorgSolutionEvaluation.prediction_time_series(
+                        data_sim, sid).prediction.values.reshape(-1, 1)
+
+                    try: predicts = np.concatenate((predicts, p), axis=1)
+                    except: predicts = p
 
             return predicts
         # end of inner function
@@ -648,28 +663,34 @@ class BorgSolutionEvaluation:
 
         if len(solution_ids) == 0: return None
 
-        # x-axis data: dates
+        # x-axis data: dates or month numbers
         start_year, end_year = find_start_and_end_year()
         yrmon = generate_year_month_pair(start_year, end_year)
-        x = monthenddate(yrmon.iloc[:, 0].values, yrmon.iloc[:, 1].values)
+        if show_month_averages:
+            x = np.arange(1, 12 + 1)
+            if not xticks: xticks = x.tolist()
+            if not xticklabels:
+                xticklabels = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
+                               'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        else: x = monthenddate(yrmon.iloc[:, 0].values, yrmon.iloc[:, 1].values)
 
         # prediction with borg solutions
         if solution_fx.shape[0] == len(solution_ids):
             if solution_fx.ndim == 1: ii = np.where(solution_fx>=accept_lim)
             else: ii = np.where((solution_fx>=accept_lim).all(axis=1))
 
-            y = extract_predictions_multiple(solution_ids[ii])
+            y = extract_predictions_multiple(solution_ids[ii], show_month_averages)
             if compute_anomaly: y = y - y.mean(axis=0)
             data_plot['Acceptable Solutions'] = {'data': y,
-                                                 'linestyle': (1, ()),
-                                                 'color': 'silver'}
+                                                 'linestyle': linestyle_allsolution,
+                                                 'color': color_allsolution}
 
         else:
-            y = extract_predictions_multiple(solution_ids)
+            y = extract_predictions_multiple(solution_ids, show_month_averages)
             if compute_anomaly: y = y - y.mean(axis=0)
             data_plot['Borg Solutions'] = {'data': y,
-                                           'linestyle': (1, ()),
-                                           'color': 'silver'}
+                                           'linestyle': linestyle_allsolution,
+                                           'color': color_allsolution}
 
         # prediction of top solutions
         obs = pd.DataFrame()
@@ -680,11 +701,11 @@ class BorgSolutionEvaluation:
                 else: ed = np.power(1-solution_fx, 2).sum(axis=1)
 
                 ii = np.argsort(ed)[:nsol]
-                y = extract_predictions_multiple(solution_ids[ii])
+                y = extract_predictions_multiple(solution_ids[ii], show_month_averages)
                 if compute_anomaly: y = y - y.mean(axis=0)
                 data_plot['Top %d Solution(s)'%nsol] = {'data': y,
-                                                        'linestyle': (1, ()),
-                                                        'color': 'green'}
+                                                        'linestyle': linestyle_topsolution,
+                                                        'color': color_topsolution}
 
             if top_selection_method == 'rmse' and observation_filename:
                 obs = BorgSolutionEvaluation.observation_time_series(
@@ -704,11 +725,11 @@ class BorgSolutionEvaluation:
 
                 errors = np.array(errors)
                 ii = np.argsort(errors)[:nsol]
-                y = extract_predictions_multiple(solution_ids[ii])
+                y = extract_predictions_multiple(solution_ids[ii], show_month_averages)
                 if compute_anomaly: y = y - y.mean(axis=0)
                 data_plot['Top %d Solution(s)' % nsol] = {'data': y,
-                                                          'linestyle': (1, ()),
-                                                          'color': 'green'}
+                                                          'linestyle': linestyle_topsolution,
+                                                          'color': color_topsolution}
 
         # observations
         if observation_filename:
@@ -716,10 +737,13 @@ class BorgSolutionEvaluation:
                 obs = BorgSolutionEvaluation.observation_time_series(
                                                 observation_filename)
             obs = yrmon.merge(right=obs, how='left', on=['year', 'month'])
+
+            if show_month_averages:
+                obs = obs.iloc[:, -2:].groupby(by='month').mean()
             if compute_anomaly: obs.observation -= obs.observation.mean()
             data_plot['Observations'] = {'data': obs.observation.values,
-                                         'linestyle': (1, ()),
-                                         'color': 'blue'}
+                                         'linestyle': linestyle_observation,
+                                         'color': color_observation}
 
         # standard model prediction
         if standard_model_dumpfile:
@@ -728,10 +752,13 @@ class BorgSolutionEvaluation:
             if std.shape[0] > 0:
                 std = BorgSolutionEvaluation.prediction_time_series(std, 0)
                 std = yrmon.merge(right=std, how='left', on=['year', 'month'])
+
+                if show_month_averages:
+                    std = std.iloc[:, -2:].groupby(by='month').mean()
                 if compute_anomaly: std.prediction -= std.prediction.mean()
                 data_plot['Standard WGHM'] = {'data': std.prediction.values,
-                                              'linestyle': (1, (5, 5)),
-                                              'color': 'red'}
+                                              'linestyle': linestyle_stdmodel,
+                                              'color': color_stdpmodel}
         # end [step]
 
         # [step] create canvas
@@ -757,6 +784,7 @@ class BorgSolutionEvaluation:
         # [step] set axes properties
         if len(ylim) == 2: ax.set_ylim(ylim[0], ylim[1])
         if yticks: ax.yaxis.set_ticks(yticks)
+        if yticklabels: ax.yaxis.set_ticklabels(yticklabels)
         ax.yaxis.set_ticks_position('left')
         ax.yaxis.set_tick_params(direction='out', which='both', labelsize=15)
         ax.set_ylabel(ylabel, fontsize=20, labelpad=15)
@@ -764,6 +792,7 @@ class BorgSolutionEvaluation:
 
         if len(xlim) == 2: ax.set_xlim(xlim[0], xlim[1])
         if xticks: ax.xaxis.set_ticks(xticks)
+        if xticklabels: ax.xaxis.set_ticklabels(xticklabels)
         if xlabel: ax.set_xlabel(xlabel, fontsize=20, labelpad=15)
 
         ax.xaxis.set_tick_params(direction='out', which='both', labelsize=15)
@@ -788,4 +817,257 @@ class BorgSolutionEvaluation:
         if filename_out: fig.savefig(filename_out, dpi=600)
         # end [step]
 
+        return fig
+
+    @staticmethod
+    def random_realization_of_observation(
+            obs:np.ndarray,
+            observation_error,
+            no_of_realization=1000,
+            non_stationary_error=True
+    ):
+        # [step] check inputs
+        if obs.shape[0] == 0: return np.empty(0)
+        if no_of_realization <= 1: return np.empty(0)
+
+        if (type(observation_error) is np.ndarray or type(observation_error) is list):
+            if len(observation_error) > 1 and len(observation_error) != len(obs):
+                return np.empty(0)
+            observation_error = np.ndarray(observation_error)
+        # end [step]
+
+        # [step] generate array of random error
+        if non_stationary_error:
+            errors = np.random.rand(no_of_realization, obs.shape[0])
+        else: errors = np.random.rand(no_of_realization, 1)
+        errors = errors * observation_error
+
+        # choose signs randomly
+        ii = np.random.randint(2, size=errors.size, dtype=bool).reshape(errors.shape)
+        errors[ii] = errors[ii] * -1
+
+        # percentage error = |observation - actual value|/actual value
+        # thus, actual value = observation / (1 plus_or_minus percentage error)
+        obs = obs / (1 + errors)
+        # end [step]
+
+        return obs
+
+    @staticmethod
+    def plot_objectives_with_random_observation_realizations(
+            solution_ids,
+            prediction_dumpfile_var1,
+            prediction_dumpfile_var2,
+            observation_filename_var1,
+            observation_filename_var2,
+            observation_error_var1,
+            observation_error_var2,
+            objective_function,
+            number_of_random_realization=1000,
+            non_stationary_error=True,
+            compute_anomaly_var1=False,
+            compute_anomaly_var2=False,
+            figsize = (6, 6),
+            xlim=(), xticks=(), xticklabels=(), xlabel='',
+            ylim=(), yticks=(), yticklabels=(), ylabel='',
+            marker='+', markersize=7, markercolor='silver',
+            show_grid_xaxis=False, show_grid_yaxis=False,
+            apply_tight_layout=False,
+            filename_out = ''
+    ):
+        __self = BorgSolutionEvaluation
+        fun = objective_function
+
+        # inner function
+        def generate_year_month_pair(start_year, end_year):
+            years = np.repeat(np.arange(start_year, end_year + 1),
+                              12).reshape(-1, 1)
+            months = np.repeat(np.arange(1, 12 + 1)[np.newaxis, :],
+                               (end_year-start_year+1), axis=0).reshape(-1,1)
+
+            yrmon = pd.DataFrame(data=np.concatenate((years, months), axis=1),
+                                 columns=['year', 'month'])
+            return yrmon
+        # end of inner function
+
+        # inner function
+        def find_start_and_end_year(data_sim):
+            yrs = np.unique(data_sim[:, 2]).astype(int)
+            return yrs.min(), yrs.max()
+        # end of inner function
+
+        # inner function
+        def compute_objectives(sid):
+            s1 = __self.prediction_time_series(data_sim_var1, sid)
+            s1 = s1.merge(right=yrmon_var1, how='inner', on=['year', 'month'])
+
+            s1 = s1.prediction.values
+            if compute_anomaly_var1: s1 = s1 - s1.mean()
+
+            x1 = np.array([fun(s1, o) for o in obs_with_error_var1])
+            x2 = fun(s1, obs_var1.observation.values)
+
+            s2 = __self.prediction_time_series(data_sim_var2, sid)
+            s2 = s2.merge(right=yrmon_var2, how='inner', on=['year', 'month'])
+
+            s2 = s2.prediction.values
+            if compute_anomaly_var2: s2 = s2 - s2.mean()
+
+            y1 = np.array([fun(s2, o) for o in obs_with_error_var2])
+            y2 = fun(s2, obs_var2.observation.values)
+
+            return x1, y1, x2, y2
+        # end of inner function
+
+        # inner function
+        def get_boundary_box(x1, y1, x2, y2):
+            left = min(x1.min(), x2)
+            bottom = min(y1.min(), y2)
+
+            width = max(x1.max(), x2) - left
+            height = max(y1.max(), y2) - bottom
+
+            return left, bottom, width, height
+        # end of inner function
+
+        # [step] check inputs
+        if len(solution_ids) == 0: return None
+
+        if not (os.path.exists(prediction_dumpfile_var1) and
+                os.path.exists(prediction_dumpfile_var2) and
+                os.path.exists(observation_filename_var1) and
+                os.path.exists(observation_filename_var2)
+        ): return None
+
+        if (type(observation_error_var1) is np.ndarray or
+            type(observation_error_var1) is list
+        ) and len(observation_error_var1) == 0: return None
+
+        if (type(observation_error_var2) is np.ndarray or
+            type(observation_error_var2) is list
+        ) and len(observation_error_var2) == 0: return None
+        # end [step]
+
+        # [step] read prediction and observation files
+        data_sim_var1 = wio.read_unf(prediction_dumpfile_var1)
+        data_sim_var2 = wio.read_unf(prediction_dumpfile_var2)
+
+        obs_var1 = __self.observation_time_series(observation_filename_var1)
+        obs_var2 = __self.observation_time_series(observation_filename_var2)
+
+        start_year, end_year = find_start_and_end_year(data_sim_var1)
+        yrmon = generate_year_month_pair(start_year, end_year)
+        obs_var1 = obs_var1.merge(right=yrmon, how='inner', on=['year', 'month'])
+
+        start_year, end_year = find_start_and_end_year(data_sim_var2)
+        yrmon = generate_year_month_pair(start_year, end_year)
+        obs_var2 = obs_var2.merge(right=yrmon, how='inner', on=['year', 'month'])
+
+        # year-month columns will be used during objective calculation. only
+        # simulation values at these months will be considered
+        yrmon_var1, yrmon_var2 = obs_var1.iloc[:,:2], obs_var2.iloc[:, :2]
+
+        if (data_sim_var1.shape[0] == 0 or data_sim_var2.shape[0] == 0 or
+            obs_var1.shape[0] == 0 or obs_var2.shape[0] == 0
+        ): return None
+        # end [step]
+
+        # [step] generate random observation realizations
+        obs_with_error_var1 = __self.random_realization_of_observation(
+            obs=obs_var1.observation.values,
+            observation_error=observation_error_var1,
+            no_of_realization=number_of_random_realization,
+            non_stationary_error=non_stationary_error
+        )
+
+        print(obs_with_error_var1.shape)
+
+        obs_with_error_var2 = __self.random_realization_of_observation(
+            obs=obs_var2.observation.values,
+            observation_error=observation_error_var2,
+            no_of_realization=number_of_random_realization,
+            non_stationary_error=non_stationary_error
+        )
+
+        print(obs_with_error_var2.shape)
+        # end [step]
+
+        # [step] compute anomalies of observations
+        if compute_anomaly_var1:
+            obs_var1.observation -= obs_var1.observation.mean()
+            obs_with_error_var1 -= obs_with_error_var1.mean(axis=1).reshape(-1, 1)
+
+        if compute_anomaly_var2:
+            obs_var2.observation -= obs_var2.observation.mean()
+            obs_with_error_var2 -= obs_with_error_var2.mean(axis=1).reshape(-1, 1)
+        # end [step]
+
+        # [step] create canvas
+        fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9,
+                            wspace=None, hspace=None)
+        # end [step]
+
+        # [step] add plot and set visibility of spines
+        ax = fig.add_subplot(1, 1, 1)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        # end [step]
+
+        # [step] process and plot data
+        for sid in solution_ids:
+            x1, y1, x2, y2 = compute_objectives(sid)
+            ax.plot(x1, y1, linewidth=0, marker=marker, markersize=markersize,
+                    color=markercolor, zorder=-1,
+                    label='Objective with modified observation')
+
+            ax.plot(x2, y2, linewidth=0, marker=marker, markersize=markersize,
+                    markeredgewidth=1.5,
+                    color='black', zorder=0,
+                    label='Objective value at PF')
+
+            left, bottom, width, height = get_boundary_box(x1, y1, x2, y2)
+            rect = patches.Rectangle((left, bottom), width, height,
+                                     edgecolor='grey', facecolor='none',
+                                     linewidth = 1.5, zorder = 1,
+                                     label='Boundary of a solution')
+            ax.add_patch(rect)
+        # end [step]
+
+        # [step] set axes properties
+        if len(ylim) == 2: ax.set_ylim(ylim[0], ylim[1])
+        if yticks: ax.yaxis.set_ticks(yticks)
+        if yticklabels: ax.yaxis.set_ticklabels(yticklabels)
+        ax.yaxis.set_ticks_position('left')
+        ax.yaxis.set_tick_params(direction='out', which='both', labelsize=15)
+        ax.set_ylabel(ylabel, fontsize=20, labelpad=15)
+
+        if len(xlim) == 2: ax.set_xlim(xlim[0], xlim[1])
+        if xticks: ax.xaxis.set_ticks(xticks)
+        if xticklabels: ax.xaxis.set_ticklabels(xticklabels)
+        if xlabel: ax.set_xlabel(xlabel, fontsize=20, labelpad=15)
+        ax.xaxis.set_tick_params(direction='out', which='both', labelsize=15)
+
+        if show_grid_yaxis:
+            ax.yaxis.grid(which='major', linestyle='--', color='silver',
+                          zorder=-1)
+        if show_grid_xaxis:
+            ax.xaxis.grid(which='major', linestyle='--', color='silver',
+                          zorder=-1)
+        # end [step]
+
+        # [step] add legend
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys(), frameon=False,
+                  fontsize=15)
+        # end [step]
+
+        # [step] apply tight layout
+        if apply_tight_layout: fig.tight_layout()
+        # end [step]
+
+        if filename_out: fig.savefig(filename_out, dpi=600)
         return fig
