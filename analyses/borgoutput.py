@@ -179,6 +179,31 @@ class RuntimeDynamicReport:
         return reports
 
     @staticmethod
+    def get_operators_probabilities(
+            report_filenames:list,
+            nfe=20000
+    ):
+        self = RuntimeDynamicReport
+
+        sbx, de, pcx, spx, undx, um = [], [], [], [], [], []
+
+        for filename in report_filenames:
+            reports = self.read_runtime_dynamic_file(filename)
+            for report in reports:
+                if report.nfe == nfe:
+                    sbx.append(report.sbx)
+                    de.append(report.de)
+                    pcx.append(report.pcx)
+                    spx.append(report.spx)
+                    undx.append(report.undx)
+                    um.append(report.um)
+                    break
+        sbx, de, pcx = np.array(sbx), np.array(de), np.array(pcx)
+        spx, undx, um = np.array(spx), np.array(undx), np.array(um)
+
+        return sbx, de, pcx, spx, undx, um
+
+    @staticmethod
     def draw_operator_probabilities(
             runtime_reports,
             figsize = (6, 4),
@@ -321,7 +346,8 @@ class RuntimeDynamicReport:
             marker='*',
             markersize=7,
             do_color_plot=True,
-            axis_labels=[]):
+            axis_labels=[]
+    ):
 
         # inner function
         def extract_xy(nfe):
@@ -422,7 +448,7 @@ class RuntimeDynamicReport:
             filename_out='',
             markersize=6,
             use_color=True
-            ):
+    ):
         # [step] check input
         nplots = len(runtime_report_files)
         if nplots > 6 or nplots < 1: return False
@@ -450,6 +476,161 @@ class RuntimeDynamicReport:
             if i == 3: ax.legend(frameon=False)
 
         fig.tight_layout()
+
+        if filename_out: fig.savefig(filename_out, dpi=600)
+
+        return True
+
+    @staticmethod
+    def paretofront_improvement_over_nfe(
+            runtime_report_files:list,
+            series_labels:list,
+            is_multi_objective:bool=False,
+            report_minimum_euclidian_distance:bool=True,
+            report_average_euclidian_distance:bool=False,
+            nobjectives=1,
+            figsize:tuple=(7, 5),
+            title:str='',
+            linestyles:list=[],
+            marker='o', markersize=3,
+            show_grid_xaxis:bool=False, show_grid_yaxis:bool=False,
+            apply_tight_layout:bool=True,
+            filename_out:str='',
+            xticks=(), yticks=()
+    ):
+        self = RuntimeDynamicReport
+
+        # inner function
+        def summary(objs:np.ndarray):
+            ed = np.sqrt(np.power(1-objs, 2).sum(axis=1))
+
+            if report_minimum_euclidian_distance:
+                i = np.argmin(ed)
+                return ed[i].reshape(1)
+            else:
+                ii = np.argsort(ed)[:objs.shape[0] // 2]
+                if report_average_euclidian_distance:
+                    return ed[ii].mean().reshape(1)
+                else: return objs[ii].mean().reshape(1)
+        # end of inner function
+
+        # inner function
+        def extract_xy(reports, nobjs):
+            nfes = []
+
+            objectives = np.empty(0)
+            for report in reports:
+                nfes.append(report.nfe)
+
+                o = np.array(report.solutions)[:,-nobjs:] * -1
+                if is_multi_objective: o = summary(o)
+
+                try: objectives = np.concatenate((objectives, o), axis=0)
+                except: objectives = o
+
+            nfes = np.array(nfes)
+            ii = np.argsort(nfes)
+
+            return nfes[ii], objectives[ii]
+        # end of inner function
+
+        # inner function
+
+        # end of inner function
+
+        # [step] check inputs
+        ncal = len(runtime_report_files)
+        if ncal == 0: return False
+
+        if len(series_labels) != ncal: return False
+
+        if not is_multi_objective: nobjectives = 1
+        else:
+            if (type(nobjectives) is np.ndarray or
+                type(nobjectives) is list) and len(nobjectives) != ncal: return False
+
+            if type(nobjectives) is int:
+                if nobjectives <= 1: return False
+                else: nobjectives = [nobjectives] * ncal
+
+        in_color = True
+        if len(linestyles) == ncal: in_color = False
+        # end [step]
+
+        # [step] create canvas
+        fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(left=0.15, bottom=0.1, right=0.9, top=0.9,
+                            wspace=None, hspace=None)
+        # end [step]
+
+        # [step] add plot and set visibility of spines
+        ax = fig.add_subplot(1, 1, 1)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        # end [step]
+
+        for i in range(ncal):
+            reports = self.read_runtime_dynamic_file(runtime_report_files[i])
+            if len(reports) == 0: return False
+
+            if is_multi_objective: nobjs = nobjectives[i]
+            else: nobjs = 1
+
+            x, y = extract_xy(reports, nobjs)
+            x = x/1000
+
+            label = series_labels[i]
+
+            if in_color:
+                ax.plot(x, y, marker=marker, markersize=markersize,
+                        label=label)
+            else:
+                ax.plot(x, y, color='black', linestyle=linestyles[i],
+                        marker=marker, markersize=markersize,
+                        label=label)
+
+        # [step] manipulate axis properties
+        ax.set_xlabel('NFE (in Thousands)', fontsize=15, labelpad=15)
+
+        if xticks: ax.xaxis.set_ticks(xticks)
+        else: ax.xaxis.set_ticks(np.arange(0, 21, 5, dtype=int))
+
+        ax.set_xlim(0, 20)
+        ax.xaxis.set_tick_params(direction='out', which='both', labelsize=15)
+
+        ax.set_ylabel('NSE', fontsize=15, labelpad=15)
+
+        if yticks: ax.yaxis.set_ticks(yticks)
+
+        ax.yaxis.set_ticks_position('left')
+        ax.yaxis.set_tick_params(direction='out', which='both', labelsize=15)
+        # end [step]
+
+        # [step] add grid
+        if show_grid_yaxis:
+            ax.yaxis.grid(which='major', linestyle='--', color='silver',
+                          zorder=-1)
+        if show_grid_xaxis:
+            ax.xaxis.grid(which='major', linestyle='--', color='silver',
+                          zorder=-1)
+        # end [step]
+
+        # [step] set title
+        if title: ax.set_title(title, fontsize=18, fontweight='none')
+        # end [step]
+
+        # [step] add legend
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys(), frameon=False,
+                  fontsize=12, ncol=2)
+        # end [step]
+
+        # [step] apply tight layout
+        if apply_tight_layout: fig.tight_layout()
+        # end [step]
 
         if filename_out: fig.savefig(filename_out, dpi=600)
 

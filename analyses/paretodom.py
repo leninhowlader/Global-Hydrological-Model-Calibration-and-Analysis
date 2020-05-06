@@ -203,7 +203,8 @@ class ParetoFrontPlot:
 
         # plot the scatter diagram
         p = ax.scatter(x, y, z, c=c, cmap=plt.get_cmap('winter_r'),
-                       edgecolors='face', s=30, vmin=0.6, vmax=1.0)
+                       edgecolors='face', s=30, alpha=.8,
+                       vmin=lim_visible, vmax=1.0)
 
         if add_2d_projection:
             zs = lim_visible - 0.1
@@ -268,7 +269,7 @@ class ParetoFrontPlot:
         ii = np.where((fx >= lim_compromise).all(axis=1))
         x, y, z = fx[ii][:,0], fx[ii][:,1], fx[ii][:,2]
 
-        ax.scatter(x, y, z, marker='o', edgecolor='face', c='black', s=60,
+        ax.scatter(x, y, z, marker='o', edgecolor='black', color=(0, 0, 0, 0), s=60,
                    zorder=-1, linewidths=1.5)
 
         if add_2d_projection:
@@ -304,7 +305,9 @@ class ParetoFrontPlot:
                             axis_labelpad=16,
                             azimuth=30,
                             elevation=25,
-                            filename_out=''):
+                            filename_out='',
+                            color='red'
+    ):
 
         # [step] input validation
         if fx.shape[0] == 0 or fx.shape[1] != 3: return None
@@ -333,8 +336,12 @@ class ParetoFrontPlot:
         y = fx[:, 1]
         z = fx[:, 2]
         # plot the scatter diagram
-        p = ax.scatter(x, y, z, color='red', edgecolors='face', s=20,
-                       vmin=0.6, vmax=1.0, zorder=1)
+        p = ax.scatter(x, y, z, color=color, edgecolors='face', s=20,
+                       vmin=0.6, vmax=1.0, zorder=1, alpha=0.8)
+
+        # add the optimal (utopia) point and the chosen best point
+        ax.scatter(1, 1, 1, marker='o', edgecolor='face', c='r', zorder=-1,
+                   s=40)
 
         if add_2d_projection:
             zs = lim_visible - 0.1
