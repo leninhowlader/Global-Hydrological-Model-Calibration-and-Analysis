@@ -602,7 +602,7 @@ class GlobalGrid:
         else: return None
 
     @staticmethod
-    def write_cell_info(filename, array, mode='w'):
+    def write_cell_info(filename, array, mode='w', data_type=int):
         '''
         Writes cell info (i.e., cell number or cell area) into output file.
 
@@ -616,7 +616,10 @@ class GlobalGrid:
         try:
             f = open(filename, mode)
             str_list = []
-            for item in array: str_list.append('[' + ','.join(str(x) for x in item) + ']')
+            if data_type == int:
+                for item in array: str_list.append('[' + ','.join(str(x) for x in item) + ']')
+            else:
+                for item in array: str_list.append('[' + ','.join('{:.15f}'.format(x) for x in item) + ']')
             f.write(', '.join(str_list))
         except: return False
         finally:

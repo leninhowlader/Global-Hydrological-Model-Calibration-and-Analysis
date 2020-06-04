@@ -607,8 +607,15 @@ class Upstream:
         return direction_line, arrows
 
     @staticmethod
-    def create_basin_shape(filename, basin_outlets, basin_ids=[], add_wghm_cnum=False, draw_flow_direction=False,
-                           base_resolution=0.5, disjoint_basin=True):
+    def create_basin_shape(
+            filename,
+            basin_outlets,
+            basin_ids=[],
+            add_wghm_cnum=False,
+            draw_flow_direction=False,
+            base_resolution=0.5,
+            disjoint_basin=True
+        ):
         '''
         The method creates a shape file of upstream basins from given basin outlets. The method will also draw the flow
         direction into another shape file if requested.

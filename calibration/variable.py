@@ -552,7 +552,7 @@ class SimVariable(Variable):
                                         finally:
                                             try: fs.close()
                                             except: pass
-
+                                        
                                         if temp_str:
                                             var.basin_cell_list = SimVariable.read_groups(temp_str, type='int')
                                             temp_str = None

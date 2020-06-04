@@ -731,6 +731,7 @@ class BorgSolutionEvaluation:
         for i in range(nvars - 1):
             if storages[i].shape != shape: return False
 
+
         # sort indices (column 1 to 3)
         for i in range(nvars):
             d = storages[i]
@@ -753,6 +754,134 @@ class BorgSolutionEvaluation:
         return wio.write_unf(filename_out, data=data_out)
 
     @staticmethod
+    def top_solutions(
+            solution_ids,
+            number_of_top_solution,
+            selection_method='euclid',
+            solution_fx:np.ndarray=np.empty(0),
+            prediction_dumpfile='',
+            observation_filename='',
+            compute_anomaly=False
+    ):
+        # inner function
+        def rmse(sim, obs):
+            try: return np.sqrt(np.mean((obs - sim) ** 2))
+            except: return np.nan
+        # end of inner function
+
+        self = BorgSolutionEvaluation
+
+        obs_data, sim_data = pd.DataFrame(), np.empty(0)
+        # [step] check inputs
+        nsol = solution_ids.shape[0]
+        ntop = number_of_top_solution
+
+        if nsol == 0: return np.empty(0)
+        if selection_method not in ['rmse', 'euclid']: return np.empty(0)
+
+        if selection_method == 'rmse':
+            if observation_filename == '': return np.empty(0)
+            if prediction_dumpfile == '': return np.empty(0)
+
+            obs_data = self.observation_time_series(observation_filename)
+            if obs_data.shape[0] == 0: return np.empty(0)
+
+            sim_data = wio.read_unf(prediction_dumpfile)
+            if sim_data.shape[0] == 0: return np.empty(0)
+        else:
+            if solution_fx.shape[0] != nsol: return np.empty(0)
+        # end [step]
+
+        if selection_method == 'rmse':
+            if compute_anomaly: obs_data.observation -= obs_data.observation.mean()
+
+            errors = []
+            for sid in solution_ids:
+                pred = BorgSolutionEvaluation.prediction_time_series(sim_data,
+                                                                     sid)
+                if compute_anomaly:
+                    pred.prediction -= pred.prediction.mean()
+
+                s, o = BorgSolutionEvaluation.couple_prediction_observation(
+                    pred, obs_data)
+                errors.append(rmse(s, o))
+
+            errors = np.array(errors)
+            ii = np.argsort(errors)[:ntop]
+        else:
+            if solution_fx.ndim ==1: ed = np.power(1-solution_fx, 2)
+            else: ed = np.power(1-solution_fx, 2).sum(axis=1)
+
+
+            ii = np.argsort(ed)[:ntop]
+
+        return solution_ids[ii]
+
+    @staticmethod
+    def top_solution_indices(
+            solution_ids,
+            number_of_top_solution,
+            selection_method='euclid',
+            solution_fx:np.ndarray=np.empty(0),
+            prediction_dumpfile='',
+            observation_filename='',
+            compute_anomaly=False
+    ):
+        # inner function
+        def rmse(sim, obs):
+            try: return np.sqrt(np.mean((obs - sim) ** 2))
+            except: return np.nan
+        # end of inner function
+
+        self = BorgSolutionEvaluation
+
+        obs_data, sim_data = pd.DataFrame(), np.empty(0)
+        # [step] check inputs
+        nsol = solution_ids.shape[0]
+        ntop = number_of_top_solution
+
+        if nsol == 0: return np.empty(0)
+        if selection_method not in ['rmse', 'euclid']: return np.empty(0)
+
+        if selection_method == 'rmse':
+            if observation_filename == '': return np.empty(0)
+            if prediction_dumpfile == '': return np.empty(0)
+
+            obs_data = self.observation_time_series(observation_filename)
+            if obs_data.shape[0] == 0: return np.empty(0)
+
+            sim_data = wio.read_unf(prediction_dumpfile)
+            if sim_data.shape[0] == 0: return np.empty(0)
+        else:
+            if solution_fx.shape[0] != nsol: return np.empty(0)
+        # end [step]
+
+        if selection_method == 'rmse':
+            if compute_anomaly: obs_data.observation -= obs_data.observation.mean()
+
+            errors = []
+            for sid in solution_ids:
+                pred = BorgSolutionEvaluation.prediction_time_series(sim_data,
+                                                                     sid)
+                if compute_anomaly:
+                    pred.prediction -= pred.prediction.mean()
+
+                s, o = BorgSolutionEvaluation.couple_prediction_observation(
+                    pred, obs_data)
+                errors.append(rmse(s, o))
+
+            errors = np.array(errors)
+            ii = np.argsort(errors)[:ntop]
+        else:
+            if solution_fx.ndim ==1: ed = np.power(1-solution_fx, 2)
+            else: ed = np.power(1-solution_fx, 2).sum(axis=1)
+
+
+            ii = np.argsort(ed)[:ntop]
+
+        return ii
+
+    @staticmethod
     def plot_predictions_with_solutions(
             prediction_dumpfile,
             solution_ids,
@@ -763,6 +892,7 @@ class BorgSolutionEvaluation:
             accept_lim=0.4,
             show_top_solutions=0,
             top_selection_method='euclid',    # options: 'rmse', 'euclid'
+            top_solution_ids=np.empty(0),
             figsize = (14, 5),
             filename_out = '',
             title='',
@@ -773,8 +903,11 @@ class BorgSolutionEvaluation:
             color_observation='dodgerblue', color_stdpmodel = 'red',
             linestyle_allsolution = '-', linestyle_topsolution = '-',
             linestyle_observation = '-', linestyle_stdmodel = '--',
-            show_month_averages=False
+            show_month_averages=False,
+            start_year=-1, end_year=-1,
+            rotate_xticklabel=False
     ):
+        self = BorgSolutionEvaluation
 
         # inner function
         def monthenddate(years: np.ndarray, months: np.ndarray):
@@ -810,8 +943,9 @@ class BorgSolutionEvaluation:
 
             if monthly_average:
                 for sid in sids:
-                    p = BorgSolutionEvaluation.prediction_time_series(
-                                                                data_sim, sid)
+                    p = self.prediction_time_series(data_sim, sid)
+                    p = p[(p.year >= start_year) & (p.year <= end_year)]
+                    if compute_anomaly: p.prediction -= p.prediction.mean()
                     p = p.iloc[:, -2:].groupby(by='month').mean().\
                         prediction.values.reshape(-1, 1)
 
@@ -819,8 +953,10 @@ class BorgSolutionEvaluation:
                     except: predicts = p
             else:
                 for sid in sids:
-                    p = BorgSolutionEvaluation.prediction_time_series(
-                        data_sim, sid).prediction.values.reshape(-1, 1)
+                    p = self.prediction_time_series(data_sim, sid)
+                    p = p[(p.year >= start_year) & (p.year <= end_year)]
+                    if compute_anomaly: p.prediction -= p.prediction.mean()
+                    p = p.prediction.values.reshape(-1, 1)
 
                     try: predicts = np.concatenate((predicts, p), axis=1)
                     except: predicts = p
@@ -834,6 +970,19 @@ class BorgSolutionEvaluation:
             except: return np.nan
         # end of inner function
 
+        # [step] check inputs
+        if len(solution_ids) == 0: return None
+
+        if top_solution_ids.shape[0] > 0: show_top_solutions = top_solution_ids.shape[0]
+        if show_top_solutions >  len(solution_ids):
+            show_top_solutions = 0
+            color_allsolution = 'green'
+        if solution_ids.shape[0] == 1:
+            color_allsolution = 'tomato'
+            color_observation = 'dodgerblue'
+            linestyle_observation = (1, (5, 2))
+        # end [step]
+
         # [step] read simulation dump file
         data_sim = wio.read_unf(prediction_dumpfile)
         if data_sim.shape[0] == 0: return None
@@ -842,10 +991,10 @@ class BorgSolutionEvaluation:
         # [step] prepare data that would be plotted
         data_plot = OrderedDict()
 
-        if len(solution_ids) == 0: return None
-
         # x-axis data: dates or month numbers
-        start_year, end_year = find_start_and_end_year()
+        if start_year <=1900 or end_year <= 1900 or start_year > end_year:
+            start_year, end_year = find_start_and_end_year()
+
         yrmon = generate_year_month_pair(start_year, end_year)
         if show_month_averages:
             x = np.arange(1, 12 + 1)
@@ -861,67 +1010,55 @@ class BorgSolutionEvaluation:
             else: ii = np.where((solution_fx>=accept_lim).all(axis=1))
 
             y = extract_predictions_multiple(solution_ids[ii], show_month_averages)
-            if compute_anomaly: y = y - y.mean(axis=0)
-            data_plot['Acceptable Solutions'] = {'data': y,
+            #if compute_anomaly: y = y - y.mean(axis=0)
+            data_plot['Pareto solution'] = {'data': y,
                                                  'linestyle': linestyle_allsolution,
                                                  'color': color_allsolution}
 
         else:
             y = extract_predictions_multiple(solution_ids, show_month_averages)
-            if compute_anomaly: y = y - y.mean(axis=0)
-            data_plot['Borg Solutions'] = {'data': y,
+            #if compute_anomaly: y = y - y.mean(axis=0)
+            data_plot['Pareto solution'] = {'data': y,
                                            'linestyle': linestyle_allsolution,
                                            'color': color_allsolution}
 
         # prediction of top solutions
         obs = pd.DataFrame()
         if show_top_solutions > 0:
-            nsol = show_top_solutions
-            if top_selection_method == 'euclid' and solution_fx.shape[0]>0:
-                if solution_fx.ndim ==1: ed = np.power(1-solution_fx, 2)
-                else: ed = np.power(1-solution_fx, 2).sum(axis=1)
+            if top_solution_ids.shape[0] == 0:
+                if top_selection_method == 'rmse':
+                    top_solution_ids = self.top_solutions(
+                                        solution_ids=solution_ids,
+                                        number_of_top_solution=show_top_solutions,
+                                        selection_method=top_selection_method,
+                                        prediction_dumpfile=prediction_dumpfile,
+                                        observation_filename=observation_filename
+                                        )
+                else:
+                    top_solution_ids = self.top_solutions(
+                                        solution_ids=solution_ids,
+                                        number_of_top_solution=show_top_solutions,
+                                        selection_method='euclid',
+                                        solution_fx=solution_fx
+                                        )
 
-                ii = np.argsort(ed)[:nsol]
-                y = extract_predictions_multiple(solution_ids[ii], show_month_averages)
-                if compute_anomaly: y = y - y.mean(axis=0)
-                data_plot['Top %d Solution(s)'%nsol] = {'data': y,
-                                                        'linestyle': linestyle_topsolution,
-                                                        'color': color_topsolution}
-
-            if top_selection_method == 'rmse' and observation_filename:
-                obs = BorgSolutionEvaluation.observation_time_series(
-                                                    observation_filename)
-
-                if compute_anomaly: obs.observation -= obs.observation.mean()
-
-                errors = []
-                for sid in solution_ids:
-                    pred = BorgSolutionEvaluation.prediction_time_series(data_sim, sid)
-
-                    if compute_anomaly:
-                        pred.prediction -= pred.prediction.mean()
-
-                    s, o = BorgSolutionEvaluation.couple_prediction_observation(pred, obs)
-                    errors.append(rmse(s, o))
-
-                errors = np.array(errors)
-                ii = np.argsort(errors)[:nsol]
-                y = extract_predictions_multiple(solution_ids[ii], show_month_averages)
-                if compute_anomaly: y = y - y.mean(axis=0)
-                data_plot['Top %d Solution(s)' % nsol] = {'data': y,
-                                                          'linestyle': linestyle_topsolution,
-                                                          'color': color_topsolution}
+            nsol = top_solution_ids.shape[0]
+            y = extract_predictions_multiple(top_solution_ids, show_month_averages)
+            #if compute_anomaly: y = y - y.mean(axis=0)
+            data_plot['Top %d solution(s)'%nsol] = {'data': y,
+                                                    'linestyle': linestyle_topsolution,
+                                                    'color': color_topsolution}
 
         # observations
         if observation_filename:
             if obs.shape[0] == 0:
-                obs = BorgSolutionEvaluation.observation_time_series(
+                obs = self.observation_time_series(
                                                 observation_filename)
             obs = yrmon.merge(right=obs, how='left', on=['year', 'month'])
 
+            if compute_anomaly: obs.observation -= obs.observation.mean()
             if show_month_averages:
                 obs = obs.iloc[:, -2:].groupby(by='month').mean()
-            if compute_anomaly: obs.observation -= obs.observation.mean()
             data_plot['Observations'] = {'data': obs.observation.values,
                                          'linestyle': linestyle_observation,
                                          'color': color_observation}
@@ -931,7 +1068,8 @@ class BorgSolutionEvaluation:
             std = wio.read_unf(standard_model_dumpfile)
 
             if std.shape[0] > 0:
-                std = BorgSolutionEvaluation.prediction_time_series(std, 0)
+                std = self.prediction_time_series(std, 0)
+                std = std[(std.year >= start_year) & (std.year <= end_year)]
                 std = yrmon.merge(right=std, how='left', on=['year', 'month'])
 
                 if show_month_averages:
@@ -977,6 +1115,7 @@ class BorgSolutionEvaluation:
         if xlabel: ax.set_xlabel(xlabel, fontsize=20, labelpad=15)
 
         ax.xaxis.set_tick_params(direction='out', which='both', labelsize=15)
+        if rotate_xticklabel: ax.xaxis.set_tick_params(rotation=90)
         # end [step]
 
         # [step] add legend
@@ -1161,16 +1300,12 @@ class BorgSolutionEvaluation:
             non_stationary_error=non_stationary_error
         )
 
-        print(obs_with_error_var1.shape)
-
         obs_with_error_var2 = __self.random_realization_of_observation(
             obs=obs_var2.observation.values,
             observation_error=observation_error_var2,
             no_of_realization=number_of_random_realization,
             non_stationary_error=non_stationary_error
         )
-
-        print(obs_with_error_var2.shape)
         # end [step]
 
         # [step] compute anomalies of observations
@@ -1202,7 +1337,7 @@ class BorgSolutionEvaluation:
             x1, y1, x2, y2 = compute_objectives(sid)
             ax.plot(x1, y1, linewidth=0, marker=marker, markersize=markersize,
                     color=markercolor, zorder=-1,
-                    label='Objective with modified observation')
+                    label='Objective with perturbed observation')
 
             ax.plot(x2, y2, linewidth=0, marker=marker, markersize=markersize,
                     markeredgewidth=1.5,
@@ -1213,7 +1348,7 @@ class BorgSolutionEvaluation:
             rect = patches.Rectangle((left, bottom), width, height,
                                      edgecolor='grey', facecolor='none',
                                      linewidth = 1.5, zorder = 1,
-                                     label='Boundary of a solution')
+                                     label='Uncertainty bound of a solution')
             ax.add_patch(rect)
         # end [step]
 

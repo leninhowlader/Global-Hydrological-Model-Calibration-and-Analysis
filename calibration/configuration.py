@@ -330,7 +330,7 @@ class Configuration:
                             try: max_iter = int(value)
                             except: max_iter = 0
 
-                            config.maximum_iteration(max_iter)
+                            config.maximum_iteration = max_iter
 
                         elif key in ['compute_upstream_from_station_file',
                                      'upstream_from_station_file']:
