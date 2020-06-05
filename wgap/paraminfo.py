@@ -1,0 +1,303 @@
+import pandas as pd
+from collections import OrderedDict
+
+class ParameterInfo:
+    __param_info = OrderedDict()
+    __param_info['gammaHBV_runoff_coeff'] = {
+                'description': 'Runoff Coefficient',
+                'acronym': 'Gamma',
+                'log_scale': False,
+                'min': 0.3,
+                'max': 3.0,
+                'optimal': 0.7,
+                'distribution': 'uniform'
+    }
+
+    __param_info['root_depth_multiplier'] = {
+                'description': 'Root Depth Multiplier',
+                'acronym': 'RTDM',
+                'log_scale': False,
+                'min': 0.5,
+                'max': 3.0,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    __param_info['river_roughness_coeff_mult'] = {
+                'description': 'River Roughness Coefficient Multiplier',
+                'acronym': 'RRCM',
+                'log_scale': False,
+                'min': 1.0,
+                'max': 5.0,
+                'optimal': 3,
+                'distribution': 'triangular'
+    }
+
+    __param_info['lake_depth'] = {
+                'description': 'Lake Depth',
+                'acronym': 'LKDep',
+                'log_scale': False,
+                'min': 1.0,
+                'max': 20.0,
+                'optimal': 5,
+                'distribution': 'uniform'
+    }
+
+    __param_info['wetland_depth'] = {
+                'description': 'Wetland Depth',
+                'acronym': 'WLDep',
+                'log_scale': False,
+                'min': 1.0,
+                'max': 20.0,
+                'optimal': 2.0,
+                'distribution': 'uniform'
+    }
+
+    __param_info['surfacewater_outflow_coefficient'] = {
+                'description': 'Surface Water Outflow Coefficient',
+                'acronym': 'SWOC',
+                'log_scale': False,
+                'min': 0.001,
+                'max': 0.1,
+                'optimal': 0.01,
+                'distribution': 'uniform'
+    }
+
+    __param_info['evapo_red_fact_exp_mult'] = {
+                'description': 'Evaporation Reduction Factor Exponent Multiplier',
+                'acronym': 'ERFM',
+                'log_scale': False,
+                'min': 0.33,
+                'max': 1.5,
+                'optimal': 1,
+                'distribution': 'triangular'
+    }
+
+    __param_info['net_radiation_mult'] = {
+                'description': 'Net Radiation Multiplier',
+                'acronym': 'NRDM',
+                'log_scale': False,
+                'min': 0.5,
+                'max': 2.0,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    __param_info['PT_coeff_humid'] = {
+                'description': 'PT-Coefficient - Humid',
+                'acronym': 'PTCH',
+                'log_scale': False,
+                'min': 0.885,
+                'max': 1.65,
+                'optimal': 1.26,
+                'distribution': 'uniform'
+    }
+
+    __param_info['PT_coeff_arid'] = {
+                'description': 'PT-Coefficient - Arid',
+                'acronym': 'PTCA',
+                'log_scale': False,
+                'min': 1.365,
+                'max': 2.115,
+                'optimal': 1.74,
+                'distribution': 'uniform'
+    }
+
+    __param_info['max_daily_PET'] = {
+                'description': 'Max Daily PET',
+                'acronym': 'MDPET',
+                'log_scale': False,
+                'min': 6.0,
+                'max': 22.0,
+                'optimal': 15.0,
+                'distribution': 'uniform'
+    }
+
+    __param_info['mcwh'] = {
+                'description': 'Maximum Canopy Water Height',
+                'acronym': 'MCWH',
+                'log_scale': False,
+                'min': 0.1,
+                'max': 1.4,
+                'optimal': 0.3,
+                'distribution': 'uniform'
+    }
+
+    __param_info['LAI_mult'] = {
+                'description': 'LAI Multiplier',
+                'acronym': 'LAIM',
+                'log_scale': False,
+                'min': 0.2,
+                'max': 2.5,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    __param_info['snow_freeze_temp'] = {
+                'description': 'Snow Freeze Temperature  ',
+                'acronym': 'SNFT',
+                'log_scale': False,
+                'min': -1,
+                'max': 3.0,
+                'optimal': 2.0,
+                'distribution': 'uniform'
+    }
+
+    __param_info['snow_melt_temp'] = {
+                'description': 'Snow Melt Temperature',
+                'acronym': 'SNMT',
+                'log_scale': False,
+                'min': -3.75,
+                'max': 3.75,
+                'optimal': 0.0,
+                'distribution': 'uniform'
+    }
+
+    __param_info['degree_day_factor_mult'] = {
+                'description': 'Degree Day Factor Multiplier',
+                'acronym': 'DDFM',
+                'log_scale': False,
+                'min': 0.5,
+                'max': 2.0,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    __param_info['temperature_gradient'] = {
+                'description': 'Temperature Gradient',
+                'acronym': 'TempG',
+                'log_scale': False,
+                'min': 0.001,
+                'max': 0.01,
+                'optimal': 0.006,
+                'distribution': 'uniform'
+    }
+
+    __param_info['gw_factor_mult'] = {
+                'description': 'Groundwater Factor Multiplier',
+                'acronym': 'GWFM',
+                'log_scale': False,
+                'min': 0.3,
+                'max': 3.0,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    __param_info['rg_max_mult'] = {
+                'description': 'Maximum Groundwater Recharge Factor Multiplier',
+                'acronym': 'MRGM',
+                'log_scale': False,
+                'min': 0.3,
+                'max': 3.0,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    __param_info['pcrit_aridgw'] = {
+                'description': 'Critical Precipitation for GW - Arid Zone',
+                'acronym': 'CPGW',
+                'log_scale': False,
+                'min': 2.5,
+                'max': 20.0,
+                'optimal': 12.5,
+                'distribution': 'uniform'
+    }
+
+    __param_info['groundwater_outflow_coeff'] = {
+                'description': 'Groundwater Outflow Coefficient',
+                'acronym': 'GWOC',
+                'log_scale': False,
+                'min': 0.001,
+                'max': 0.02,
+                'optimal': 0.01,
+                'distribution': 'uniform'
+    }
+
+    __param_info['net_abstraction_surfacewater_mult'] = {
+                'description': 'Net Surfacewater Abstraction Multiplier ',
+                'acronym': 'SWAM',
+                'log_scale': False,
+                'min': -2.0,
+                'max': 2.0,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    __param_info['net_abstraction_groundwater_mult'] = {
+                'description': 'Net Groundwater Abstraction Multiplier',
+                'acronym': 'GWAM',
+                'log_scale': False,
+                'min': -2.0,
+                'max': 2.0,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    __param_info['precip_mult'] = {
+                'description': 'Precipitation Multiplier',
+                'acronym': 'PrecipM',
+                'log_scale': False,
+                'min': 0.5,
+                'max': 2.0,
+                'optimal': 1.0,
+                'distribution': 'triangular'
+    }
+
+    @staticmethod
+    def get_parameter_info(): return ParameterInfo.__param_info
+
+    @staticmethod
+    def get_selected_paramter_info(param_names:list=[], param_acronyms:list=[]):
+        if not (param_names or param_acronyms): return {}
+
+        param_info = OrderedDict()
+
+        succeed = False
+        if param_names:
+            try:
+                for param in param_names:
+                    param_info[param] = ParameterInfo.__param_info[param]
+                succeed = True
+            except: pass
+
+        if not succeed and param_acronyms:
+            for acronym in param_acronyms:
+                for param in ParameterInfo.__param_info.keys():
+                    if ParameterInfo.__param_info[param]['acronym'] == acronym:
+                        param_info[param] = ParameterInfo.__param_info[param]
+                        break
+            if len(param_info) == len(param_acronyms): succeed = True
+
+        if succeed: return param_info
+        else: return {}
+
+    @staticmethod
+    def write_parameter_info(
+            filename_out,
+            param_names:list=[],
+            param_acronyms:list=[]
+    ):
+        if not filename_out: return False
+
+        if param_names or param_acronyms:
+            param_info = ParameterInfo.get_selected_paramter_info(
+                param_names=param_names,
+                param_acronyms=param_acronyms
+            )
+        else: param_info = ParameterInfo.__param_info
+
+        if len(param_info) == 0: return False
+
+        df = pd.DataFrame()
+        df['parameter_name'] = list(param_info.keys())
+
+        info = ['min', 'max', 'optimal', 'distribution']
+        for x in info:
+            temp = []
+            for param in param_info.keys(): temp.append(param_info[param][x])
+            df[x] = temp
+
+        df.to_csv(filename_out, index=False)
+
+        return True
+
