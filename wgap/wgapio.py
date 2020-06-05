@@ -537,11 +537,20 @@ class WaterGapIO:
                        'G_LOCWET.UNF0', 'GFREQ.UNF0', 'GFREQW.UNF0']
         
         reservoir_frac_files = []
-        if start_year >=1901: 
+        if start_year >=1901:
             if end_year > start_year:
                 for year in range(start_year, end_year + 1):
-                    reservoir_frac_files.append('G_RES/G_RES_%d.UNF0'%year)
-            else: reservoir_frac_files.append('G_RES/G_RES_%d.UNF0'%start_year)
+                    f = 'G_RES/G_RES_%d.UNF0'%year
+                    if not os.path.exists(os.path.join(
+                            WaterGapIO.__model_input_data_directory, f)):
+                        f = 'G_RES/G_RES_FRAC.UNF0'
+                    reservoir_frac_files.append(f)
+            else:
+                f = 'G_RES/G_RES_%d.UNF0' % start_year
+                if not os.path.exists(os.path.join(
+                        WaterGapIO.__model_input_data_directory, f)):
+                    f = 'G_RES/G_RES_FRAC.UNF0'
+                reservoir_frac_files.append(f)
         else: reservoir_frac_files.append('G_RES/G_RES_FRAC.UNF0')
         
         input_files += reservoir_frac_files
