@@ -602,13 +602,17 @@ class GlobalGrid:
         else: return None
 
     @staticmethod
-    def write_cell_info(filename, array, mode='w', data_type=int):
+    def write_cell_info(filename, array, mode='w', format_str=''):
         '''
         Writes cell info (i.e., cell number or cell area) into output file.
 
         :param filename: (string) output filename
         :param array: (list of list) input information array
         :param mode: (string) fileopen mode, e.g., 'w', 'a' etc
+        :param format_str: (string) format to be used during string convertion.
+                            if format string is not provided, str() function 
+                            will be used for string convertion. if wrong format
+                            is provided, '{:.15f}' will be used as format
         :return: True on success, False otherwise
         '''
 
@@ -616,10 +620,22 @@ class GlobalGrid:
         try:
             f = open(filename, mode)
             str_list = []
-            if data_type == int:
-                for item in array: str_list.append('[' + ','.join(str(x) for x in item) + ']')
+            if not format_str:
+                for item in array: str_list.append('[' + ','.join(str(x) 
+                                                    for x in item) + ']')
             else:
-                for item in array: str_list.append('[' + ','.join('{:.15f}'.format(x) for x in item) + ']')
+                # [check] whether or not format string can correctly produce a string
+                succeed = False
+                try:
+                    if float(format_str.format(1)) == 1: succeed = True
+                except: pass
+                
+                if not succeed: format_str = '{:.15f}'
+                # end [check]
+                
+                for item in array: str_list.append(
+                    '[' + ','.join(format_str.format(x) for x in item) + ']')
+                
             f.write(', '.join(str_list))
         except: return False
         finally:
