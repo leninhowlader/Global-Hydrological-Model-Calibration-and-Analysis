@@ -977,7 +977,12 @@ class SimVariable(Variable):
                             outlets = np.array(outlets) - 1
                             temp = pred[outlets]
 
-                            for i in range(1, len(temp)): temp[0] -= temp[i]
+                            # if a basin has sub-basins in the upstream, river
+                            # discharge of the upstream sub-basin will be
+                            # deducted from the discharge of the outlet cell
+                            # of the current basin
+                            for i in range(1, len(temp)): temp[0] -= temp[i] 
+
                             data.append(temp[0])
                         data = np.array(data)
 
