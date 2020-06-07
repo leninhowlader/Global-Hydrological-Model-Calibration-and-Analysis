@@ -15,7 +15,7 @@ class Parameter:
         self.cell_list = []
         self.single_value_flag = True
         self.cell_specific_values = []
-        self.precision_level = 8
+        self.precision_level = -1
 
     def is_okey(self):
         if not self.parameter_name: return False
@@ -29,9 +29,17 @@ class Parameter:
     def get_parameter_name(self): return self.parameter_name
     def get_lower_bound(self): return self.lower_bound
     def get_upper_bound(self): return self.upper_bound
+
     def get_parameter_value(self):
-        if not self.logarithmic_scale: return round(self.parameter_value, self.precision_level)
-        else: return round(10**self.parameter_value, self.precision_level)
+        if not self.logarithmic_scale:
+            if self.precision_level > 0:
+                return round(self.parameter_value, self.precision_level)
+            else: return self.parameter_value
+        else:
+            if self.precision_level > 0:
+                return round(10**self.parameter_value, self.precision_level)
+            else: return 10**self.parameter_value
+
     def set_cell_list(self, cell_list): self.cell_list = cell_list
     def set_single_value_flag(self, flag): self.single_value_flag = flag
     def set_cell_specific_values(self, values): self.cell_specific_values = values
