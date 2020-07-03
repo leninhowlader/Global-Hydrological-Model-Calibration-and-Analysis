@@ -101,12 +101,12 @@ class BasinInfo:
         ):
 
             basin_info = OrderedDict()
-            basin_info['louisville_nebraska'] = {'station_id': '4122600', 'lon': -96.25, 'lat': 41.25, 'cellnum': 32754}
-            basin_info['bismarck'] = {'station_id': '4121802', 'lon': -100.75, 'lat': 47.25, 'cellnum': 28159}
-            basin_info['landusky_mt'] = {'station_id': '6115200', 'lon': -108.75, 'lat': 47.75, 'cellnum': 27722}
-            basin_info['mt_carmel'] = {'station_id': '4123130', 'lon': -87.75, 'lat': 38.25, 'cellnum': 34863}
-            basin_info['louisville_kentucky'] = {'station_id': '4123300', 'lon': -85.75, 'lat': 38.25, 'cellnum': 34867}
-            basin_info['nashville_tn'] = {'station_id': '3431500', 'lon': -86.75, 'lat': 36.25, 'cellnum': 36217}
+            basin_info['louisville_nebraska'] = {'station_id': '4122600', 'lon': -96.25, 'lat': 41.25, 'cellnum': 32754, 'cda_unit': 'hermann'}
+            basin_info['bismarck'] = {'station_id': '4121802', 'lon': -100.75, 'lat': 47.25, 'cellnum': 28159, 'cda_unit': 'hermann'}
+            basin_info['landusky_mt'] = {'station_id': '6115200', 'lon': -108.75, 'lat': 47.75, 'cellnum': 27722, 'cda_unit': 'hermann'}
+            basin_info['mt_carmel'] = {'station_id': '4123130', 'lon': -87.75, 'lat': 38.25, 'cellnum': 34863, 'cda_unit': 'metropolis'}
+            basin_info['louisville_kentucky'] = {'station_id': '4123300', 'lon': -85.75, 'lat': 38.25, 'cellnum': 34867, 'cda_unit': 'metropolis'}
+            basin_info['nashville_tn'] = {'station_id': '3431500', 'lon': -86.75, 'lat': 36.25, 'cellnum': 36217, 'cda_unit': 'metropolis'}
 
             if with_upstream:
                 BasinInfo.include_basin_property_upstream(

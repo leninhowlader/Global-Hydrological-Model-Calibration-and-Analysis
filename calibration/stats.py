@@ -105,6 +105,13 @@ class stats:
     def KGE_dBeta(sim, obs): return abs(np.mean(sim)-np.mean(obs))
 
     @staticmethod
+    def KGE_gamma(sim, obs):
+        cv_sim = np.std(sim) / np.mean(sim)
+        cv_obs = np.std(obs) / np.mean(obs)
+
+        return cv_sim/cv_obs
+
+    @staticmethod
     def kling_gupta_efficiency(sim, obs):
         sim_mean, obs_mean = np.mean(sim), np.mean(obs)
         sim_stdv, obs_stdv = np.std(sim), np.std(obs)
@@ -118,6 +125,41 @@ class stats:
         else: beta = 1.0
 
         return 1- np.sqrt((r-1)**2 + (alpha-1)**2 + (beta-1)**2)
+
+    @staticmethod
+    def kling_gupta_efficiency2012(sim, obs):
+        # Reference: Kling et al., 2012
+
+
+        mean_sim, mean_obs = np.mean(sim), np.mean(obs)
+        stdv_sim, stdv_obs = np.std(sim), np.std(obs)
+
+        if round(stdv_obs, 8) == 0.0: return np.nan
+
+        r = stats.pearson_correlation_coefficient(sim, obs)
+
+        if round(mean_obs, 8) == 0.0:
+            # with observed mean equals 0.0, the kling-gupta equation turns into
+            # kge2009 (Gupta et al., 2009)
+
+            alpha = stdv_sim / stdv_obs
+
+            # beta is removed from the equation considering it would equal to 1.0
+            # i.e.,
+            # beta = 1.0
+            # kge = 1 - np.sqrt((r - 1) ** 2 + (alpha - 1) ** 2 + (beta - 1) ** 2)
+            # which is equivalent to
+            # kge = 1 - np.sqrt((r - 1) ** 2 + (alpha - 1) ** 2)
+
+            return 1 - np.sqrt((r - 1) ** 2 + (alpha - 1) ** 2)
+        else:
+            cv_sim = stdv_sim/mean_sim
+            cv_obs = stdv_obs/mean_obs
+
+            beta = mean_sim / mean_obs
+            gamma = cv_sim / cv_obs
+
+            return 1- np.sqrt((r-1)**2 + (beta-1)**2 + (gamma-1)**2)
 
     @staticmethod
     def scaled_kling_gupta_efficiency(sim, obs, scale_r, scale_alpha, scale_beta):

@@ -50,7 +50,7 @@ class SensitivityAnalysis:
 
             # step: write new parameter file with update parameter values
             pfix = str(iter_no).rjust(6, '0')
-            filename = 'parameters_' + pfix + '.json'
+            filename = WaterGAP.json_parameter_file[:-5] + '_' + pfix + '.json'
             if not WaterGAP.update_parameter_file(config.parameters, filename):
                 return False
             arguments['p'] = filename

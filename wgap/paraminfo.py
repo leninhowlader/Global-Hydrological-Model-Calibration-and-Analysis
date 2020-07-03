@@ -301,3 +301,35 @@ class ParameterInfo:
 
         return True
 
+    class GlobalCDA:
+        @staticmethod
+        def Mississippi_Sensitive_Parameters():
+            param_info = OrderedDict()
+
+            paramlist_hermann = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'SWAM', 'GWAM']
+            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_hermann)
+            param_info['hermann'] = pinfo
+
+            paramlist_grafton = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'MRGM']
+            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_grafton)
+            param_info['grafton'] = pinfo
+
+            paramlist_metropolis = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'MRGM', 'GWOC']
+            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_metropolis)
+            param_info['metropolis'] = pinfo
+
+            paramlist_fortsmith = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'MDPET', 'SNMT', 'MRGM', 'GWAM']
+            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_fortsmith)
+            param_info['fort_smith'] = pinfo
+
+            paramlist_vicksburg = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'GWFM', 'GWAM']
+            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_vicksburg)
+            param_info['vicksburg'] = pinfo
+
+            paramlist_mississippi = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'GWAM']
+            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_mississippi)
+            param_info['mississippi'] = pinfo
+
+            return param_info
+
+
