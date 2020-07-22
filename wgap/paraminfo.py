@@ -9,7 +9,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.3,
                 'max': 3.0,
-                'optimal': 0.7,
+                'nominal': 0.7,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -19,7 +20,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.5,
                 'max': 3.0,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -29,7 +31,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 1.0,
                 'max': 5.0,
-                'optimal': 3,
+                'nominal': 3,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -39,7 +42,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 1.0,
                 'max': 20.0,
-                'optimal': 5,
+                'nominal': 5,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -49,7 +53,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 1.0,
                 'max': 20.0,
-                'optimal': 2.0,
+                'nominal': 2.0,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -59,7 +64,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.001,
                 'max': 0.1,
-                'optimal': 0.01,
+                'nominal': 0.01,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -69,7 +75,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.33,
                 'max': 1.5,
-                'optimal': 1,
+                'nominal': 1,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -79,7 +86,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.5,
                 'max': 2.0,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -89,7 +97,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.885,
                 'max': 1.65,
-                'optimal': 1.26,
+                'nominal': 1.26,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -99,7 +108,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 1.365,
                 'max': 2.115,
-                'optimal': 1.74,
+                'nominal': 1.74,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -109,7 +119,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 6.0,
                 'max': 22.0,
-                'optimal': 15.0,
+                'nominal': 15.0,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -119,7 +130,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.1,
                 'max': 1.4,
-                'optimal': 0.3,
+                'nominal': 0.3,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -129,7 +141,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.2,
                 'max': 2.5,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -139,7 +152,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': -1,
                 'max': 3.0,
-                'optimal': 2.0,
+                'nominal': 2.0,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -149,7 +163,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': -3.75,
                 'max': 3.75,
-                'optimal': 0.0,
+                'nominal': 0.0,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -159,7 +174,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.5,
                 'max': 2.0,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -169,7 +185,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.001,
                 'max': 0.01,
-                'optimal': 0.006,
+                'nominal': 0.006,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -179,7 +196,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.3,
                 'max': 3.0,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -189,7 +207,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.3,
                 'max': 3.0,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -199,7 +218,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 2.5,
                 'max': 20.0,
-                'optimal': 12.5,
+                'nominal': 12.5,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -209,7 +229,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.001,
                 'max': 0.02,
-                'optimal': 0.01,
+                'nominal': 0.01,
+                'optimal': None,
                 'distribution': 'uniform'
     }
 
@@ -219,7 +240,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': -2.0,
                 'max': 2.0,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -229,7 +251,8 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': -2.0,
                 'max': 2.0,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
@@ -239,12 +262,18 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.5,
                 'max': 2.0,
-                'optimal': 1.0,
+                'nominal': 1.0,
+                'optimal': None,
                 'distribution': 'triangular'
     }
 
     @staticmethod
-    def get_parameter_info(): return ParameterInfo.__param_info
+    def get_parameter_info():
+        param_info = OrderedDict()
+        for param in ParameterInfo.__param_info.keys():
+            param_info[param] = ParameterInfo.__param_info[param].copy()
+
+        return param_info
 
     @staticmethod
     def get_selected_paramter_info(param_names:list=[], param_acronyms:list=[]):
@@ -256,7 +285,7 @@ class ParameterInfo:
         if param_names:
             try:
                 for param in param_names:
-                    param_info[param] = ParameterInfo.__param_info[param]
+                    param_info[param] = ParameterInfo.__param_info[param].copy()
                 succeed = True
             except: pass
 
@@ -264,7 +293,7 @@ class ParameterInfo:
             for acronym in param_acronyms:
                 for param in ParameterInfo.__param_info.keys():
                     if ParameterInfo.__param_info[param]['acronym'] == acronym:
-                        param_info[param] = ParameterInfo.__param_info[param]
+                        param_info[param] = ParameterInfo.__param_info[param].copy()
                         break
             if len(param_info) == len(param_acronyms): succeed = True
 
@@ -291,7 +320,7 @@ class ParameterInfo:
         df = pd.DataFrame()
         df['parameter_name'] = list(param_info.keys())
 
-        info = ['min', 'max', 'optimal', 'distribution']
+        info = ['min', 'max', 'nominal', 'distribution']
         for x in info:
             temp = []
             for param in param_info.keys(): temp.append(param_info[param][x])
@@ -300,6 +329,34 @@ class ParameterInfo:
         df.to_csv(filename_out, index=False)
 
         return True
+
+    @staticmethod
+    def update_parameters(param_info:dict, property_name, values):
+        if len(param_info) != len(values): return False
+
+        param_names = list(param_info.keys())
+        for i in range(len(param_names)):
+            param = param_names[i]
+            try: param_info[param][property_name] = values[i]
+            except: return False
+
+        return True
+
+    @staticmethod
+    def get_parameter_property_values(param_info:dict, property_name):
+        values = []
+        try:
+            for param in param_info.keys():
+                values.append(param_info[param][property_name])
+        except: return []
+
+        return values
+
+    @staticmethod
+    def get_parameter_property_names():
+        property_names = ['description', 'acronym', 'log_scale', 'min', 'max',
+                          'nominal', 'optimal', 'distribution']
+        return property_names
 
     class GlobalCDA:
         @staticmethod

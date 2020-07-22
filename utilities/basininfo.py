@@ -35,7 +35,10 @@ class BasinInfo:
                                include_only_basin_area=False):
             
             basin_info = OrderedDict()
-            basin_info['mississippi'] = {'station_id': '4127800', 'lon': -91.25, 'lat': 32.25, 'cellnum': 38760}
+            basin_info['mississippi'] = {'name': 'Mississippi River Basin', 'acronym': 'MRB (Unit-VI)',
+                                         'station_id': '4127800', 'lon': -91.25, 'lat': 32.25, 'cellnum': 38760}
+
+            if include_cellarea or include_only_basin_area: with_upstream = True
 
             if with_upstream: 
                 BasinInfo.include_basin_property_upstream(
@@ -60,12 +63,18 @@ class BasinInfo:
                                include_only_basin_area=False):
             
             basin_info = OrderedDict()
-            basin_info['hermann'] = {'station_id': '4122900', 'lon': -91.75, 'lat': 38.75, 'cellnum': 34526}
-            basin_info['grafton'] = {'station_id': '5587450', 'lon': -90.25, 'lat': 39.25, 'cellnum': 34191}
-            basin_info['metropolis'] = {'station_id': '4123050', 'lon': -88.75, 'lat': 37.25, 'cellnum': 35523}
-            basin_info['fort_smith'] = {'station_id': '7249455', 'lon': -94.25, 'lat': 35.25, 'cellnum': 36847}
-            basin_info['vicksburg'] = {'station_id': '4127800', 'lon': -91.25, 'lat': 32.25, 'cellnum': 38760}
+            basin_info['fort_smith'] = {'name': 'Arkansas River Basin', 'acronym': 'Arkansas (Unit-I)',
+                                        'station_id': '7249455', 'lon': -94.25, 'lat': 35.25, 'cellnum': 36847}
+            basin_info['hermann'] = {'name': 'Missouri River Basin', 'acronym': 'Missouri (Unit-II)',
+                                     'station_id': '4122900', 'lon': -91.75, 'lat': 38.75, 'cellnum': 34526}
+            basin_info['grafton'] = {'name': 'Upper Mississippi River Basin', 'acronym': 'Upper MRB (Unit-III)',
+                                     'station_id': '5587450', 'lon': -90.25, 'lat': 39.25, 'cellnum': 34191}
+            basin_info['metropolis'] = {'name': 'Ohio River Basin', 'acronym': 'Ohio (Unit-IV)',
+                                        'station_id': '4123050', 'lon': -88.75, 'lat': 37.25, 'cellnum': 35523}
+            basin_info['vicksburg'] = {'name': 'Lower Mississippi River Basin', 'acronym': 'Lower MRB (Unit-V)',
+                                       'station_id': '4127800', 'lon': -91.25, 'lat': 32.25, 'cellnum': 38760}
 
+            if include_cellarea or include_only_basin_area: with_upstream = True
 
             if with_upstream:
                 BasinInfo.include_basin_property_upstream(
@@ -101,12 +110,14 @@ class BasinInfo:
         ):
 
             basin_info = OrderedDict()
-            basin_info['louisville_nebraska'] = {'station_id': '4122600', 'lon': -96.25, 'lat': 41.25, 'cellnum': 32754, 'cda_unit': 'hermann'}
-            basin_info['bismarck'] = {'station_id': '4121802', 'lon': -100.75, 'lat': 47.25, 'cellnum': 28159, 'cda_unit': 'hermann'}
+            basin_info['louisville_nebraska'] = {'station_id': '6805500', 'lon': -96.25, 'lat': 41.25, 'cellnum': 32754, 'cda_unit': 'hermann'}
+            basin_info['bismarck'] = {'station_id': '6342500', 'lon': -100.75, 'lat': 47.25, 'cellnum': 28159, 'cda_unit': 'hermann'}
             basin_info['landusky_mt'] = {'station_id': '6115200', 'lon': -108.75, 'lat': 47.75, 'cellnum': 27722, 'cda_unit': 'hermann'}
-            basin_info['mt_carmel'] = {'station_id': '4123130', 'lon': -87.75, 'lat': 38.25, 'cellnum': 34863, 'cda_unit': 'metropolis'}
-            basin_info['louisville_kentucky'] = {'station_id': '4123300', 'lon': -85.75, 'lat': 38.25, 'cellnum': 34867, 'cda_unit': 'metropolis'}
+            basin_info['mt_carmel'] = {'station_id': '3377500', 'lon': -87.75, 'lat': 38.25, 'cellnum': 34863, 'cda_unit': 'metropolis'}
+            basin_info['louisville_kentucky'] = {'station_id': '3294500', 'lon': -85.75, 'lat': 38.25, 'cellnum': 34867, 'cda_unit': 'metropolis'}
             basin_info['nashville_tn'] = {'station_id': '3431500', 'lon': -86.75, 'lat': 36.25, 'cellnum': 36217, 'cda_unit': 'metropolis'}
+
+            if include_cellarea or include_only_basin_area: with_upstream = True
 
             if with_upstream:
                 BasinInfo.include_basin_property_upstream(
@@ -132,6 +143,8 @@ class BasinInfo:
             
             basin_info = OrderedDict()
             basin_info['amazonas'] = {'station_id': '3623100', 'lon': -50.25, 'lat': 0.25, 'cellnum': 53829}
+
+            if include_cellarea or include_only_basin_area: with_upstream = True
 
             if with_upstream: 
                 BasinInfo.include_basin_property_upstream(
@@ -159,7 +172,9 @@ class BasinInfo:
             basin_info['manicore'] = {'station_id': '3627030', 'lon': -61.25, 'lat': -5.75, 'cellnum': 56135}
             basin_info['obidos'] = {'station_id': '3629000', 'lon': -55.75, 'lat': -1.75, 'cellnum': 54549}
             basin_info['amazonas'] = {'station_id': '3623100', 'lon': -50.25, 'lat': 0.25, 'cellnum': 53829}
-            
+
+            if include_cellarea or include_only_basin_area: with_upstream = True
+
             if with_upstream:
                 BasinInfo.include_basin_property_upstream(
                                             basin_info, 
@@ -199,6 +214,8 @@ class BasinInfo:
             basin_info = OrderedDict()
             basin_info['ganges'] = {'station_id': '2646200', 'lon': 88.75, 'lat': 24.25, 'cellnum': -1}
             basin_info['brahmaputra'] = {'station_id': '2651100', 'lon': 89.75, 'lat': 25.25, 'cellnum': -1}
+
+            if include_cellarea or include_only_basin_area: with_upstream = True
 
             if with_upstream:
                 BasinInfo.include_basin_property_upstream(
@@ -306,7 +323,7 @@ class BasinInfo:
             
             if (len(basin_info[basin]['upstream']) == 0 or
                 type(basin_info[basin]['upstream'][0]) is not int): 
-                succeed 
+                succeed = False
                 break
         
         # include upstream cell list if upstream is not previously included
@@ -359,7 +376,7 @@ class BasinInfo:
             
             if (len(basin_info[basin]['upstream']) == 0 or
                 type(basin_info[basin]['upstream'][0]) is not int): 
-                succeed 
+                succeed = False
                 break
         
         # include upstream cell list if upstream is not previously included

@@ -99,15 +99,28 @@ class stats:
     def KGE_dAlpha(sim, obs): return abs(np.std(sim) - np.std(obs))
 
     @staticmethod
-    def KGE_beta(sim, obs): return np.mean(sim)/np.mean(obs)
+    def KGE_beta(sim, obs):
+        mu_sim = np.mean(sim)
+        mu_obs = np.mean(obs)
+
+        if round(mu_sim, 8) == 0:
+            if round(mu_obs, 8) == 0: return 1
+            else: return np.inf
+
+        return np.mean(sim)/np.mean(obs)
 
     @staticmethod
     def KGE_dBeta(sim, obs): return abs(np.mean(sim)-np.mean(obs))
 
     @staticmethod
     def KGE_gamma(sim, obs):
-        cv_sim = np.std(sim) / np.mean(sim)
-        cv_obs = np.std(obs) / np.mean(obs)
+        mu_sim = np.mean(sim)
+        mu_obs = np.mean(obs)
+
+        if round(mu_sim, 8) == 0 or round(mu_obs, 8) == 0: return np.inf
+
+        cv_sim = np.std(sim) / mu_sim
+        cv_obs = np.std(obs) / mu_obs
 
         return cv_sim/cv_obs
 
@@ -129,8 +142,6 @@ class stats:
     @staticmethod
     def kling_gupta_efficiency2012(sim, obs):
         # Reference: Kling et al., 2012
-
-
         mean_sim, mean_obs = np.mean(sim), np.mean(obs)
         stdv_sim, stdv_obs = np.std(sim), np.std(obs)
 
