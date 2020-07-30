@@ -960,10 +960,16 @@ class SimVariable(Variable):
                         if data.ndim == 1: ncol = data.size
                         else: ncol = data.shape[1]
 
-                        dump_filename = self.varname + '.%s.%d.unf0' % (prefix_filename, ncol)
+                        if prefix_filename:
+                            dump_filename = self.varname + '.%s.%d.unf0' % (prefix_filename, ncol)
+                        else: dump_filename = self.varname + '.%d.unf0' % ncol
+
                         if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
 
-                        if use_lock: lock_file = '_%s.%s.LOCK' % (self.varname.upper(), prefix_filename)
+                        if use_lock:
+                            if prefix_filename:
+                                lock_file = '_%s.%s.LOCK' % (self.varname.upper(), prefix_filename)
+                            else: lock_file = '_%s.LOCK' % self.varname.upper()
                         else: lock_file = ''
 
                         succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), lock_file)
@@ -1019,10 +1025,15 @@ class SimVariable(Variable):
                     if data.ndim == 1: ncol = data.size
                     else: ncol = data.shape[1]
 
-                    dump_filename = self.varname + '.%s.%d.unf0' % (prefix_filename, ncol)
+                    if prefix_filename:
+                        dump_filename = self.varname + '.%s.%d.unf0' % (prefix_filename, ncol)
+                    else: dump_filename = self.varname + '.%d.unf0' % ncol
                     if dumping_directory: dump_filename = os.path.join(dumping_directory, dump_filename)
 
-                    if use_lock: lock_file = '_%s.%s.LOCK'% (self.varname.upper(), prefix_filename)
+                    if use_lock:
+                        if prefix_filename:
+                            lock_file = '_%s.%s.LOCK'% (self.varname.upper(), prefix_filename)
+                        else: lock_file = '_%s.LOCK'% self.varname.upper()
                     else: lock_file = ''
 
                     succeed = self.dump_data_into_file(dump_filename, data.astype(format_str), lock_file)
