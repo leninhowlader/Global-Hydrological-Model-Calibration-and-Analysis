@@ -304,16 +304,18 @@ class ParameterInfo:
     def write_parameter_info(
             filename_out,
             param_names:list=[],
-            param_acronyms:list=[]
+            param_acronyms:list=[],
+            param_info:dict={}
     ):
         if not filename_out: return False
 
-        if param_names or param_acronyms:
-            param_info = ParameterInfo.get_selected_paramter_info(
-                param_names=param_names,
-                param_acronyms=param_acronyms
-            )
-        else: param_info = ParameterInfo.__param_info
+        if not param_info:
+            if param_names or param_acronyms:
+                param_info = ParameterInfo.get_selected_paramter_info(
+                    param_names=param_names,
+                    param_acronyms=param_acronyms
+                )
+            else: param_info = ParameterInfo.__param_info
 
         if len(param_info) == 0: return False
 
