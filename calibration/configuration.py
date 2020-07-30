@@ -1,6 +1,8 @@
 __author__ = 'mhasan'
 
-import sys, os
+import sys, os, numpy as np
+from datetime import datetime
+
 sys.path.append('..')
 from calibration.variable import ObsVariable, SimVariable, DerivedVariable
 from wgap.watergap import WaterGAP
@@ -9,6 +11,7 @@ from utilities.fileio import FileInputOutput as io
 from utilities.station import Station
 from utilities.upstream import Upstream
 from utilities.globalgrid import GlobalGrid as gg
+from wgap.paraminfo import ParameterInfo
 
 class Configuration:
     '''
@@ -564,3 +567,188 @@ class Configuration:
             if not param.cell_list: param.cell_list = unique_target_cells
 
         return succeed
+
+    @staticmethod
+    def runtime_report(
+        filename_config:str,
+        filename_out:str
+    ):
+        f = open(filename_out, 'a')
+
+        today = datetime.now()
+        text = """
+_______________________________________________________________________________
+                Runtime Configuration-Object Correctness Test
+                         [Written by: H.M. Mehedi]
+_______________________________________________________________________________
+Date: %s
+    
+Name of the File: %s
+\n\n\n""" % (str(today), filename_config)
+        f.write(text)
+
+        if not os.path.exists(filename_config):
+            message = 'configuration file does not exist: %s\n'%filename_config
+            f.write(message)
+            f.close()
+            return -1
+
+        config = Configuration.read_configuration_file(filename_config)
+        if not config:
+            message = 'wrong file format: %s\n'%filename_config
+            f.write(message)
+            f.close()
+            return -1
+
+        if config.is_okay():
+            message = 'configuration overall check  [okay]\n'
+        else: message = 'configuration overall check  [failed]\n'
+        f.write(message)
+
+        # report general setting
+        message = '\tMode:%s\n' % config.mode
+        f.write(message)
+
+        message = '\tOuput directory: %s\n' % config.output_directory
+        f.write(message)
+
+        if not os.path.exists(config.output_directory):
+            message = '\tOutput directory: [does not exist]\n'
+        else: message = '\tOutput directory: [exists] \n'
+        f.write(message)
+
+        message = '\tSample filename: %s\n' % config.input_sample_filename
+        f.write(message)
+
+        message = '\tNumber of samples: %d\n'%len(config.samples)
+        f.write(message)
+
+        # report model settings
+        message = 'Model Setting Section:\n'
+        f.write(message)
+
+        if WaterGAP.is_okay():
+            message = '\tWaterGAP model overall check [okay]\n'
+        else: message = '\tWaterGAP model overall check [failed]\n'
+        f.write(message)
+
+        if os.path.exists(WaterGAP.home_directory):
+            message = '\tModel home directory: [exists]\n'
+        else: message = '\tModel home directory: [does not exist]\n'
+        f.write(message)
+
+        message = '\tstart year: %d\n'%WaterGAP.start_year
+        f.write(message)
+
+        message = '\tend year: %d\n'%WaterGAP.end_year
+        f.write(message)
+
+        message = 'Parameter Section:\n'
+        f.write(message)
+
+        message = '\tNumber of parameter: %d\n' % len(config.parameters)
+        f.write(message)
+
+        param_names = []
+        for p in config.parameters: param_names.append(p.parameter_name)
+        param_info = ParameterInfo.get_selected_paramter_info(param_names=param_names)
+
+        param_acronyms = ','.join([param_info[p]['acronym'] for p in param_names])
+        message = '\tparameter names: %s\n' % param_acronyms
+        f.write(message)
+
+        succeed = True
+        for p in config.parameters:
+            if (p.get_lower_bound() != param_info[p.parameter_name]['min'] or
+                p.get_upper_bound() != param_info[p.parameter_name]['max']):
+                succeed = False; break
+        if succeed: message = '\tparameter range: [correct]\n'
+        else: message = '\tparameter range: [not correct]\n'
+        f.write(message)
+
+
+        succeed = True
+        nParam = 0
+        counts =[len(p.cell_list) for p in config.parameters]
+        if np.mean(counts) != counts[0]: succeed = False
+
+        if succeed:
+            counts =[[len(p.cell_list[i]) for i in range(len(p.cell_list))] for p in config.parameters]
+
+            nParam = np.sum(counts[0])
+            message = '\tnumber of grid cells in first parameter: %d\n' % nParam
+            f.write(message)
+
+            if np.abs(np.array(counts).mean(axis=0)-np.array(counts[0])).sum() != 0:
+                succeed = False
+
+
+        if succeed:
+            counts =[np.array(p.cell_list).size for p in config.parameters]
+            if np.mean(counts) != counts[0]: succeed = False
+
+        if succeed: message = '\tparameter cell list: [consistent]\n'
+        else: message = '\tparameter cell list: [not consistent]\n'
+        f.write(message)
+
+
+        message = 'Variable Section:\n'
+        f.write(message)
+
+        message = '\tnumber of simulation variables: %d\n' % len(config.sim_variables)
+        f.write(message)
+
+        succeed = True
+        for v in config.sim_variables:
+            if not v.is_okay(): succeed = False; break
+        if succeed:  message = '\tgeneral check for variables: [okay]\n'
+        else: message = '\tgeneral check for variables: [not okay]\n'
+        f.write(message)
+
+        if succeed:
+            counts =[len(v.basin_cell_list) for v in config.sim_variables]
+            if np.mean(counts) == counts[0]:
+                message = '\tnumber of basin in variables: [consistent]\n'
+                f.write(message)
+
+                message='\tnumber of basin: %d\n'%counts[0]
+            else: message = '\tnumber of basin in variables: [not consistent]\n'
+            f.write(message)
+
+            succeed = True
+            varlist = [v for v in config.sim_variables if len(v.basin_cell_list[0]) > 1]
+
+            counts =[[len(v.basin_cell_list[i]) for i in range(len(v.basin_cell_list))]
+                     for v in varlist]
+            if np.abs(np.array(counts).mean(axis=0)-np.array(counts[0])).sum() != 0:
+                succeed = False
+
+            if succeed:
+                counts =[np.array(v.basin_cell_list).size for v in varlist]
+                if np.mean(counts) != counts[0]: succeed = False
+
+            if succeed: message = '\ttarget cell list: [consistent]\n'
+            else: message = '\ttarget cell list: [not consistent]\n'
+            f.write(message)
+
+            succeed = True
+            for v in config.sim_variables:
+                if len(v.cell_weights) != 0:
+
+                    weight_counts = [len(v.cell_weights[i]) for i in range(len(v.cell_weights))]
+                    cell_counts = [len(v.basin_cell_list[i]) for i in range(len(v.basin_cell_list))]
+
+                    if np.abs(np.array(weight_counts)-np.array(cell_counts)).sum() == 0:
+                        f.write('\t[%s] cell counts: [consistent]\n' % v.varname)
+                    else: f.write('\t[%s] cell counts: [not consistent]\n' % v.varname)
+
+                    weight_sums = [np.sum(v.cell_weights[i]) for i in range(len(v.cell_weights))]
+
+                    message = '\t[%s] area sum: %s\n' % (v.varname, ','.join([str(x) for x in weight_sums]))
+                    f.write(message)
+
+        message = '\n\nreport success!!\n'
+        f.write(message)
+        f.close()
+
+        return 1
