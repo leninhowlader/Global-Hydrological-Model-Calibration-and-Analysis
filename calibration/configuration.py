@@ -606,6 +606,9 @@ Name of the File: %s
         f.write(message)
 
         # report general setting
+        message = '\n[SECTION] BASIC SETTINGS:\n'
+        f.write(message)
+
         message = '\tMode:%s\n' % config.mode
         f.write(message)
 
@@ -624,7 +627,7 @@ Name of the File: %s
         f.write(message)
 
         # report model settings
-        message = 'Model Setting Section:\n'
+        message = '\n[SECTION] MODEL CONFIGURATION:\n'
         f.write(message)
 
         if WaterGAP.is_okay():
@@ -643,7 +646,7 @@ Name of the File: %s
         message = '\tend year: %d\n'%WaterGAP.end_year
         f.write(message)
 
-        message = 'Parameter Section:\n'
+        message = '\n[SECTION] PARAMETER:\n'
         f.write(message)
 
         message = '\tNumber of parameter: %d\n' % len(config.parameters)
@@ -667,32 +670,26 @@ Name of the File: %s
         f.write(message)
 
 
-        succeed = True
-        nParam = 0
-        counts =[len(p.cell_list) for p in config.parameters]
-        if np.mean(counts) != counts[0]: succeed = False
-
-        if succeed:
+        message = '\tnumber of grid cells: '
+        temp = config.parameters[0].cell_list
+        if (type(config.parameters[0].cell_list[0]) is list or
+            type(config.parameters[0].cell_list[0]) is np.ndarray):
             counts =[[len(p.cell_list[i]) for i in range(len(p.cell_list))] for p in config.parameters]
 
-            nParam = np.sum(counts[0])
-            message = '\tnumber of grid cells in first parameter: %d\n' % nParam
+            f.write(message + '\n')
+            for i in range(len(counts)):
+                message = 'p%d'%(i+1) + ', '.join(
+                [str(counts[i][j]) for j in range(len(counts[i]))]
+                )
+            f.write(message)
+        else:
+            counts = [len(p.cell_list) for p in config.parameters]
+            message += ', '.join(
+                [str(counts[i]) for i in range(len(counts))]
+            )
             f.write(message)
 
-            if np.abs(np.array(counts).mean(axis=0)-np.array(counts[0])).sum() != 0:
-                succeed = False
-
-
-        if succeed:
-            counts =[np.array(p.cell_list).size for p in config.parameters]
-            if np.mean(counts) != counts[0]: succeed = False
-
-        if succeed: message = '\tparameter cell list: [consistent]\n'
-        else: message = '\tparameter cell list: [not consistent]\n'
-        f.write(message)
-
-
-        message = 'Variable Section:\n'
+        message = '\n[SECTION] VARIABLE:\n'
         f.write(message)
 
         message = '\tnumber of simulation variables: %d\n' % len(config.sim_variables)
@@ -751,4 +748,4 @@ Name of the File: %s
         f.write(message)
         f.close()
 
-        return 1
+        return True
