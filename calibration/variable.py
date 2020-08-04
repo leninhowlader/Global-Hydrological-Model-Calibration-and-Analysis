@@ -1081,6 +1081,92 @@ class SimVariable(Variable):
 
         return succeed
 
+    def cell_level_predicted_time_series(
+        self,
+        start_year,
+        end_year,
+        prediction_directory
+    ):
+        '''
+        This function will read model predictions and transform cell-level
+        prediction time-series. As convention no aggregation will be preformed.
+
+        Parameters:
+        :param start_year: (int) start year of prediction
+        :param end_year: (int) end year of prediction
+        :param prediction_directory: (string) path of model output
+                                                        directory
+        :return: (np.ndarray) cell-level time-series
+
+        Notes:
+            dimension of output dataset = nrow x ncol;
+            where, nrow = number of months and
+                   ncol = id columns (cell number, year, month) + number of cell
+        '''
+
+        # step-01: validate inputs
+        if start_year < 1901 or end_year > 2016: return False
+        if os.path.exists(prediction_directory): return False
+
+        if start_year > end_year: end_year = start_year
+        # end [step-01]
+
+        # step-02: gather all cell numbers into one single list
+        cell_list = []
+        for basin_cells in self.basin_cell_list: cell_list += basin_cells
+        if len(cell_list) == 0: return False
+
+        cell_list = np.array(cell_list, dtype=int)
+        ii_cell = cell_list - 1      # 0-based cell indices
+        # end [step-02]
+
+        # step-03: validate data-source object of current variable
+        if not self.data_source.is_okay(): return False
+        if not self.data_source.file_type == FileType.wghm_binary: return False
+        # end [step-03]
+
+        # step-04: read monthly prediction output
+        d_out = np.empty(0)
+        if self.data_source.prediction_type == PredictionType.monthly:
+            for year in range(start_year, end_year + 1):
+                # step-4.1: generate prediction filename
+                ndx = self.data_source.filename.lower().find('[year]')
+                filename_in = os.path.join(
+                    prediction_directory,
+                    self.data_source.filename[:ndx] + str(year) +
+                    self.data_source.filename[ndx + 6:]
+                )
+                # end [step-4.1]
+
+                # step-4.2: read prediction from UNF file
+                d_pred =  WaterGapIO.read_unf(
+                    filename_in,
+                    file_endian=self.data_source.file_endian
+                )
+
+                if not type(d_pred) is np.ndarray or len(d_pred) == 0:
+                    return False
+                # end [step-4.2]
+
+                # step-4.3: identify cell-level predictions and store then into
+                # output dataset
+                try: d_out = np.concatenate((d_out, d_pred[ii_cell].T), axis=0)
+                except: d_out = d_pred[ii_cell].T
+                # end [step-4.3]
+
+        if d_out.shape != ((end_year - start_year + 1) * 12, cell_list.size):
+            return False
+        # end [step-04]
+
+        # step-05: add data indices
+        yy = np.repeat(np.arange(start_year, end_year + 1), 12).reshape(-1, 1)
+        mm = np.repeat(np.arange(1, 12 + 1)[np.newaxis, :],
+                           (end_year - start_year + 1), axis=0).reshape(-1, 1)
+        d_out = np.concatenate((yy, mm, d_out), axis=1)
+        # end [step-05]
+
+        return d_out
+
 class DerivedVariable(Variable):
     def __init__(self):
         Variable.__init__(self)
