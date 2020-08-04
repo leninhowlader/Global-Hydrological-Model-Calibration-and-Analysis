@@ -7,5 +7,4 @@
 !utilities/data/*
 !wgap/*.py
 !observationprocessing/*.py
-!evaluator_step_one.py
-!evaluator_step_two.py
+!*.py
