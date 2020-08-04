@@ -8,3 +8,4 @@
 !wgap/*.py
 !observationprocessing/*.py
 !*.py
+temp.py
