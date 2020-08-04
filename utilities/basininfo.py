@@ -25,18 +25,119 @@ class BasinInfo:
         @staticmethod
         def get_model_grid_resolution():
             return BasinInfo.GlobalCDA.__model_grid_resolution_deg
-        
+
+        @staticmethod
+        def GFBasin_level0(
+            compute_upstream=False,
+            wghm_cell_number=True,
+            include_arcid=False,
+            include_cellarea=False,
+            include_only_basin_area=False
+        ):
+            basin_info = OrderedDict()
+            basin_info['elbe'] = {
+                'bid': 1, 'name': 'Elbe Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': 8.75, 'lat': 53.75,
+                'cellnum': 22538
+            }
+
+            basin_info['weser'] = {
+                'bid': 2, 'name': 'Weser Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': 8.25, 'lat': 53.75,
+                'cellnum': 22537
+            }
+
+            basin_info['rhine'] = {
+                'bid': 3, 'name': 'Rhine Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': 4.25, 'lat': 52.25,
+                'cellnum': 23905
+            }
+
+            basin_info['meuse'] = {
+                'bid': 4, 'name': 'Meuse Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': 3.75, 'lat': 51.75,
+                'cellnum': 24363
+            }
+
+            basin_info['seine'] = {
+                'bid': 5, 'name': 'Seine Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': 0.25, 'lat': 49.75,
+                'cellnum': 26107
+            }
+
+            basin_info['rhone'] = {
+                'bid': 6, 'name': 'Rhone Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': 4.75, 'lat': 43.25,
+                'cellnum': 31405
+            }
+
+            basin_info['loire'] = {
+                'bid': 7, 'name': 'Loire Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': -2.25, 'lat': 47.25,
+                'cellnum': 28236
+            }
+
+            basin_info['vilaine'] = {
+                'bid': 8, 'name': 'Vilaine Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': -2.25, 'lat': 47.75,
+                'cellnum': 27826
+            }
+
+            basin_info['garonne'] = {
+                'bid': 9, 'name': 'Garonne Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': -0.75, 'lat': 45.25,
+                'cellnum': 29861
+            }
+
+            basin_info['adour'] = {
+                'bid': 10, 'name': 'Adour Basin', 'acronym': 'NA',
+                'station_id': '4127800', 'lon': -1.25, 'lat': 43.75,
+                'cellnum': 31016
+            }
+
+            if include_cellarea or include_only_basin_area: compute_upstream = True
+
+            if compute_upstream:
+                BasinInfo.include_basin_property_upstream(
+                    basin_info,
+                    wghm_cell_number=wghm_cell_number
+                )
+
+            BasinInfo.GlobalCDA.include_basin_properties(
+                basin_info,
+                include_arcid=include_arcid,
+                include_cellarea=include_cellarea,
+                include_only_basin_area=include_only_basin_area
+            )
+
+            # [step] add basin outlet (WaterGAP) cell number
+            is_available_outlet_cellnum = True
+            for basin in basin_info.keys():
+                if basin_info[basin]['cellnum'] == -1:
+                    is_available_outlet_cellnum = False
+                    break
+
+            if (not is_available_outlet_cellnum):
+                BasinInfo.GlobalCDA.include_basin_outlet_cellnumber(basin_info)
+            # [end]
+
+            return basin_info
         
         @staticmethod
-        def Mississippi_level0(with_upstream=False, 
-                               wghm_cell_number=True,
-                               include_arcid=False, 
-                               include_cellarea=False, 
-                               include_only_basin_area=False):
+        def Mississippi_level0(
+            with_upstream=False,
+            wghm_cell_number=True,
+            include_arcid=False,
+            include_cellarea=False,
+            include_only_basin_area=False
+        ):
             
             basin_info = OrderedDict()
-            basin_info['mississippi'] = {'name': 'Mississippi River Basin', 'acronym': 'MRB (Unit-VI)',
-                                         'station_id': '4127800', 'lon': -91.25, 'lat': 32.25, 'cellnum': 38760}
+            basin_info['mississippi'] = {
+                'name': 'Mississippi River Basin', 'acronym': 'MRB (Unit-VI)',
+                'station_id': '4127800', 'lon': -91.25, 'lat': 32.25,
+                'cellnum': 38760
+            }
 
             if include_cellarea or include_only_basin_area: with_upstream = True
 
@@ -63,16 +164,37 @@ class BasinInfo:
                                include_only_basin_area=False):
             
             basin_info = OrderedDict()
-            basin_info['fort_smith'] = {'name': 'Arkansas River Basin', 'acronym': 'Arkansas (Unit-I)',
-                                        'station_id': '7249455', 'lon': -94.25, 'lat': 35.25, 'cellnum': 36847}
-            basin_info['hermann'] = {'name': 'Missouri River Basin', 'acronym': 'Missouri (Unit-II)',
-                                     'station_id': '4122900', 'lon': -91.75, 'lat': 38.75, 'cellnum': 34526}
-            basin_info['grafton'] = {'name': 'Upper Mississippi River Basin', 'acronym': 'Upper MRB (Unit-III)',
-                                     'station_id': '5587450', 'lon': -90.25, 'lat': 39.25, 'cellnum': 34191}
-            basin_info['metropolis'] = {'name': 'Ohio River Basin', 'acronym': 'Ohio (Unit-IV)',
-                                        'station_id': '4123050', 'lon': -88.75, 'lat': 37.25, 'cellnum': 35523}
-            basin_info['vicksburg'] = {'name': 'Lower Mississippi River Basin', 'acronym': 'Lower MRB (Unit-V)',
-                                       'station_id': '4127800', 'lon': -91.25, 'lat': 32.25, 'cellnum': 38760}
+            basin_info['fort_smith'] = {
+                'name': 'Arkansas River Basin', 'acronym': 'Arkansas (Unit-I)',
+                'station_id': '7249455', 'lon': -94.25, 'lat': 35.25,
+                'cellnum': 36847
+            }
+
+            basin_info['hermann'] = {
+                'name': 'Missouri River Basin', 'acronym': 'Missouri (Unit-II)',
+                'station_id': '4122900', 'lon': -91.75, 'lat': 38.75,
+                'cellnum': 34526
+            }
+
+            basin_info['grafton'] = {
+                'name': 'Upper Mississippi River Basin',
+                'acronym': 'Upper MRB (Unit-III)',
+                'station_id': '5587450', 'lon': -90.25, 'lat': 39.25,
+                'cellnum': 34191
+            }
+
+            basin_info['metropolis'] = {
+                'name': 'Ohio River Basin', 'acronym': 'Ohio (Unit-IV)',
+                'station_id': '4123050', 'lon': -88.75, 'lat': 37.25,
+                'cellnum': 35523
+            }
+
+            basin_info['vicksburg'] = {
+                'name': 'Lower Mississippi River Basin',
+                'acronym': 'Lower MRB (Unit-V)',
+                'station_id': '4127800', 'lon': -91.25, 'lat': 32.25,
+                'cellnum': 38760
+            }
 
             if include_cellarea or include_only_basin_area: with_upstream = True
 
@@ -110,12 +232,35 @@ class BasinInfo:
         ):
 
             basin_info = OrderedDict()
-            basin_info['louisville_nebraska'] = {'station_id': '6805500', 'lon': -96.25, 'lat': 41.25, 'cellnum': 32754, 'cda_unit': 'hermann'}
-            basin_info['bismarck'] = {'station_id': '6342500', 'lon': -100.75, 'lat': 47.25, 'cellnum': 28159, 'cda_unit': 'hermann'}
-            basin_info['landusky_mt'] = {'station_id': '6115200', 'lon': -108.75, 'lat': 47.75, 'cellnum': 27722, 'cda_unit': 'hermann'}
-            basin_info['mt_carmel'] = {'station_id': '3377500', 'lon': -87.75, 'lat': 38.25, 'cellnum': 34863, 'cda_unit': 'metropolis'}
-            basin_info['louisville_kentucky'] = {'station_id': '3294500', 'lon': -85.75, 'lat': 38.25, 'cellnum': 34867, 'cda_unit': 'metropolis'}
-            basin_info['nashville_tn'] = {'station_id': '3431500', 'lon': -86.75, 'lat': 36.25, 'cellnum': 36217, 'cda_unit': 'metropolis'}
+            basin_info['louisville_nebraska'] = {
+                'station_id': '6805500', 'lon': -96.25, 'lat': 41.25,
+                'cellnum': 32754, 'cda_unit': 'hermann'
+            }
+
+            basin_info['bismarck'] = {
+                'station_id': '6342500', 'lon': -100.75, 'lat': 47.25,
+                'cellnum': 28159, 'cda_unit': 'hermann'
+            }
+
+            basin_info['landusky_mt'] = {
+                'station_id': '6115200', 'lon': -108.75, 'lat': 47.75,
+                'cellnum': 27722, 'cda_unit': 'hermann'
+            }
+
+            basin_info['mt_carmel'] = {
+                'station_id': '3377500', 'lon': -87.75, 'lat': 38.25,
+                'cellnum': 34863, 'cda_unit': 'metropolis'
+            }
+
+            basin_info['louisville_kentucky'] = {
+                'station_id': '3294500', 'lon': -85.75, 'lat': 38.25,
+                'cellnum': 34867, 'cda_unit': 'metropolis'
+            }
+
+            basin_info['nashville_tn'] = {
+                'station_id': '3431500', 'lon': -86.75, 'lat': 36.25,
+                'cellnum': 36217, 'cda_unit': 'metropolis'
+            }
 
             if include_cellarea or include_only_basin_area: with_upstream = True
 
@@ -142,7 +287,10 @@ class BasinInfo:
                           include_only_basin_area=False):
             
             basin_info = OrderedDict()
-            basin_info['amazonas'] = {'station_id': '3623100', 'lon': -50.25, 'lat': 0.25, 'cellnum': 53829}
+            basin_info['amazonas'] = {
+                'station_id': '3623100', 'lon': -50.25, 'lat': 0.25,
+                'cellnum': 53829
+            }
 
             if include_cellarea or include_only_basin_area: with_upstream = True
 
@@ -167,11 +315,30 @@ class BasinInfo:
                           include_cellarea=False, 
                           include_only_basin_area=False):
             basin_info = OrderedDict()
-            basin_info['olivenca'] = {'station_id': '3623100', 'lon': -69.25, 'lat': -3.25, 'cellnum': 55134}
-            basin_info['negro_river'] = {'station_id': '3623100', 'lon': -60.75, 'lat': -2.75, 'cellnum': 54942}
-            basin_info['manicore'] = {'station_id': '3627030', 'lon': -61.25, 'lat': -5.75, 'cellnum': 56135}
-            basin_info['obidos'] = {'station_id': '3629000', 'lon': -55.75, 'lat': -1.75, 'cellnum': 54549}
-            basin_info['amazonas'] = {'station_id': '3623100', 'lon': -50.25, 'lat': 0.25, 'cellnum': 53829}
+            basin_info['olivenca'] = {
+                'station_id': '3623100', 'lon': -69.25, 'lat': -3.25,
+                'cellnum': 55134
+            }
+
+            basin_info['negro_river'] = {
+                'station_id': '3623100', 'lon': -60.75, 'lat': -2.75,
+                'cellnum': 54942
+            }
+
+            basin_info['manicore'] = {
+                'station_id': '3627030', 'lon': -61.25, 'lat': -5.75,
+                'cellnum': 56135
+            }
+
+            basin_info['obidos'] = {
+                'station_id': '3629000', 'lon': -55.75, 'lat': -1.75,
+                'cellnum': 54549
+            }
+
+            basin_info['amazonas'] = {
+                'station_id': '3623100', 'lon': -50.25, 'lat': 0.25,
+                'cellnum': 53829
+            }
 
             if include_cellarea or include_only_basin_area: with_upstream = True
 
@@ -184,7 +351,7 @@ class BasinInfo:
                 basin_info['amazonas']['upstream'] = list(
                         set(basin_info['amazonas']['upstream'])
                         - set(basin_info['obidos']['upstream'])
-                        )
+                )
                 
                 # remove upstream basins from obidos
                 basin_info['obidos']['upstream'] = list(
@@ -192,7 +359,7 @@ class BasinInfo:
                         - set(basin_info['negro_river']['upstream'])
                         - set(basin_info['manicore']['upstream'])
                         - set(basin_info['olivenca']['upstream'])
-                        )
+                )
                 
                 
             BasinInfo.GlobalCDA.include_basin_properties(
@@ -212,8 +379,15 @@ class BasinInfo:
                           include_only_basin_area=False):
 
             basin_info = OrderedDict()
-            basin_info['ganges'] = {'station_id': '2646200', 'lon': 88.75, 'lat': 24.25, 'cellnum': -1}
-            basin_info['brahmaputra'] = {'station_id': '2651100', 'lon': 89.75, 'lat': 25.25, 'cellnum': -1}
+            basin_info['ganges'] = {
+                'station_id': '2646200', 'lon': 88.75, 'lat': 24.25,
+                'cellnum': -1
+            }
+
+            basin_info['brahmaputra'] = {
+                'station_id': '2651100', 'lon': 89.75, 'lat': 25.25,
+                'cellnum': -1
+            }
 
             if include_cellarea or include_only_basin_area: with_upstream = True
 
