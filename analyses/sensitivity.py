@@ -6,6 +6,8 @@ import os, sys, numpy as np
 from datetime import datetime
 from collections import OrderedDict
 from copy import deepcopy
+from matplotlib import pyplot as plt
+
 
 sys.path.append('..')
 from wgap.wgapio import WaterGapIO
@@ -15,6 +17,11 @@ from calibration.seasonalstats import SeasonalStatistics
 from utilities.fileio import FileInputOutput as io
 
 class SensitivityAnalysis:
+    # methods and variables of SensitivityAnalysis class
+    # [to be added]
+    #
+    
+    
     class SampleEvaluation:
         @staticmethod
         def evaluate_sample(
@@ -441,8 +448,8 @@ class SensitivityAnalysis:
         # end of function
     
     # end of SampleEval_ComputeFx class
-    
-    
+
+
     class ParameterSelection:
         __method = 'major contributors' # methosds: Equal Top Rank, 
                                         #           Major Contributors
@@ -525,9 +532,175 @@ class SensitivityAnalysis:
             # end of step
             
             return d_out, colnames
+
+        @staticmethod
+        def compute_ranks(
+            si:np.ndarray,
+            filename_out:str = ''
+        ):
+            ndim = si.ndim
+            if ndim == 1: si = si.reshape(-1, 1)
+
+            nparam, nvar = si.shape
+
+            ranks_out = np.empty(0)
+            for i in range(nvar):
+                ranks = (np.argsort(np.argsort(-si[:,i])) + 1).reshape(-1, 1)
+
+                try: ranks_out = np.concatenate((ranks_out, ranks), axis=1)
+                except: ranks_out = ranks
+
+            if filename_out:
+                fmt = ','.join(['%d'] * nvar)
+                np.savetxt(filename_out, ranks_out, delimiter=',', fmt=fmt)
+            else:
+                if ndim == 1: ranks_out = ranks_out.flatten()
+                return ranks_out
+
     # end of ParameterSelection class
     
-    # methods and variables of SensitivityAnalysis class
-    # pass
+    class Plot:
+        @staticmethod
+        def plot_parameter_ranks(
+            ranks:np.ndarray,
+            parameter_names:list,
+            xvar_names:list,
+            filename_out:str='',
+            ax=None,
+            figsize=(5, 7),
+            title='',
+            colormap='YlOrRd_r',
+            show_cmap=False,
+            show_yticks=True,
+            fig_adjust_params={'left': 0.15, 'bottom': 0.20, 'right': 0.95,
+                               'top': 0.95, 'wspace': None, 'hspace': None},
+            tight_layout=False
+        ):
+            # colormaps:
+            # Accent, Accent_r, Blues, Blues_r, BrBG, BrBG_r, BuGn, BuGn_r, 
+            # BuPu, BuPu_r, CMRmap, CMRmap_r, Dark2, Dark2_r, GnBu, GnBu_r, 
+            # Greens, Greens_r, Greys, Greys_r, OrRd, OrRd_r, Oranges, 
+            # Oranges_r, PRGn, PRGn_r, Paired, Paired_r, Pastel1, Pastel1_r, 
+            # Pastel2, Pastel2_r, PiYG, PiYG_r, PuBu, PuBuGn, PuBuGn_r, PuBu_r, 
+            # PuOr, PuOr_r, PuRd, PuRd_r, Purples, Purples_r, RdBu, RdBu_r, 
+            # RdGy, RdGy_r, RdPu, RdPu_r, RdYlBu, RdYlBu_r, RdYlGn, RdYlGn_r, 
+            # Reds, Reds_r, Set1, Set1_r, Set2, Set2_r, Set3, Set3_r, Spectral,
+            # Spectral_r, Wistia, Wistia_r, YlGn, YlGnBu, YlGnBu_r, YlGn_r, 
+            # YlOrBr, YlOrBr_r, YlOrRd, YlOrRd_r, afmhot, afmhot_r, autumn, 
+            # autumn_r, binary, binary_r, bone, bone_r, brg, brg_r, bwr, bwr_r, 
+            # cividis, cividis_r, cool, cool_r, coolwarm, coolwarm_r, copper, 
+            # copper_r, cubehelix, cubehelix_r, flag, flag_r, gist_earth, 
+            # gist_earth_r, gist_gray, gist_gray_r, gist_heat, gist_heat_r, 
+            # gist_ncar, gist_ncar_r, gist_rainbow, gist_rainbow_r, gist_stern, 
+            # gist_stern_r, gist_yarg, gist_yarg_r, gnuplot, gnuplot2, 
+            # gnuplot2_r, gnuplot_r, gray, gray_r, hot, hot_r, hsv, hsv_r, 
+            # inferno, inferno_r, jet, jet_r, magma, magma_r, nipy_spectral, 
+            # nipy_spectral_r, ocean, ocean_r, pink, pink_r, plasma, plasma_r, 
+            # prism, prism_r, rainbow, rainbow_r, seismic, seismic_r, spring, 
+            # spring_r, summer, summer_r, tab10, tab10_r, tab20, tab20_r, 
+            # tab20b, tab20b_r, tab20c, tab20c_r, terrain, terrain_r, twilight, 
+            # twilight_r, twilight_shifted, twilight_shifted_r, viridis, 
+            # viridis_r, winter, winter_r
+            
+            
+            nrow, ncol = ranks.shape
+            if len(parameter_names) != nrow: return False
+            if len(xvar_names) != ncol: return False
+            
+            if ax: 
+                fig = ax.figure
+                
+                filename_out = ''
+                tight_layout = False
+                fig_adjust_params = {}
+            else:
+                fig = plt.figure(figsize=figsize)
+                ax = fig.add_subplot(111)
+                
+            im = ax.imshow(ranks, cmap=colormap)
+            
+            if show_yticks:
+                yticks = np.arange(nrow)
+                ax.set_yticks(yticks)
+                ax.set_yticklabels(parameter_names)
+            else: ax.set_yticks([])
+            
+            ax.set_xticks(np.arange(ncol))
+            ax.set_xticklabels(xvar_names, rotation=90)
+            
+            if show_cmap:
+                ticks = np.arange(1, nrow + 1)
+                cbar = fig.colorbar(im)
+                cbar.set_ticks(ticks)
+                cbar.set_ticklabels(ticks)
+                
+                if colormap[-2:] == '_r': cbar.ax.invert_yaxis()
+                cbar.set_label('Parameter ranks')
+                
+                
+            
+            if title: ax.set_title(title)
+            
+            if tight_layout: fig.tight_layout()
+            elif fig_adjust_params: fig.subplots_adjust(**fig_adjust_params)
+              
+            if filename_out: fig.savefig(filename_out, dpi=600)
+
+            return fig
     
+        @staticmethod
+        def multiplot_parameter_ranks(
+            list_of_ranks:list,
+            parameter_names:list,
+            xvar_names:list,
+            filename_out:str='',
+            figsize=(5, 7),
+            titles='',
+            colormap='YlOrRd_r',
+            show_cmap=True,
+            fig_adjust_params={'left': 0.15, 'bottom': 0.20, 'right': 0.95,
+                               'top': 0.95, 'wspace': None, 'hspace': None},
+            tight_layout=False
+        ):
+            nplots = len(list_of_ranks)
+            
+            if nplots == 0: return False
+            if titles and len(titles) != nplots: return False
+            
+            nrow, ncol = list_of_ranks[0].shape
+            if len(parameter_names) != nrow: return False
+            if len(xvar_names) != ncol: return False
+            
+            fig = plt.figure(figsize=figsize)
+            
+            ax, show_yticks, show_cmap_i, title = None, True, False, ''
+            
+            for i in range(nplots):
+                ranks = list_of_ranks[i]
+                
+                if titles: title = titles[i]
+                
+                if show_cmap and i == (nplots-1): show_cmap_i = True
+                
+                ax = fig.add_subplot(1, nplots, i+1)
+                
+                f = SensitivityAnalysis.Plot.plot_parameter_ranks(
+                        ranks=ranks,
+                        parameter_names=parameter_names,
+                        xvar_names=xvar_names,
+                        title=title,
+                        show_yticks=show_yticks,
+                        show_cmap=show_cmap_i,
+                        ax=ax,
+                        colormap=colormap
+                )
+                
+                show_yticks = False
+            
+            if tight_layout: fig.tight_layout()
+            else: fig.subplots_adjust(**fig_adjust_params)
+            
+            if filename_out: fig.savefig(filename_out, dpi=600)
+            
+            return fig
         
