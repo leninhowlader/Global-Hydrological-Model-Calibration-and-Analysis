@@ -227,6 +227,92 @@ class SensitivityAnalysis:
 
             return succeed
 
+        @staticmethod
+        def run_model(
+            config: Configuration,
+            sample_id: int,
+            additional_filename_specifier=''
+        ):
+            '''
+            The function run WaterGAP model with a sample and read model
+            predictions.
+
+            :param config: (Configuration) configuration object. The config
+                            object contains all required information about how
+                            to run the model, which parameters to modify, which
+                            output files to be read in and what statistical
+                            calculation to be made etc
+            :param sample_id: (int) sample number
+            :param additional_filename_specifier: (str, optional) additional
+                            info to avoid naming conflict in model output
+                            directory, data directory file and parameter file
+            :return: (bool) on successful operation it returns True,
+                            False otherwise.
+            '''
+            arguments = OrderedDict()
+
+            # step: update and write parameter values into new json file
+            params = config.samples[sample_id]
+            if len(params) == len(config.parameters):
+                for i in range(len(params)):
+                    config.parameters[i].parameter_value = params[i]
+            else: return False
+
+            name_specifier = str(sample_id).rjust(6, '0')
+            if additional_filename_specifier:
+                name_specifier += '_' + additional_filename_specifier
+
+            filename = WaterGAP.json_parameter_file[:-5] + '_' \
+                       + name_specifier + '.json'
+            if not WaterGAP.update_parameter_file(config.parameters, filename):
+                return False
+            arguments['p'] = filename
+            # end [step]
+
+            # step: create output directory and directory file
+            output_dir = 'output_' + name_specifier
+            dir_filename = 'data_' + name_specifier + '.dir'
+            if not WaterGAP.update_directory_info(output_dir, dir_filename):
+                return False
+            arguments['d'] = dir_filename
+            # end [step]
+
+            # step: execute model with new parameters
+            log_file = '/dev/null'
+
+            # log_file = os.path.join(WaterGAP.home_directory, 'log',
+            #                         'run' + pfix + '.log')
+
+            if not WaterGAP.execute_model(arguments, log_file=log_file):
+                WaterGAP.remove_files(arguments)
+                return False
+            # end [step]
+
+            # step: read the model outputs
+            directory_prediction \
+            = os.path.join(WaterGAP.home_directory, output_dir)
+
+            succeed = True
+            for var in config.sim_variables:
+                d = var.cell_level_predicted_time_series(
+                    start_year=WaterGAP.start_year,
+                    end_year=WaterGAP.end_year,
+                    prediction_directory=directory_prediction
+                )
+
+                if d.size == 0:
+                    succeed = False
+                    break
+
+                var.prediction_time_series = d
+            # end [step]
+
+            # step: remove model output files
+            WaterGAP.remove_files(arguments)
+            # end [step]
+
+            return succeed
+
     # end of SampleEval_ModelRun class
 
     class SampleEval_ComputeFx:
