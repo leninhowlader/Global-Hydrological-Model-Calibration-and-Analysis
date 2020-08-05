@@ -1159,7 +1159,7 @@ class SimVariable(Variable):
         # end [step-04]
 
         # step-05: compute anomaly, if applicable
-        if self.compute_anomaly: d_out -= d_out.mean(axis=1).reshape(-1,1)
+        if self.compute_anomaly: d_out -= d_out.mean(axis=0).reshape(1, -1)
         # end [step-05]
 
         # step-06: add data indices
