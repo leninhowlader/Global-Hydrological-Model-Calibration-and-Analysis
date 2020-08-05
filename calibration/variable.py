@@ -26,7 +26,7 @@ class DataSource:
         # properties required for binary files
         self.block_size = 0
         self.block_format = ''
-        self.file_endian = FileEndian.little_endian
+        self.file_endian = FileEndian.big_endian
 
         # properties required for wghm binaries
         self.prediction_type = PredictionType.monthly
@@ -1158,12 +1158,16 @@ class SimVariable(Variable):
             return False
         # end [step-04]
 
-        # step-05: add data indices
+        # step-05: compute anomaly, if applicable
+        if self.compute_anomaly: d_out -= d_out.mean(axis=1).reshape(-1,1)
+        # end [step-05]
+
+        # step-06: add data indices
         yy = np.repeat(np.arange(start_year, end_year + 1), 12).reshape(-1, 1)
         mm = np.repeat(np.arange(1, 12 + 1)[np.newaxis, :],
                            (end_year - start_year + 1), axis=0).reshape(-1, 1)
         d_out = np.concatenate((yy, mm, d_out), axis=1)
-        # end [step-05]
+        # end [step-06]
 
         return d_out
 

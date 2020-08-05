@@ -66,7 +66,7 @@ class WaterGAP:
     executable = ''
     start_year = 1901
     end_year = 2100
-    output_endian_type = FileEndian.little_endian
+    output_endian_type = FileEndian.big_endian
 
     __system_arguments = ''
 
