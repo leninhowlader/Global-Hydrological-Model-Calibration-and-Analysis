@@ -3,7 +3,7 @@ __author__ = 'mhasan'
 import sys, os, numpy as np
 from datetime import datetime
 
-sys.path.append('..')
+if '..' not in sys.path: sys.path.append('..')
 from calibration.variable import ObsVariable, SimVariable, DerivedVariable
 from wgap.watergap import WaterGAP
 from calibration.parameter import Parameter
@@ -12,6 +12,7 @@ from utilities.station import Station
 from utilities.upstream import Upstream
 from utilities.globalgrid import GlobalGrid as gg
 from wgap.paraminfo import ParameterInfo
+from calibration.stats import stats
 
 class Configuration:
     '''
@@ -80,11 +81,28 @@ class Configuration:
         # NB: Prediction statistics and seasonal statistics will be merged
         # together in the future
 
+        # sensitivity measure as the change in prediction from reference
+        self.__as_change_in_prediction = True
+        # function to measure the change
+        self.__function = None
+
         self.obs_variables = []
         self.sim_variables = []
         self.derived_variables = []
         self.parameters = []
         self.samples = []
+
+    @property
+    def sensitivity_as_change_in_prediction(self):
+        return self.__as_change_in_prediction
+    @sensitivity_as_change_in_prediction.setter
+    def sensitivity_as_change_in_prediction(self, flag:bool):
+        self.__as_change_in_prediction = bool(flag)
+
+    @property
+    def function(self): return self.__function
+    @function.setter
+    def function(self, fun): self.__function = fun
 
     @property
     def mode(self): return self.__mode
@@ -230,6 +248,7 @@ class Configuration:
     @prediction_summary_monthly_output_filename.setter
     def prediction_summary_monthly_output_filename(self, filename):
         self.__prediction_summary_monthly_output_filename = filename
+
 
     def obs_var_count(self): return len(self.obs_variables)
     def sim_var_count(self): return len(self.sim_variables)
@@ -415,6 +434,18 @@ class Configuration:
                         elif key in ['seasonal_statistics_output_filename']:
                             config.seasonal_statistics_output_filename = value
                             config.compute_seasonal_statistics = True
+                        elif key in ['as_change_in_prediction']:
+                            if value.lower() in ['true', 't', '1', 'yes', 'y']:
+                                config.sensitivity_as_change_in_prediction
+                            else:
+                                config.sensitivity_as_change_in_prediction = False
+                        elif key in ['function']:
+                            fun = None
+                            value = value.lower()
+                            if value == 'rmse': fun = stats.root_mean_square_error
+                            # else: value = None
+                            config.function = fun
+
 
         return False
 
