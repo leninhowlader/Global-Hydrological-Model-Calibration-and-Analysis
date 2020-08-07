@@ -605,6 +605,8 @@ class SimVariable(Variable):
                                 value = value.lower()
                                 if value in ['yes', 'y', '1', 'true', 't']: var.boo_consider_super_basins = True
                                 else: var.boo_consider_super_basins = False
+                            elif key in ['spatial_scale', 'scale']:
+                                var.spatial_scale = value.lower()
             except: return None
 
     @staticmethod
