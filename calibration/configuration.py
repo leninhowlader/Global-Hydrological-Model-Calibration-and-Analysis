@@ -498,7 +498,6 @@ class Configuration:
         # if parameter file is specified instead of defining individual parameters, create the parameter
         # object with provided information in the parameter info file.
         if self.__mode == 'sensitivity':
-
             # check the sample file and load samples
             if not self.__input_sample_filename: return False
             elif not self.samples:
@@ -512,6 +511,9 @@ class Configuration:
 
             # create parameter objects from parameter info file (if given)
             if self.__parameter_info_input_filename: self.parameters = Parameter.read_parameter_list(self.__parameter_info_input_filename, header=True)
+
+            if not (self.sensitivity_as_change_in_prediction or
+                    len(self.obs_variables) > 0): return False
 
         # step: check completeness of parameters
         if not self.parameters: return False
