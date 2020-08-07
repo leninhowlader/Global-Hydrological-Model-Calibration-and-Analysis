@@ -481,6 +481,9 @@ class SimVariable(Variable):
         self.__cell_area_as_weight = False
         self.cell_weights = []              # two-dimensional array
 
+        self.__has_aggregated = False
+        self.__has_anomaly_computed = False
+
     @property
     def cell_area_as_weight(self): return self.__cell_area_as_weight
     @cell_area_as_weight.setter
@@ -505,11 +508,33 @@ class SimVariable(Variable):
 
     def is_okay(self):
         if not Variable.is_okay(self): return False
-        elif self.group_stats:
+
+        # step: validity check of basin cell list
+        if self.basin_cell_list:
+            nunits = len(self.basin_cell_list)
+            for i in range(nunits):
+                if (type(self.basin_cell_list[i]) is not list or
+                    type(self.basin_cell_list[i]) is not np.ndarray): return False
+
+                for j in range(len(self.basin_cell_list[i])):
+                    if type(self.basin_cell_list[i][j]) is not int: return False
+        # end [step]
+
+        if self.__spatial_scale == 'cell': self.group_stats = False
+
+        # step: validity check of aggregation options
+        if self.group_stats:
             if not self.basin_cell_list: return False
-            else:
-                for i in range(len(self.basin_cell_list)):
-                    if not self.basin_cell_list[i] and type(self.basin_cell_list[i]) is not list: return False
+
+            if self.cell_weights:
+                nunits = len(self.basin_cell_list)
+                if len(self.cell_weights) != nunits: return False
+
+                for i in range(nunits):
+                    if len(self.cell_weights[i]) != len(self.basin_cell_list[i]):
+                        return False
+        # end [step]
+
         return True
 
     def compute_anomalies(self):
@@ -543,7 +568,9 @@ class SimVariable(Variable):
                                 if value in ['monthly', 'month']: var.data_source.prediction_type = PredictionType.monthly
                                 elif value in ['yearly', 'annual', 'year']: var.data_source.prediction_type = PredictionType.yearly
                                 elif value in ['daily', 'day']: var.data_source.prediction_type = PredictionType.daily
-                            elif key in ['zonal_average', 'zonal average', 'zone flag', 'zone_flag', 'group stats', 'group_stats']:
+                            elif key in ['zonal_average', 'zonal average', 'zone flag', 'zone_flag', 'group stats', 'group_stats',
+                                         'spatial aggregation', 'aggregation',
+                                         'spatial_aggregation']:
                                 value = value.lower()
                                 if value in ['yes', 'y', '1', 'true', 't']: var.group_stats = True
                                 else: var.group_stats = False
@@ -1170,18 +1197,96 @@ class SimVariable(Variable):
             return False
         # end [step-04]
 
-        # step-05: compute anomaly, if applicable
-        # if self.compute_anomaly: d_out -= d_out.mean(axis=0).reshape(1, -1)
-        # end [step-05]
-
-        # step-06: add data indices
+        # step-05: add data indices and store predictions into data cloud
         yy = np.repeat(np.arange(start_year, end_year + 1), 12).reshape(-1, 1)
         mm = np.repeat(np.arange(1, 12 + 1)[np.newaxis, :],
                            (end_year - start_year + 1), axis=0).reshape(-1, 1)
-        d_out = np.concatenate((yy, mm, d_out), axis=1)
-        # end [step-06]
+        self.data_cloud.data_indices = np.concatenate((yy, mm), axis=1)
 
-        return d_out
+        self.data_cloud.data = d_out
+
+        # set data manipulation flags to their defaults
+        self.__has_aggregated = False
+        self.__has_anomaly_computed = False
+        # end [step-05]
+
+        return True
+
+    def aggregate_prediction_at_spatial_scale(self):
+        if not self.group_stats: return True
+        if self.__has_aggregated: return True
+
+        # step: convert data and indices into np.ndarray
+        self.data_cloud.data = np.array(self.data_cloud.data)
+        self.data_cloud.data_indices = np.array(self.data_cloud.data_indices)
+        # end [step]
+
+        nunits = len(self.basin_cell_list)   # no. of units or basins
+        start_index, end_index = 0, 0
+
+        d_out = np.empty(0)
+        for i in range(nunits):
+            end_index += len(self.basin_cell_list[i])
+            d = self.data_cloud.data[:, start_index:end_index]
+            if d.ndim == 1: d = d[:, None]
+
+            weights = np.empty(0)
+            if self.cell_weights:
+                weights = np.array(self.cell_weights[i])
+                d = (d * weights[None,:]) /weights.sum()
+            else: d = d.sum(axis=1)
+
+            try: d_out = np.concatenate((d_out, d[:, None]), axis=1)
+            except: d_out = d[:, None]
+
+            start_index = end_index
+
+        if d_out.shape[1] != nunits: return False
+        else:
+            self.data_cloud.data = d_out
+            self.__has_aggregated = True
+
+        return True
+
+    def do_anomaly_computation(self):
+        if self.compute_anomaly and not self.__has_anomaly_computed:
+            self.data_cloud.data = np.array(self.data_cloud.data)
+            self.data_cloud.data -= self.data_cloud.data.mean(axis=0).reshape(
+                                                                        1, -1)
+
+            self.__has_anomaly_computed = True
+
+        return True
+
+    def dump_data_into_binary_file(
+            self,
+            directory_out,
+            additional_filename_identifier='',
+            additional_attributes=[]
+        ):
+        if (len(self.data_cloud.data) > 0 and
+            len(self.data_cloud.data) == len(self.data_cloud.data_indices)):
+
+            dd = np.array(self.data_cloud.data)
+            ii = np.array(self.data_cloud.data_indices)
+            d_out = np.concatenate((ii, dd), axis=1)
+
+            if additional_attributes:
+                attribs = np.array(additional_attributes)
+                attribs = np.repeat(attribs[None,:], d_out.shape[0], axis=0)
+
+                d_out = np.concatenate((attribs, d_out), axis=1)
+
+            if additional_filename_identifier:
+                f_out = '%s_%s.%d.unf0' % (self.varname.lower(),
+                                           additional_filename_identifier,
+                                           d_out.shape[1])
+            else: f_out = '%s.%d.unf0' % (self.varname.lower(), d_out.shape[1])
+            f_out = os.path.join(directory_out, f_out)
+
+            return WaterGapIO.write_unf(filename=f_out, data=d_out, append=True)
+
+        return False
 
 class DerivedVariable(Variable):
     def __init__(self):
