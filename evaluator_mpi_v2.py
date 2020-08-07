@@ -1,11 +1,13 @@
 #!/usr/local/Python-3.5.2/bin/python3
 __author__ = 'mhasan'
 
-import os, sys
+import os, sys, numpy as np
 from calibration.configuration import Configuration
 from wgap.watergap import WaterGAP
+from wgap.wgapio import WaterGapIO
 from utilities.fileio import FileInputOutput as io
 from analyses.sensitivity import SensitivityAnalysis
+from calibration.stats import stats
 
 evaluate_sample = SensitivityAnalysis.SampleEvaluation.evaluate_sample
 run_model = SensitivityAnalysis.SampleEvaluation.run_model
@@ -80,18 +82,24 @@ def main(argv):
 
     # step: run reference-run when necessary
     reference_predictions = {}
-    M = len(config.parameters)          # no. of parameters
+    if config.sensitivity_as_change_in_prediction or len(
+            config.obs_variables) > 0:
 
-    if start_index%(M+1) != 0:
-        ref_sample_no = (start_index//(M+1))*(M+1)
-        succeed = run_model(
-            config=config,
-            sample_id=ref_sample_no,
-            additional_filename_specifier='ref' + str(world_rank)
-        )
+        M = len(config.parameters)          # no. of parameters
 
-        for var in config.sim_variables:
-            reference_predictions[var.varname] = var.prediction_time_series.copy()
+        if start_index%(M+1) != 0:
+            ref_sample_no = (start_index//(M+1))*(M+1)
+            succeed = run_model(
+                config=config,
+                sample_id=ref_sample_no,
+                additional_filename_specifier='ref' + str(world_rank)
+            )
+
+            for var in config.sim_variables:
+                reference_predictions[var.varname] = {
+                    'data': var.data_cloud.data.copy(),
+                    'indices': var.data_cloud.data_indices.copy()
+                }
     # end [step]
 
 
@@ -110,25 +118,60 @@ def main(argv):
         if not succeed: break
 
         for var in config.sim_variables:
-            # from cell time-series compute basin time-series
+            # compute spatial scale summary
+            succeed = var.aggregate_prediction_at_spatial_scale()
+
             # compute anomaly
+            succeed = var.do_anomaly_computation()
+
             # dump predictions
-            # compute fx
-
             if config.dump_model_prediction:
-                # dump prediction in suitable manner
-                pass
+                if var.spatial_scale != 'cell':
+                    succeed = var.dump_data_into_binary_file(
+                        directory_out=config.output_directory,
+                        additional_filename_identifier=str(world_rank),
+                        additional_attributes=[sample_no]
+                    )
 
+            # compute fx
+            if config.sensitivity_as_change_in_prediction:
+                fun = config.function
+                if not fun: fun = stats.root_mean_square_error
 
-            if sample_no % (M + 1) == 0:
-                reference_predictions[var.varname] = \
-                var.prediction_time_series.copy()
+                data_curr = var.data_cloud.data
+                indicies_curr = var.data_cloud.data_indices
 
-                # append fx=0 into output file
-            else:
-                # compute fx
-                # append fx into output file
-                pass
+                ncol = data_curr.shape[1]
+                fx = [0] * ncol
+
+                if sample_no % (M + 1) == 0:
+                    reference_predictions[var.varname] = {
+                        'data': data_curr.copy(),
+                        'indices': indicies_curr.copy()
+                    }
+                else:
+                    data_ref = reference_predictions[var.varname]['data']
+                    indices_ref = reference_predictions[var.varname]['indices']
+
+                    if (data_ref.shape == data_curr.shape and
+                        indices_ref.shape == indicies_curr.shape and
+                        np.abs(indices_ref-indicies_curr).sum() == 0):
+
+                        for i in range(ncol):
+                            fx[i] = fun(data_curr[:,i], data_ref[:,i])
+
+                # step: dump fx into binary file
+                fx = np.array([sample_no] + fx) # add sample number
+                f_out = 'fx_%s_%d.%d.unf0'%(
+                    var.varname.lower(), world_rank, ncol + 1
+                )
+                f_out = os.path.join(config.output_directory, f_out)
+
+                succeed = WaterGapIO.write_unf(f_out, fx, append=True)
+                # end of step
+
+            elif len(config.obs_variables) > 1: pass # sub-section to be added
+            else: break
     # end [step]
 
     if world_rank == (world_size - 1) and sample_no == (sample_size - 1):
