@@ -472,6 +472,9 @@ class SimVariable(Variable):
         self.data_source.file_type = FileType.wghm_binary
         self.__basin_outlets_only = False
         self.__boo_consider_super_basins = False     # only if basin_outlets_only flag is true
+
+        # spatial scale: cell, basin, mixed (or empty)
+        self.__spatial_scale = ''
         self.basin_cell_list = []           # two-dimensional array
         self.group_stats = False
         self.compute_anomaly = False
@@ -492,6 +495,13 @@ class SimVariable(Variable):
     def boo_consider_super_basins(self): return self.__boo_consider_super_basins
     @boo_consider_super_basins.setter
     def boo_consider_super_basins(self, flag:bool): self.__boo_consider_super_basins = flag
+
+    @property
+    def spatial_scale(self): return self.__spatial_scale
+    @spatial_scale.setter
+    def spatial_scale(self, value):
+        if value in ['cell', 'basin', 'mixed']: self.__spatial_scale = value
+        else: self.__spatial_scale = ''
 
     def is_okay(self):
         if not Variable.is_okay(self): return False
