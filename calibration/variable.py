@@ -513,8 +513,8 @@ class SimVariable(Variable):
         if self.basin_cell_list:
             nunits = len(self.basin_cell_list)
             for i in range(nunits):
-                if (type(self.basin_cell_list[i]) is not list or
-                    type(self.basin_cell_list[i]) is not np.ndarray): return False
+                if not (type(self.basin_cell_list[i]) is list or
+                    type(self.basin_cell_list[i]) is np.ndarray): return False
 
                 for j in range(len(self.basin_cell_list[i])):
                     if type(self.basin_cell_list[i][j]) is not int: return False
