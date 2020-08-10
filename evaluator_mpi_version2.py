@@ -9,7 +9,6 @@ from utilities.fileio import FileInputOutput as io
 from analyses.sensitivity import SensitivityAnalysis
 from calibration.stats import stats
 
-evaluate_sample = SensitivityAnalysis.SampleEvaluation.evaluate_sample
 run_model = SensitivityAnalysis.SampleEvaluation.run_model
 
 def get_start_end_index(world_rank, world_size, sample_size):
@@ -71,7 +70,7 @@ def main(argv):
 
     if start_index <= end_index:
         message = 'Node %d will process sample no. %d-%d' % (
-                                        world_rank, start_index, end_index - 1)
+                                        world_rank, start_index, end_index)
         io.print_on_screen(message)
     else:
         message = 'Node %d will not process any sample.' % world_rank
