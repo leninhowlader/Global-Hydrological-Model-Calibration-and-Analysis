@@ -173,7 +173,7 @@ class GlobalGrid:
         '''
         if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
             GlobalGrid.read_wghm_grid_lookup_table()
-        return GlobalGrid.__wghm_grid_lookup_table
+        return GlobalGrid.__wghm_grid_lookup_table.copy()
 
     @staticmethod
     def get_wghm_grid_rowcolumn():
