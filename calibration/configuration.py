@@ -705,22 +705,27 @@ Name of the File: %s
 
         message = '\tnumber of grid cells: '
         temp = config.parameters[0].cell_list
-        if (type(config.parameters[0].cell_list[0]) is list or
-            type(config.parameters[0].cell_list[0]) is np.ndarray):
-            counts =[[len(p.cell_list[i]) for i in range(len(p.cell_list))] for p in config.parameters]
+        if len(temp) > 1:
+            for p in config.parameters:
+                counts =[len(x) for x in p.cell_list]
 
-            f.write(message + '\n')
-            for i in range(len(counts)):
-                message = 'p%d'%(i+1) + ', '.join(
-                [str(counts[i][j]) for j in range(len(counts[i]))]
+                f.write(message + '\n')
+
+                message = '\t\t%s: %s [total = %d]'%(
+                    p.parameter_name,
+                    ', '.join([str(x) for x in counts]),
+                    sum(counts)
                 )
             f.write(message)
         else:
-            counts = [len(p.cell_list) for p in config.parameters]
-            message += ', '.join(
-                [str(counts[i]) for i in range(len(counts))]
-            )
-            f.write(message)
+            for p in config.parameters:
+                try: count = len(p.cell_list[0])
+                except: count = 0
+                message = '\n\t\t%s: total count = %d'%(
+                    p.parameter_name, count
+                )
+
+                f.write(message)
 
         message = '\n[SECTION] VARIABLE:\n'
         f.write(message)
@@ -735,7 +740,8 @@ Name of the File: %s
         else: message = '\tgeneral check for variables: [not okay]\n'
         f.write(message)
 
-        if succeed:
+        if False: # if succeed:
+            # erroneous
             counts =[len(v.basin_cell_list) for v in config.sim_variables]
             if np.mean(counts) == counts[0]:
                 message = '\tnumber of basin in variables: [consistent]\n'
