@@ -430,4 +430,33 @@ class ParameterInfo:
 
             return param_info
 
+        @staticmethod
+        def GBB_all_parameters():
+            param_info = ParameterInfo.get_parameter_info()
 
+            t = param_info.pop('net_radiation_mult')
+            t = param_info.pop('precip_mult')
+
+            return param_info
+
+        @staticmethod
+        def GBB_sensitive_parameters():
+            param_info = OrderedDict()
+
+            ## add sensitive parameters of ganges
+            params_gan = ['Gamma', 'RTDM', 'RRCM', 'WLDep', 'SWOC', 'PTCH', 'GWFM',
+                          'MRGM', 'GWOC', 'SWAM', 'GWAM', 'PrecipM']
+            temp = ParameterInfo.get_selected_paramter_info(
+                                                      param_acronyms=params_gan)
+            param_info['ganges'] = temp
+            ##
+
+            ## add sensitive parameters of brahmaputra
+            params_brh = ['Gamma', 'RTDM', 'RRCM', 'WLDep', 'SWOC', 'PTCH',
+                          'TempG', 'GWFM', 'MRGM', 'GWOC', 'PrecipM']
+            temp = ParameterInfo.get_selected_paramter_info(
+                                                      param_acronyms=params_brh)
+            param_info['brahmaputra'] = temp
+            ##
+
+            return param_info
