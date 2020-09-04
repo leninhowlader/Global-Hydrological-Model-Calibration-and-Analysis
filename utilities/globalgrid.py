@@ -1076,11 +1076,14 @@ class GlobalGrid:
                 except: succeed = False
             else:
                 try:
-                    for row in d:
+                    for row in d.tolist():
+                        cnum_i, arc_i = int(row[0]), int(row[1])
                         x, y = row[2], row[3]
                         v = GlobalGrid.cell_vertices([(y, x)])
                         g.poly(v)
-                        g.record(*row)
+                        
+                        records = [arc_i, cnum_i, x, y] + row[4:]
+                        g.record(*records)
                 except: succeed = False
             
             try:
