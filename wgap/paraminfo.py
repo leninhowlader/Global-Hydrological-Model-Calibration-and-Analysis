@@ -361,6 +361,43 @@ class ParameterInfo:
         return property_names
 
     class GlobalCDA:
+        parameter_acronyms = {
+            'gammaHBV_runoff_coeff': 'SL-RC',
+            'root_depth_multiplier': 'SL-MSM',
+            'river_roughness_coeff_mult': 'SW-RRM',
+            'lake_depth': 'SW-LD',
+            'wetland_depth': 'SW-WD',
+            'surfacewater_outflow_coefficient': 'SW-DC',
+            'evapo_red_fact_exp_mult': 'SW-ERM',
+            'net_radiation_mult': 'EP-NM',
+            'PT_coeff_humid': 'EP-PTh',
+            'PT_coeff_arid': 'EP-PTa',
+            'max_daily_PET': 'SL-MEP',
+            'mcwh': 'CA-MC',
+            'LAI_mult': 'CA-LAIM',
+            'snow_freeze_temp': 'SN-FT',
+            'snow_melt_temp': 'SN-MT',
+            'degree_day_factor_mult': 'SN-DM',
+            'temperature_gradient': 'SN-TG',
+            'gw_factor_mult': 'GW-RFM',
+            'rg_max_mult': 'GW-MM',
+            'pcrit_aridgw': 'GW-CP',
+            'groundwater_outflow_coeff': 'GW-DC',
+            'net_abstraction_surfacewater_mult': 'NA-SM',
+            'net_abstraction_groundwater_mult': 'NA-GM',
+            'precip_mult': 'P-PM'
+        }
+
+        @staticmethod
+        def update_parameter_acronym(parameter_info):
+            acronyms = ParameterInfo.GlobalCDA.parameter_acronyms
+
+            for basin in parameter_info.keys():
+                for param, info in parameter_info[basin].items():
+                    info['acronym'] = acronyms[param]
+
+            return parameter_info
+
         @staticmethod
         def Mississippi_Sensitive_Parameters():
             param_info = OrderedDict()
@@ -388,6 +425,8 @@ class ParameterInfo:
             paramlist_mississippi = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'GWAM']
             pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_mississippi)
             param_info['mississippi'] = pinfo
+
+            param_info = ParameterInfo.GlobalCDA.update_parameter_acronym(param_info)
 
             return param_info
 
