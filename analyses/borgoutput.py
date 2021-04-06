@@ -28,7 +28,24 @@ class BorgOutput:
             objs = objs * wts
 
         return np.argmin(np.sum((utopia - objs) ** 2, axis=1))
-    
+
+    @staticmethod
+    def index_of_behavioural_solutions(objs:np.ndarray, thresholds:np.ndarray):
+
+        if not type(thresholds) in [np.ndarray or list]:
+            thresholds = np.array([thresholds] * objs.shape[1])
+
+        if thresholds.size != objs.shape[1]:
+            thresholds = \
+            thresholds.repeat(np.ceil(objs.shape[1] / thresholds.size)
+                              )[:objs.shape[1]]
+
+        cond = np.ones(objs.shape[0], dtype=bool)
+        for i in range(objs.shape[1]):
+            cond = (cond & (objs[:, i] >= thresholds[i]))
+
+        return np.where(cond==True)[0]
+
     @staticmethod
     def find_nan_objectives(objs, nanvalue=np.float64('1.79769e+308')):
         return np.where((objs==nanvalue).any(axis=1))[0]
