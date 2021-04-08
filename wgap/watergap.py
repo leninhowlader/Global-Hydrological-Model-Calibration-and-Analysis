@@ -78,6 +78,8 @@ class WaterGAP:
 
     station_filename = ''
 
+    remove_waterGap_files_after_evaluation = True
+
     @staticmethod
     def set_system_arguments(argument_str):
         WaterGAP.__system_arguments = argument_str
@@ -226,6 +228,12 @@ class WaterGAP:
                             WaterGAP.station_filename = value
                         elif key in ['model_version', 'model version']:
                             WaterGAP.set_model_version(value)
+                        elif key in ['remove_modelfiles_after_evaluation',
+                                     'remove modelfiles after evaluation']:
+                            if value.lower() in ['n', 'no', 'false', 'f', '0']:
+                                WaterGAP.remove_waterGap_files_after_evaluation \
+                                = False
+                            
         except: succeed = False
 
         return succeed
