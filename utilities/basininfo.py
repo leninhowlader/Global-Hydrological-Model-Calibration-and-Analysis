@@ -4,6 +4,7 @@ from collections import OrderedDict
 sys.path.append('..')
 from utilities.globalgrid import GlobalGrid as gg
 from utilities.upstream import Upstream as up
+from wgap.wgapio import WaterGapIO as wio
 
 class BasinInfo:
     class GlobalCDA:
@@ -32,7 +33,8 @@ class BasinInfo:
             wghm_cell_number=True,
             include_arcid=False,
             include_cellarea=False,
-            include_only_basin_area=False
+            include_only_basin_area=False,
+            report_continental_area=False
         ):
             basin_info = OrderedDict()
             basin_info['elbe'] = {
@@ -107,7 +109,8 @@ class BasinInfo:
                 basin_info,
                 include_arcid=include_arcid,
                 include_cellarea=include_cellarea,
-                include_only_basin_area=include_only_basin_area
+                include_only_basin_area=include_only_basin_area,
+                report_continental_area=report_continental_area
             )
 
             # [step] add basin outlet (WaterGAP) cell number
@@ -129,7 +132,8 @@ class BasinInfo:
             wghm_cell_number=True,
             include_arcid=False,
             include_cellarea=False,
-            include_only_basin_area=False
+            include_only_basin_area=False,
+            report_continental_area=False
         ):
             
             basin_info = OrderedDict()
@@ -150,7 +154,8 @@ class BasinInfo:
                                 basin_info,
                                 include_arcid=include_arcid,
                                 include_cellarea=include_cellarea,
-                                include_only_basin_area=include_only_basin_area)
+                                include_only_basin_area=include_only_basin_area,
+                                report_continental_area=report_continental_area)
             
             return basin_info
         #end of function
@@ -161,7 +166,8 @@ class BasinInfo:
                                wghm_cell_number=True,
                                include_arcid=False, 
                                include_cellarea=False, 
-                               include_only_basin_area=False):
+                               include_only_basin_area=False,
+                               report_continental_area=False):
             
             basin_info = OrderedDict()
             basin_info['fort_smith'] = {
@@ -216,7 +222,8 @@ class BasinInfo:
                                 basin_info,
                                 include_arcid=include_arcid,
                                 include_cellarea=include_cellarea,
-                                include_only_basin_area=include_only_basin_area)
+                                include_only_basin_area=include_only_basin_area,
+                                report_continental_area=report_continental_area)
             
             
             return basin_info
@@ -228,7 +235,8 @@ class BasinInfo:
                 wghm_cell_number=True,
                 include_arcid=False,
                 include_cellarea=False,
-                include_only_basin_area=False
+                include_only_basin_area=False,
+                report_continental_area=False
         ):
 
             basin_info = OrderedDict()
@@ -273,7 +281,8 @@ class BasinInfo:
                 basin_info,
                 include_arcid=include_arcid,
                 include_cellarea=include_cellarea,
-                include_only_basin_area=include_only_basin_area)
+                include_only_basin_area=include_only_basin_area,
+                report_continental_area=report_continental_area)
 
             return basin_info
 
@@ -284,7 +293,8 @@ class BasinInfo:
                           wghm_cell_number=True,
                           include_arcid=False, 
                           include_cellarea=False, 
-                          include_only_basin_area=False):
+                          include_only_basin_area=False,
+                          report_continental_area=False):
             
             basin_info = OrderedDict()
             basin_info['amazonas'] = {
@@ -303,7 +313,8 @@ class BasinInfo:
                                 basin_info,
                                 include_arcid=include_arcid,
                                 include_cellarea=include_cellarea,
-                                include_only_basin_area=include_only_basin_area)
+                                include_only_basin_area=include_only_basin_area,
+                                report_continental_area=report_continental_area)
             
             return basin_info
         #end of function
@@ -313,7 +324,8 @@ class BasinInfo:
                           wghm_cell_number=True,
                           include_arcid=False, 
                           include_cellarea=False, 
-                          include_only_basin_area=False):
+                          include_only_basin_area=False,
+                          report_continental_area=False):
             basin_info = OrderedDict()
             basin_info['olivenca'] = {
                 'station_id': '3623100', 'lon': -69.25, 'lat': -3.25,
@@ -366,7 +378,8 @@ class BasinInfo:
                                 basin_info,
                                 include_arcid=include_arcid,
                                 include_cellarea=include_cellarea,
-                                include_only_basin_area=include_only_basin_area)
+                                include_only_basin_area=include_only_basin_area,
+                                report_continental_area=report_continental_area)
             
             return basin_info
         # end of function
@@ -376,17 +389,20 @@ class BasinInfo:
                           wghm_cell_number=True,
                           include_arcid=False,
                           include_cellarea=False,
-                          include_only_basin_area=False):
+                          include_only_basin_area=False,
+                          report_continental_area=False):
 
             basin_info = OrderedDict()
             basin_info['ganges'] = {
+                'acronym': 'GAN',
                 'station_id': '2646200', 'lon': 88.75, 'lat': 24.25,
-                'cellnum': -1
+                'cellnum': 43913
             }
 
             basin_info['brahmaputra'] = {
+                'acronym': 'BRH',
                 'station_id': '2651100', 'lon': 89.75, 'lat': 25.25,
-                'cellnum': -1
+                'cellnum': 43357
             }
 
             if include_cellarea or include_only_basin_area: with_upstream = True
@@ -400,7 +416,8 @@ class BasinInfo:
                                 basin_info,
                                 include_arcid=include_arcid,
                                 include_cellarea=include_cellarea,
-                                include_only_basin_area=include_only_basin_area)
+                                include_only_basin_area=include_only_basin_area,
+                                report_continental_area=report_continental_area)
 
             # [step] add basin outlet (WaterGAP) cell number
             is_available_outlet_cellnum = True
@@ -430,7 +447,8 @@ class BasinInfo:
         def include_basin_properties(basin_info,
                                      include_arcid=True,
                                      include_cellarea=True,
-                                     include_only_basin_area=True):
+                                     include_only_basin_area=True,
+                                     report_continental_area=False):
             
             succeed = False
             if include_arcid: 
@@ -442,7 +460,8 @@ class BasinInfo:
                 succeed = BasinInfo.include_basin_property_cellarea(
                                 basin_info,
                                 only_total_basin_area=include_only_basin_area,
-                                resolution_deg=resolution_deg)
+                                resolution_deg=resolution_deg,
+                                report_continental_area=report_continental_area)
             
             return succeed
         # end of function
@@ -525,9 +544,11 @@ class BasinInfo:
         return True
         
     @staticmethod
-    def include_basin_property_cellarea(basin_info, 
+    def include_basin_property_cellarea(basin_info,
                                         only_total_basin_area=False,
-                                        resolution_deg=0.5):
+                                        resolution_deg=0.5,
+                                        report_continental_area=False
+                                        ):
         
         # inner function to read latitudinal cell area
         def read_latitudinal_cell_area():
@@ -577,9 +598,25 @@ class BasinInfo:
             lats = grid_info[ii, 3]
             rr = (np.abs(lats - 90) // resolution_deg).astype(int)
             
-            if not only_total_basin_area: 
-                basin_info[basin]['area'] = cell_area[rr]
-            else: basin_info[basin]['basin_area'] = np.sum(cell_area[rr])
+            basin_info[basin]['area'] = cell_area[rr]
+
         # end of step
-        
+
+        ## step: compute continental area
+        if report_continental_area:
+            contarea_frc = wio.compute_continental_area_fraction()
+
+            for basin in basin_info.keys():
+                upstream = np.array(basin_info[basin]['upstream'])
+                area_frc = contarea_frc[upstream - 1]
+                basin_info[basin]['area'] *= area_frc
+        ## end of step
+
+        ## step: compute total basin area
+        if only_total_basin_area:
+            for basin in basin_info.keys():
+                area = basin_info[basin].pop('area')
+                basin_info[basin]['basin_area'] = area.sum()
+        ##
+
         return True
