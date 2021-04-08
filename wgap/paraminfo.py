@@ -360,6 +360,44 @@ class ParameterInfo:
                           'nominal', 'optimal', 'distribution']
         return property_names
 
+    @staticmethod
+    def describe_parameters(
+            param_info,
+            filename_out='',
+            added_description=''
+    ):
+        string_out = '\nBEGIN PARAMETER'
+
+        for param in param_info.keys():
+            string_out += '\n@'
+            string_out += '\nparam_name = %s' % param
+            if param_info[param]['log_scale']:
+                import math
+
+                s_min = ('%f' % math.log10(param_info[param]['min'])
+                         ).rstrip('0').rstrip('.')
+                s_max = ('%f' % math.log10(param_info[param]['max'])
+                         ).rstrip('0').rstrip('.')
+                string_out += '\nlower_bound = %s' % s_min
+                string_out += '\nupper_bound = %s' % s_max
+
+                string_out += '\nlogarithmic_scale = True'
+            else:
+                s_min = ('%f' % param_info[param]['min']).rstrip('0').rstrip('.')
+                s_max = ('%f' % param_info[param]['max']).rstrip('0').rstrip('.')
+                string_out += '\nlower_bound = %s' % s_min
+                string_out += '\nupper_bound = %s' % s_max
+            if added_description: string_out += '\n%s' % added_description
+            string_out += '\n@@'
+
+        string_out += '\nEND PARAMETER\n'
+
+        if filename_out:
+            f = open(filename_out, 'a')
+            f.write(string_out)
+            f.close()
+        else: print(string_out)
+
     class GlobalCDA:
         parameter_acronyms = {
             'gammaHBV_runoff_coeff': 'SL-RC',
@@ -402,31 +440,44 @@ class ParameterInfo:
         def Mississippi_Sensitive_Parameters():
             param_info = OrderedDict()
 
-            paramlist_hermann = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'SWAM', 'GWAM']
-            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_hermann)
+            paramlist_hermann = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC',
+                                 'PTCH', 'SNMT', 'SWAM', 'GWAM']
+            pinfo = ParameterInfo.get_selected_paramter_info(
+                                            param_acronyms=paramlist_hermann)
             param_info['hermann'] = pinfo
 
-            paramlist_grafton = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'MRGM']
-            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_grafton)
+            paramlist_grafton = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC',
+                                 'PTCH', 'SNMT', 'MRGM']
+            pinfo = ParameterInfo.get_selected_paramter_info(
+                                            param_acronyms=paramlist_grafton)
             param_info['grafton'] = pinfo
 
-            paramlist_metropolis = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'MRGM', 'GWOC']
-            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_metropolis)
+            paramlist_metropolis = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep',
+                                    'SWOC', 'PTCH', 'SNMT', 'MRGM', 'GWOC']
+            pinfo = ParameterInfo.get_selected_paramter_info(
+                                            param_acronyms=paramlist_metropolis)
             param_info['metropolis'] = pinfo
 
-            paramlist_fortsmith = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'MDPET', 'SNMT', 'MRGM', 'GWAM']
-            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_fortsmith)
+            paramlist_fortsmith = ['Gamma', 'RTDM', 'LKDep', 'WLDep', 'SWOC',
+                                   'PTCH', 'MDPET', 'SNMT', 'MRGM', 'GWAM']
+            pinfo = ParameterInfo.get_selected_paramter_info(
+                                            param_acronyms=paramlist_fortsmith)
             param_info['fort_smith'] = pinfo
 
-            paramlist_vicksburg = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'GWFM', 'GWAM']
-            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_vicksburg)
+            paramlist_vicksburg = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep',
+                                   'SWOC', 'PTCH', 'SNMT', 'GWFM', 'GWAM']
+            pinfo = ParameterInfo.get_selected_paramter_info(
+                                            param_acronyms=paramlist_vicksburg)
             param_info['vicksburg'] = pinfo
 
-            paramlist_mississippi = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep', 'SWOC', 'PTCH', 'SNMT', 'GWAM']
-            pinfo = ParameterInfo.get_selected_paramter_info(param_acronyms=paramlist_mississippi)
+            paramlist_mississippi = ['Gamma', 'RTDM', 'RRCM', 'LKDep', 'WLDep',
+                                     'SWOC', 'PTCH', 'SNMT', 'GWAM']
+            pinfo = ParameterInfo.get_selected_paramter_info(
+                                            param_acronyms=paramlist_mississippi)
             param_info['mississippi'] = pinfo
 
-            param_info = ParameterInfo.GlobalCDA.update_parameter_acronym(param_info)
+            param_info = ParameterInfo.GlobalCDA.update_parameter_acronym(
+                                                                    param_info)
 
             return param_info
 
@@ -448,15 +499,52 @@ class ParameterInfo:
                           'MRGM', 'GWOC', 'SWAM', 'GWAM', 'PrecipM']
             temp = ParameterInfo.get_selected_paramter_info(
                                                       param_acronyms=params_gan)
+            temp['surfacewater_outflow_coefficient']['log_scale'] = True
             param_info['ganges'] = temp
             ##
 
             ## add sensitive parameters of brahmaputra
             params_brh = ['Gamma', 'RTDM', 'RRCM', 'WLDep', 'SWOC', 'PTCH',
-                          'TempG', 'GWFM', 'MRGM', 'GWOC', 'PrecipM']
+                          'SNMT', 'TempG', 'GWFM', 'MRGM', 'GWOC', 'PrecipM']
             temp = ParameterInfo.get_selected_paramter_info(
                                                       param_acronyms=params_brh)
+            temp['surfacewater_outflow_coefficient']['log_scale'] = True
             param_info['brahmaputra'] = temp
             ##
+
+            return param_info
+
+        @staticmethod
+        def GFB_sensitive_parameters(expid='SA-QTG'):
+
+            params = OrderedDict()
+            if expid == 'SA-QTG':
+                params['elbe'] = ['Gamma', 'RTDM', 'PTCH','SNMT','GWFM','MRGM',
+                                  'GWOC', 'PrecipM']
+                params['weser'] = ['Gamma','RTDM','PTCH','MRGM','GWOC', 'PrecipM']
+                params['rhine'] = ['Gamma','RTDM','PTCH','SNMT','GWFM','MRGM',
+                                   'GWOC', 'PrecipM']
+                params['meuse'] = ['Gamma','RTDM','WLDep','PTCH','GWFM','MRGM',
+                                   'GWOC', 'PrecipM']
+                params['seine'] = ['Gamma','RTDM','PTCH','MRGM','GWOC','GWAM',
+                                   'PrecipM']
+                params['rhone'] = ['Gamma','RTDM','LKDep','SWOC','PTCH','SNMT',
+                                   'GWFM','MRGM','GWOC', 'PrecipM']
+                params['loire'] = ['Gamma','RTDM','PTCH','GWFM','GWOC', 'PrecipM']
+                params['vilaine'] = ['Gamma','RTDM','PTCH','GWFM','MRGM','GWOC',
+                                      'PrecipM']
+                params['garonne'] = ['Gamma','RTDM','PTCH','GWFM','MRGM',
+                                      'GWOC','SWAM', 'PrecipM']
+                params['adour'] = ['Gamma','RTDM','MRGM','GWOC','SWAM',
+                                   'PrecipM']
+
+            param_info = OrderedDict()
+            for basin in params.keys():
+                temp = ParameterInfo.get_selected_paramter_info(
+                                                param_acronyms=params[basin])
+                param_info[basin] = temp
+
+            param_info = ParameterInfo.GlobalCDA.update_parameter_acronym(
+                                                                    param_info)
 
             return param_info
