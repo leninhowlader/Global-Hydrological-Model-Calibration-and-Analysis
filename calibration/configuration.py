@@ -446,18 +446,38 @@ class Configuration:
                             # else: value = None
                             config.function = fun
 
-
         return False
 
-    def is_okay(self, skip_observation=False):
+    def is_okay(self, skip_observation=False, error_code=False):
+        # if error_code: return self.is_okay_errcode(skip_observation=skip_observation)
+        # else: return not bool(self.is_okay_errcode(skip_observation=skip_observation))
+
+        err = self.is_okay_errcode(skip_observation=skip_observation)
+        if error_code: return err
+        else:
+            if err == 0: return True
+            else: return False
+
+    def is_okay_errcode(self, skip_observation=False):
         '''
         This function checks the completeness of the configuration object. If
         the configuration object has observation variable(s), observation data
         will be read hear if skip observation flag is not set True. In case of
         sensitivity analysis, samples will be loaded.
 
-        :return: (bool) true on completeness of the object;
-                        false otherwise
+        :return: (int)  Error Code
+                        0	no error
+                        100 failed to create target cell list from stations in station file
+                        200 absence of sim-variable
+                        20x error in sim variable no. x
+                        300 failed to acquire observation dataset
+                        30x obs-variable no. x
+                        40x error in derived variable no. x
+                        501 Sample file not found
+                        502 Samples could not be read from sample file
+                        600 error in sensitivity method selection
+                        700 absence of parameters
+                        70x error in parameter no. x
         '''
 
         # step: check whether or not the station file is available when 'target cell from station file' flag is set ON
@@ -470,58 +490,66 @@ class Configuration:
         # step: read the target cells from station file, if applicable
         if self.compute_upstream_from_station_file:
             succeed = self.generate_target_cells_from_station_file()
-            if not succeed: return False
+            if not succeed: return 100
 
         # step: check completeness of simulation variables. there must at least be one simulation variable
-        if not self.sim_variables: return False
+        if not self.sim_variables: return 200
         else:
+            varnum = 0
             for var in self.sim_variables:
+                varnum += 1
                 var.data_source.file_endian = WaterGAP.output_endian_type
-                if not var.is_okay(): return False
+                if not var.is_okay(): return (200 + varnum)
 
         # step: check completeness of observation variables (if any). Try to load the observation data
         if not skip_observation:
             if len(self.obs_variables) > 0:
-                if not ObsVariable.data_collection(self.obs_variables): return False
+                if not ObsVariable.data_collection(self.obs_variables): return 300
 
+                varnum = 0
                 for var in self.obs_variables:
-                    if not var.is_okay(): return False
+                    varnum += 1
+                    if not var.is_okay(): return (300 + varnum)
 
         # step: check completeness of derived variables (if any)
         if len(self.derived_variables) > 0:
+            varnum = 0
             for var in self.derived_variables:
-                if not var.is_okay(): return False
+                varnum += 1
+                if not var.is_okay(): return (400 + varnum)
                 if not var.evaluate_equation(simvars=self.sim_variables, obsvars=self.obs_variables):
-                    return False
+                    return (400 + varnum)
 
         # step: check if the samples can be gathered in case of sensitivity analysis mode. load the samples.
         # if parameter file is specified instead of defining individual parameters, create the parameter
         # object with provided information in the parameter info file.
         if self.__mode == 'sensitivity':
             # check the sample file and load samples
-            if not self.__input_sample_filename: return False
+            if not self.__input_sample_filename: return 501
             elif not self.samples:
                 header, dt = io.read_flat_file(self.__input_sample_filename, separator=',')
                 if dt:
                     for d in dt:
-                        if len(d) != len(self.parameters): return False
+                        if len(d) != len(self.parameters): return 502
                     self.samples = dt
-                else: return False
-            if not self.samples: return False
+                else: return 502
+            if not self.samples: return 502
 
             # create parameter objects from parameter info file (if given)
             if self.__parameter_info_input_filename: self.parameters = Parameter.read_parameter_list(self.__parameter_info_input_filename, header=True)
 
             if not (self.sensitivity_as_change_in_prediction or
-                    len(self.obs_variables) > 0): return False
+                    len(self.obs_variables) > 0): return 600
 
         # step: check completeness of parameters
-        if not self.parameters: return False
+        if not self.parameters: return 700
         else:
+            pnum = 0
             for param in self.parameters:
-                if not param.is_okey(): return False
+                pnum += 1
+                if not param.is_okey(): return (700 + pnum)
 
-        return True
+        return 0
 
     def generate_target_cells_from_station_file(self):
         '''
@@ -633,9 +661,11 @@ Name of the File: %s
             f.close()
             return -1
 
-        if config.is_okay():
+        err_code = config.is_okay(error_code=True)
+        if err_code == 0:
             message = 'configuration overall check  [okay]\n'
-        else: message = 'configuration overall check  [failed]\n'
+        else: message = 'configuration overall check  [failed: error %d]\n' % \
+                        err_code
         f.write(message)
 
         # report general setting
