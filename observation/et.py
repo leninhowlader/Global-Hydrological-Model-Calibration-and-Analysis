@@ -9,8 +9,8 @@ class EvapoTranspiration:
     @staticmethod
     def read_LandFluxEVAL_dataset(
             data_filename:str,
-            output_filename:str,
             waterGap_cells:np.ndarray,
+            output_filename: str='',
             stat_name:str='ET_mean',
             compute_basin_average:bool=True,
             compute_monthly_ET:bool=True):
@@ -19,9 +19,9 @@ class EvapoTranspiration:
         2013) for given WaterGAP cells.
 
         :param data_filename: (string) filename of LandFluxEVAL data product
-        :param output_filename: (string) output filename
         :param waterGap_cells: (numpy 1-d array or 1-d list) List of WaterGAP
                         cell numbers [within a single basin]
+        :param output_filename: (string; optional) output filename
         :param stat_name: (string) name of the statistics to be used from the
                         data product. data contains mean as 'ET_mean', median as
                         'ET_median', inter quartile range as 'ET_IQR', first
@@ -127,8 +127,6 @@ class EvapoTranspiration:
             fmt = '%d,%d,' + '%f' * (d.shape[1] - 2)
             np.savetxt(output_filename, d, fmt=fmt)
         # end of step
-        
-        print(GlobalGrid.get_current_model_version())
         
         return d
 
