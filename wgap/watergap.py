@@ -233,7 +233,7 @@ class WaterGAP:
                             if value.lower() in ['n', 'no', 'false', 'f', '0']:
                                 WaterGAP.remove_waterGap_files_after_evaluation \
                                 = False
-                            
+
         except: succeed = False
 
         return succeed
@@ -273,15 +273,23 @@ class WaterGAP:
 
     @staticmethod
     def remove_files(arguments={}):
-        try:
-            parameter_file = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.input_directory, arguments['p'])
-            dir_file = os.path.join(WaterGAP.home_directory, arguments['d'])
-            os.remove(parameter_file)
-            os.remove(dir_file)
-            output_dir = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.output_directory)
-            shutil.rmtree(output_dir)
-            return True
-        except: return False
+        if WaterGAP.remove_waterGap_files_after_evaluation:
+            try:
+                parameter_file = \
+                os.path.join(WaterGAP.home_directory,
+                             WaterGAP.dir_info.input_directory, arguments['p'])
+
+                dir_file = os.path.join(WaterGAP.home_directory, arguments['d'])
+                os.remove(parameter_file)
+                os.remove(dir_file)
+                output_dir = \
+                os.path.join(WaterGAP.home_directory,
+                             WaterGAP.dir_info.output_directory)
+                shutil.rmtree(output_dir)
+
+            except: return False
+
+        return True
 
     @staticmethod
     def read_predictions(sim_vars, output_directory_name=''):
