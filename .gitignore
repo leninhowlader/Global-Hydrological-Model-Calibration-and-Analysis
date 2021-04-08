@@ -7,5 +7,6 @@
 !utilities/data/*
 !wgap/*.py
 !observationprocessing/*.py
+!plots/*.py
 !*.py
 temp.py
