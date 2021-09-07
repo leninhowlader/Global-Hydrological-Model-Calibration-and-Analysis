@@ -348,7 +348,8 @@ class RuntimeDynamicReport:
             axis_labels=(), fontsize_label=14,
             title='', fontsize_title=15, pad_title=20,
             xlim=(), ylim=(),
-            ticksize=13
+            ticksize=13,
+            pad_axislabel=5
     ):
 
         # inner function
@@ -410,7 +411,7 @@ class RuntimeDynamicReport:
             x, y = extract_xy(nfes[i])
 
             zorder = pf_count - 1 - i
-            label = '%d model runs' % nfes[i]
+            label = '%d Model runs' % nfes[i]
 
             if do_color_plot:
                 p = draw_pf_color(ax, x, y, linestyle=pf_styles[i],
@@ -434,10 +435,12 @@ class RuntimeDynamicReport:
         ax.spines['left'].set_visible(False)
 
         if axis_labels:
-            ax.set_xlabel(axis_labels[0], fontsize=fontsize_label)
+            ax.set_xlabel(axis_labels[0], fontsize=fontsize_label,
+                          labelpad=pad_axislabel)
             ax.xaxis.set_label_position('top')
 
-            ax.set_ylabel(axis_labels[1], fontsize=fontsize_label)
+            ax.set_ylabel(axis_labels[1], fontsize=fontsize_label,
+                          labelpad=pad_axislabel)
             ax.yaxis.set_label_position('right')
 
         if title: ax.set_title(title, fontsize=fontsize_title, pad=pad_title)
@@ -456,17 +459,17 @@ class RuntimeDynamicReport:
 
     @staticmethod
     def paretofront_at_different_nfe_of_two_objective_calibrations(
-            runtime_report_files:list,
+            report_filename:str,
             axis_labels:list,
             figsize=(12, 7),
             filename_out='',
             marker='*',
             markersize=6,
             use_color=True,
-            axnum_legend=3,
-            titles=(),
-            xlims=(),
-            ylims=(),
+            show_legend=True,
+            title='',
+            xlim=(),
+            ylim=(),
             fontsize_title=15, pad_title=20,
             ticksize=13,
             fontsize_label=14, fontsize_legend=12,
@@ -474,67 +477,43 @@ class RuntimeDynamicReport:
             adjust_left=0.03, adjust_right=0.90, adjust_bottom=0.1, adjust_top=0.80,
             adjust_hspace=0, adjust_wspace=0.30,
             legend_ncol=4,
-            bbox_to_anchor=(0, -0.18, 1, 0.1)
-
+            bbox_to_anchor=(0, 0., 0.5, 0.5),
+            legend_loc='lower right',
+            ax=None,
+            columnspacing=1
     ):
-        # [step] check input
-        nplots = len(runtime_report_files)
-        if nplots > 6 or nplots < 1: return False
-        if len(axis_labels) != nplots: return False
+        if not ax:
+            fig = plt.figure(figsize=figsize)
 
-        for x in axis_labels:
-            if len(x) != 2: return False
+            ax = fig.add_subplot(1, 1, 1)
 
-        if axnum_legend > nplots: axnum_legend = 1
-        if len(titles) != nplots: titles=()
-        for lim in xlims:
-            if len(lim) != 2: xlims = ()
-            break
-        for lim in ylims:
-            if len(lim) != 2: ylims = ()
-        # end [step]
+            fig.subplots_adjust(
+                left=adjust_left, right=adjust_right, bottom=adjust_bottom,
+                top=adjust_top, hspace=adjust_hspace, wspace=adjust_wspace
+            )
+        else: fig = ax.get_figure()
 
-        fig = plt.figure(figsize=figsize)
-        fig.subplots_adjust(
-            left=adjust_left, right=adjust_right, bottom=adjust_bottom,
-            top=adjust_top, hspace=adjust_hspace, wspace=adjust_wspace
+        RuntimeDynamicReport.draw_paretofront_at_different_nfe_2D(
+            ax,
+            report_filename,
+            axis_labels=axis_labels,
+            fontsize_label=fontsize_label,
+            do_color_plot=use_color,
+            marker=marker,
+            markersize=markersize,
+            title=title,
+            fontsize_title=fontsize_title,
+            pad_title=pad_title,
+            xlim=xlim, ylim=ylim,
+            ticksize=ticksize
         )
 
-        nrow = int(np.ceil(nplots/3))
-        ncol = int(nplots//nrow)
-        for i in range(nplots):
-            filename_runtime_report = runtime_report_files[i]
-            xy_labels = axis_labels[i]
-
-            ax = fig.add_subplot(nrow, ncol, i + 1)
-
-            title = ''
-            if titles: title = titles[i]
-
-            xlim, ylim = (), ()
-            if xlims: xlim = xlims[i]
-            if ylims: ylim = ylims[i]
-            RuntimeDynamicReport.draw_paretofront_at_different_nfe_2D(
-                ax,
-                filename_runtime_report,
-                axis_labels=xy_labels,
-                fontsize_label=fontsize_label,
-                do_color_plot=use_color,
-                marker=marker,
-                markersize=markersize,
-                title=title,
-                fontsize_title=fontsize_title,
-                pad_title=pad_title,
-                xlim=xlim, ylim=ylim,
-                ticksize=ticksize
+        if show_legend:
+            ax.legend(
+                frameon=False, fontsize=fontsize_legend,
+                ncol=legend_ncol, loc=legend_loc,
+                bbox_to_anchor=bbox_to_anchor, columnspacing=columnspacing
             )
-
-            if (i + 1) == axnum_legend:
-                ax.legend(
-                    frameon=False, fontsize=fontsize_legend,
-                    ncol=legend_ncol, loc='lower left',
-                    bbox_to_anchor=bbox_to_anchor, columnspacing=1
-                )
 
         if tight_layout: fig.tight_layout()
 
@@ -561,7 +540,7 @@ class RuntimeDynamicReport:
             tight_layout:bool=False,
             filename_out:str='',
 
-            title:str='',
+            title:str='', title_fontsize=18, pad_title=10,
             series_labels:tuple= (),
             series_linestyles:tuple=(),
             series_linewidths:tuple=(),
@@ -572,11 +551,16 @@ class RuntimeDynamicReport:
             xticks=(), yticks=(),
             xlim=(0.5, 20.0), ylim=(0.5, 1.0),
             ylabel='',
+            ticks_labelsize=14,
+            axislabel_fontsize=14,
+            pad_axislabel=5,
 
             show_legend=True,
-            bbox_to_anchor=(0, -0.6, 1, 0.1),
+            bbox_to_anchor=(0.5, 0., 0.5, 0.5),
             legend_fontsize=12,
-            legend_ncol=5
+            legend_ncol=5,
+            legend_loc='lower right',
+            columnspacing=1.0
     ):
         self = RuntimeDynamicReport
 
@@ -680,24 +664,29 @@ class RuntimeDynamicReport:
                         label=series_labels[i])
 
         # [step] manipulate axis properties
-        ax.set_xlabel('NFE (in Thousands)', fontsize=15, labelpad=15)
+        ax.set_xlabel('NFE (in Thousands)', fontsize=axislabel_fontsize,
+                      labelpad=pad_axislabel)
 
         if xticks: ax.xaxis.set_ticks(xticks)
         else: ax.xaxis.set_ticks([0.5] + np.arange(5, 21, 5, dtype=int).tolist())
 
         if xlim: ax.set_xlim(xlim)
-        ax.xaxis.set_tick_params(direction='out', which='both', labelsize=15)
+        ax.xaxis.set_tick_params(direction='out', which='both', 
+                                 labelsize=ticks_labelsize)
 
         if ylim: ax.set_ylim(ylim)
         # ylabel = 'Mean objective (NSE)'
         # if report_average_euclidian_distance: ylabel = 'Mean ED'
         # if report_minimum_euclidian_distance: ylabel = 'Minimum ED'
-        if ylabel: ax.set_ylabel(ylabel, fontsize=15, labelpad=15)
+        if ylabel: 
+            ax.set_ylabel(ylabel, fontsize=axislabel_fontsize, 
+                          labelpad=pad_axislabel)
 
         if yticks: ax.yaxis.set_ticks(yticks)
 
         ax.yaxis.set_ticks_position('left')
-        ax.yaxis.set_tick_params(direction='out', which='both', labelsize=15)
+        ax.yaxis.set_tick_params(direction='out', which='both', 
+                                 labelsize=ticks_labelsize)
         # end [step]
 
         # [step] add grid
@@ -710,7 +699,7 @@ class RuntimeDynamicReport:
         # end [step]
 
         # [step] set title
-        if title: ax.set_title(title, fontsize=18)
+        if title: ax.set_title(title, fontsize=title_fontsize, pad=pad_title)
         # end [step]
 
         # [step] add legend
@@ -718,8 +707,9 @@ class RuntimeDynamicReport:
             handles, labels = ax.get_legend_handles_labels()
             by_label = OrderedDict(zip(labels, handles))
             ax.legend(by_label.values(), by_label.keys(), frameon=False,
-                      loc='right', bbox_to_anchor=bbox_to_anchor,
-                      fontsize=legend_fontsize, ncol=legend_ncol)
+                      loc=legend_loc, bbox_to_anchor=bbox_to_anchor,
+                      fontsize=legend_fontsize, ncol=legend_ncol,
+                      columnspacing=columnspacing)
             # end [step]
 
         # [step] apply tight layout
