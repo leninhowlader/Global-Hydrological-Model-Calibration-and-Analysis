@@ -13,7 +13,7 @@ class ParetoFrontPlot(Plot):
             lim_visible=0.5,
             behavioral_lim=0.7,
             axis_labels=[],
-            title='',
+            title='', pad_title=-2000,
             axis_labelfontsize=18,
             axis_labelpad=16,
             azimuth=30,
@@ -22,7 +22,13 @@ class ParetoFrontPlot(Plot):
             show_utopia=False,
             show_compromise_solution=True,
             color_compromise_solution='red',
-            color_behavioral_solution='black'
+            color_behavioral_solution='black',
+            ax=None,
+            xlim=(), ylim=(), zlim=(),
+            grid_dist=(0.2, 0.2, 0.2),
+            adj_top=0.9, adj_bottom=0.1, adj_left=0.05, adj_right=0.97,
+            adj_hspace=0.2, adj_wspace=0.2
+            
         ):
         # inner function
         def index_compromise_solution(fx:np.ndarray):
@@ -45,14 +51,29 @@ class ParetoFrontPlot(Plot):
         # end [step]
 
         # [step] create plot
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(111, projection='3d')
-        plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=.99,
-                            wspace=None, hspace=None)
+        if not ax:
+            fig = plt.figure(figsize=figsize)
+            ax = fig.add_subplot(111, projection='3d')
+        else: fig = ax.figure
+        
+        fig.subplots_adjust(left=adj_left, bottom=adj_bottom, right=adj_right, 
+                            top=adj_top, wspace=adj_wspace, hspace=adj_hspace)
         fig.set_facecolor('white')
-        if title: plt.suptitle(title, fontsize=22, style='italic')
+        if title: 
+            ax.set_title(title, fontsize=22, pad=pad_title)
+            #plt.suptitle(title, fontsize=22, style='italic')
         # end [step]
-
+        
+        
+        ## get axes limits
+        lo, hi = lim_visible - 0.1, 1.05
+        if not xlim: xlim = [lo, hi]
+        if not ylim: ylim = [lo, hi]
+        if not zlim: zlim = [lo, hi]
+        ## [end]
+        
+        
+        
         # [step] draw point on the plot
         # split data into four dimensions
         x = fx[:, 0]
@@ -66,37 +87,41 @@ class ParetoFrontPlot(Plot):
                        vmin=lim_visible, vmax=1.0)
 
         if add_2d_projection:
-            zs = lim_visible - 0.1
             color, markersize = 'grey', 7
-            ax.plot(x, z, '+', zdir='y', zs=zs, color=color, markersize=markersize,
+            ax.plot(x, z, '+', zdir='y', zs=ylim[0], color=color, markersize=markersize,
                     linewidth=1.3)
-            ax.plot(y, z, '+', zdir='x', zs=zs, color=color, markersize=markersize,
+            ax.plot(y, z, '+', zdir='x', zs=xlim[0], color=color, markersize=markersize,
                     linewidth=1.3)
-            ax.plot(x, y, '+', zdir='z', zs=zs, color=color, markersize=markersize,
+            ax.plot(x, y, '+', zdir='z', zs=zlim[0], color=color, markersize=markersize,
                     linewidth=1.3)
 
             if show_utopia:
                 utopia = np.array([1.0])
                 color, markersize = 'red', 7
-                ax.plot(utopia, utopia, '+', zdir='y', zs=zs, color=color,
+                ax.plot(utopia, utopia, '+', zdir='y', zs=ylim[0], color=color,
                         markersize=markersize, markeredgewidth=2)
-                ax.plot(utopia, utopia, '+', zdir='x', zs=zs, color=color,
+                ax.plot(utopia, utopia, '+', zdir='x', zs=xlim[0], color=color,
                         markersize=markersize, markeredgewidth=2)
-                ax.plot(utopia, utopia, '+', zdir='z', zs=zs, color=color,
+                ax.plot(utopia, utopia, '+', zdir='z', zs=zlim[0], color=color,
                         markersize=markersize, markeredgewidth=2)
         # end [step]
 
         # [step] set axes, axis ticks, axis labels
         lim_lo, lim_hi = lim_visible - 0.1, 1.05
-
-        ax.set_xlim([lim_lo, lim_hi])
-        ax.set_ylim([lim_lo, lim_hi])
-        ax.set_zlim([lim_lo, lim_hi])
+        
+#        if xlim: ax.set_xlim(xlim[0], xlim[1])
+#        else: ax.set_xlim([lim_lo, lim_hi])
+#        
+#        if ylim: ax.set_ylim(ylim[0], ylim[1])
+#        else: ax.set_ylim([lim_lo, lim_hi])
+#        
+#        if zlim: ax.set_zlim(zlim[0], zlim[1])
+#        else: ax.set_zlim([lim_lo, lim_hi])
 
         # set axes ticks
-        ax.xaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
-        ax.yaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
-        ax.zaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, 0.2))
+        ax.xaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, grid_dist[0]))
+        ax.yaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, grid_dist[1]))
+        ax.zaxis.set_ticks(np.arange(lim_lo, lim_hi + 0.01, grid_dist[2]))
 
         ax.tick_params(axis='both', which='major', labelsize=13)
 
@@ -116,7 +141,7 @@ class ParetoFrontPlot(Plot):
 #        cax = divider.append_axes('right', size='5%', pad=0.01)
 #
 
-        cbar = plt.colorbar(p, ticks=np.arange(lim_lo, 1.01, 0.1), pad=0.01,
+        cbar = plt.colorbar(p, ticks=np.arange(lim_lo, 1.01, 0.1), pad=0.08,
                             fraction=0.02, aspect=30)
         cbar.ax.tick_params(labelsize=12)
         cbar.outline.set_linewidth(0.6)
@@ -141,13 +166,12 @@ class ParetoFrontPlot(Plot):
                    zorder=-1, linewidths=1.1)
 
         if add_2d_projection:
-            zs = lim_visible - 0.1
             markersize = 4
-            ax.plot(x, z, '+', zdir='y', zs=zs, color=color_behvsol, markersize=markersize,
+            ax.plot(x, z, '+', zdir='y', zs=ylim[0], color=color_behvsol, markersize=markersize,
                     linewidth=1.3)  # color='blueviolet'
-            ax.plot(y, z, '+', zdir='x', zs=zs, color=color_behvsol, markersize=markersize,
+            ax.plot(y, z, '+', zdir='x', zs=xlim[0], color=color_behvsol, markersize=markersize,
                     linewidth=1.3)  # color='peru'
-            ax.plot(x, y, '+', zdir='z', zs=zs, color=color_behvsol, markersize=markersize,
+            ax.plot(x, y, '+', zdir='z', zs=zlim[0], color=color_behvsol, markersize=markersize,
                     linewidth=1.3)  # color='magenta')
         # end [step]
 
@@ -163,18 +187,20 @@ class ParetoFrontPlot(Plot):
                        color='red', alpha=1.0, markersize=10, markeredgewidth=1.5)
 
             if add_2d_projection:
-                # show compromise solution
-                zs = lim_visible - 0.1
-                markersize = 9
+                markersize = 11
                 x, y, z = fx[i_compromise, (0,1,2)]
-                ax.plot([x], [z], '+', zdir='y', color=color_compsol, zs=zs,
-                        markersize=markersize, markeredgewidth=1.2)
-                ax.plot([y], [z], '+', zdir='x', color=color_compsol, zs=zs,
-                        markersize=markersize, markeredgewidth=1.2)
-                ax.plot([x], [y], '+', zdir='z', color=color_compsol, zs=zs,
-                        markersize=markersize, markeredgewidth=1.2)
+                ax.plot([x], [z], '+', zdir='y', zs=ylim[0], color=color_compsol,
+                        markersize=markersize, markeredgewidth=1.8)
+                ax.plot([y], [z], '+', zdir='x', zs=xlim[0], color=color_compsol,
+                        markersize=markersize, markeredgewidth=1.8)
+                ax.plot([x], [y], '+', zdir='z', zs=zlim[0], color=color_compsol,
+                        markersize=markersize, markeredgewidth=1.8)
             # end [step]
-
+        
+        ax.set_xlim(xlim[0], xlim[1])
+        ax.set_ylim(ylim[0], ylim[1])
+        ax.set_zlim(zlim[0], zlim[1])
+        
         # [step] adjust viewing angle
         ax.view_init(elev=elevation, azim=azimuth)
         # end [step]
