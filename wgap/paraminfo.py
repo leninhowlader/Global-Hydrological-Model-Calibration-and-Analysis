@@ -427,12 +427,21 @@ class ParameterInfo:
         }
 
         @staticmethod
+        def update_multibasin_parameter_acronym(multibasin_parameter_info):
+            acronyms = ParameterInfo.GlobalCDA.parameter_acronyms
+
+            for basin in multibasin_parameter_info.keys():
+                for param, info in multibasin_parameter_info[basin].items():
+                    info['acronym'] = acronyms[param]
+
+            return multibasin_parameter_info
+
+        @staticmethod
         def update_parameter_acronym(parameter_info):
             acronyms = ParameterInfo.GlobalCDA.parameter_acronyms
 
-            for basin in parameter_info.keys():
-                for param, info in parameter_info[basin].items():
-                    info['acronym'] = acronyms[param]
+            for param, info in parameter_info.items():
+                info['acronym'] = acronyms[param]
 
             return parameter_info
 
@@ -476,7 +485,7 @@ class ParameterInfo:
                                             param_acronyms=paramlist_mississippi)
             param_info['mississippi'] = pinfo
 
-            param_info = ParameterInfo.GlobalCDA.update_parameter_acronym(
+            param_info = ParameterInfo.GlobalCDA.update_multibasin_parameter_acronym(
                                                                     param_info)
 
             return param_info
@@ -544,7 +553,7 @@ class ParameterInfo:
                                                 param_acronyms=params[basin])
                 param_info[basin] = temp
 
-            param_info = ParameterInfo.GlobalCDA.update_parameter_acronym(
+            param_info = ParameterInfo.GlobalCDA.update_multibasin_parameter_acronym(
                                                                     param_info)
 
             return param_info
