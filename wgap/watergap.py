@@ -94,7 +94,8 @@ class WaterGAP:
 
     @staticmethod
     def set_model_version(version):
-        if version in ['wghm22b', 'wghm22d', 'wghm22e']:
+        if (version in ['wghm22b', 'wghm22d', 'wghm22e'] and
+            version != WaterGAP.model_version):
             WaterGAP.model_version = version
 
             # set version to GlobalGrid class
@@ -122,8 +123,10 @@ class WaterGAP:
         if WaterGAP.model_version == 'wghm22e':
             if not WaterGAP.model_config:
                 mconfig = WaterGapConfig.read_watergap_config_file(
-                                                WaterGAP.model_config_filename)
-                if not mconfig: WaterGAP.model_config = mconfig
+                            os.path.join(WaterGAP.home_directory,
+                                         WaterGAP.model_config_filename)
+                )
+                if mconfig: WaterGAP.model_config = mconfig
                 else: return False
         else:
             if not WaterGAP.dir_info:
