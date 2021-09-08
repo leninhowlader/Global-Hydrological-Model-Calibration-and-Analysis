@@ -56,23 +56,64 @@ class SensitivityAnalysis:
             else: return False
 
             # step: write new parameter file with update parameter values
-            pfix = str(iter_no).rjust(6, '0')
-            filename = WaterGAP.json_parameter_file[:-5] + '_' + pfix + '.json'
+            name_specifier = str(iter_no).rjust(6, '0')
+            filename = WaterGAP.json_parameter_file[:-5] + '_' \
+                       + name_specifier + '.json'
+
+            if WaterGAP.model_version == 'wghm22e':
+                filename = os.path.join(
+                    WaterGAP.model_config.input_directory,
+                    filename
+                )
+                WaterGAP.model_config.parameter_filename = filename
+
+                filename = os.path.join(WaterGAP.home_directory, filename)
+            else:
+                arguments['p'] = filename
+                filename = os.path.join(
+                    WaterGAP.home_directory,
+                    WaterGAP.dir_info.input_directory,
+                    filename
+                )
+
             if not WaterGAP.update_parameter_file(config.parameters, filename):
                 return False
-            arguments['p'] = filename
 
             # step: create output output_directory and output_directory file
-            output_dir = 'output_' + pfix
-            dir_filename = 'data_' + pfix + '.dir'
-            if not WaterGAP.update_directory_info(output_dir, dir_filename):
-                return False
-            arguments['d'] = dir_filename
+            output_dir = 'output_' + name_specifier
+            if WaterGAP.model_version == 'wghm22e':
+                WaterGAP.model_config.output_directory = output_dir
+            else:
+                dir_filename = 'data_' + name_specifier + '.dir'
+                if not WaterGAP.update_directory_info(output_dir, dir_filename):
+                    return False
+                arguments['d'] = dir_filename
+
+            # step: write model configuration file for WaterGap22e
+            if WaterGAP.model_version == 'wghm22e':
+                mconfig_filename = os.path.join(
+                        WaterGAP.home_directory,
+                        'configuration_wghm_%s.txt'%name_specifier
+                )
+                if not WaterGAP.model_config.write_wgapConfig_file(
+                        mconfig_filename): return False
 
             # step: execute model with new parameters
-            log_file = '/dev/null'  # os.path.join(WaterGAP.home_directory,
-                                    #              'log', 'run' + pfix + '.log')
-            if not WaterGAP.execute_model(arguments, log_file=log_file):
+            if WaterGAP.log_directory:
+                log_file = os.path.join(
+                        WaterGAP.log_directory,
+                        '%s.log'%name_specifier
+                )
+                error_file = os.path.join(
+                        WaterGAP.log_directory,
+                        '%s.err'%name_specifier
+                )
+            else:
+                log_file = '/dev/null'
+                error_file = '/dev/null'
+
+            if not WaterGAP.execute_model(arguments, log_file=log_file,
+                                          error_file=error_file):
                 WaterGAP.remove_files(arguments)
                 return False
 
@@ -264,26 +305,64 @@ class SensitivityAnalysis:
 
             filename = WaterGAP.json_parameter_file[:-5] + '_' \
                        + name_specifier + '.json'
+
+            if WaterGAP.model_version == 'wghm22e':
+                filename = os.path.join(
+                    WaterGAP.model_config.input_directory,
+                    filename
+                )
+                WaterGAP.model_config.parameter_filename = filename
+
+                filename = os.path.join(WaterGAP.home_directory, filename)
+            else:
+                arguments['p'] = filename
+                filename = os.path.join(
+                    WaterGAP.home_directory,
+                    WaterGAP.dir_info.input_directory,
+                    filename
+                )
+
             if not WaterGAP.update_parameter_file(config.parameters, filename):
                 return False
-            arguments['p'] = filename
             # end [step]
 
             # step: create output directory and directory file
             output_dir = 'output_' + name_specifier
-            dir_filename = 'data_' + name_specifier + '.dir'
-            if not WaterGAP.update_directory_info(output_dir, dir_filename):
-                return False
-            arguments['d'] = dir_filename
+            if WaterGAP.model_version == 'wghm22e':
+                WaterGAP.model_config.output_directory = output_dir
+            else:
+                dir_filename = 'data_' + name_specifier + '.dir'
+                if not WaterGAP.update_directory_info(output_dir, dir_filename):
+                    return False
+                arguments['d'] = dir_filename
+            # end [step]
+
+            # step: write model configuration file for WaterGap22e
+            if WaterGAP.model_version == 'wghm22e':
+                mconfig_filename = os.path.join(
+                        WaterGAP.home_directory,
+                        'configuration_wghm_%s.txt'%name_specifier
+                )
+                if not WaterGAP.model_config.write_wgapConfig_file(
+                        mconfig_filename): return False
             # end [step]
 
             # step: execute model with new parameters
-            log_file = '/dev/null'
+            if WaterGAP.log_directory:
+                log_file = os.path.join(
+                        WaterGAP.log_directory,
+                        '%s.log'%name_specifier
+                )
+                error_file = os.path.join(
+                        WaterGAP.log_directory,
+                        '%s.err'%name_specifier
+                )
+            else:
+                log_file = '/dev/null'
+                error_file = '/dev/null'
 
-            # log_file = os.path.join(WaterGAP.home_directory, 'log',
-            #                         'run' + pfix + '.log')
-
-            if not WaterGAP.execute_model(arguments, log_file=log_file):
+            if not WaterGAP.execute_model(arguments, log_file=log_file,
+                                          error_file=error_file):
                 WaterGAP.remove_files(arguments)
                 return False
             # end [step]
