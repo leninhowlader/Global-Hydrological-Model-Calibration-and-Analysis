@@ -10,6 +10,7 @@ from calibration.variable import DataCloud
 from calibration.stats import stats
 from collections import OrderedDict
 from utilities.globalgrid import GlobalGrid as gg
+from wgap.wgapconfig import WaterGapConfig
 
 class DirInfo:
     def __init__(self):
@@ -67,6 +68,7 @@ class WaterGAP:
     start_year = 1901
     end_year = 2100
     output_endian_type = FileEndian.big_endian
+    log_directory = ''
 
     __system_arguments = ''
 
@@ -80,6 +82,9 @@ class WaterGAP:
 
     remove_waterGap_files_after_evaluation = True
 
+    model_config_filename = ''
+    model_config = None
+
     @staticmethod
     def set_system_arguments(argument_str):
         WaterGAP.__system_arguments = argument_str
@@ -89,8 +94,12 @@ class WaterGAP:
 
     @staticmethod
     def set_model_version(version):
-        if version in ['wghm22b', 'wghm22d']:
+        if version in ['wghm22b', 'wghm22d', 'wghm22e']:
             WaterGAP.model_version = version
+
+            # set version to GlobalGrid class
+            # note that version wghm22d and wghm22e use the same grid configuration
+            if version == 'wghm22e': version = 'wghm22d'
             gg.set_model_version(version)
             if WaterGAP.ngc <= 0: WaterGAP.ngc = gg.get_wghm_cell_count()
 
@@ -110,14 +119,37 @@ class WaterGAP:
     def is_okay():
         if not(WaterGAP.home_directory and WaterGAP.executable): return False
 
-        if not WaterGAP.dir_info:
-            dinfo = DirInfo.read_directory_file( os.path.join(WaterGAP.home_directory, WaterGAP.directory_filename))
-            if dinfo: WaterGAP.dir_info = dinfo
-            else: return False
+        if WaterGAP.model_version == 'wghm22e':
+            if not WaterGAP.model_config:
+                mconfig = WaterGapConfig.read_watergap_config_file(
+                                                WaterGAP.model_config_filename)
+                if not mconfig: WaterGAP.model_config = mconfig
+                else: return False
+        else:
+            if not WaterGAP.dir_info:
+                dinfo = DirInfo.read_directory_file(
+                                os.path.join(WaterGAP.home_directory,
+                                             WaterGAP.directory_filename)
+                )
+
+                if dinfo: WaterGAP.dir_info = dinfo
+                else: return False
 
         if not WaterGAP.json_paramset:
-            if not WaterGAP.read_json_parameter_file(os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.input_directory,
-                                                                  WaterGAP.json_parameter_file)): return False
+            if WaterGAP.model_version == 'wghm22e':
+                param_filename = os.path.join(
+                                    WaterGAP.home_directory,
+                                    WaterGAP.model_config.parameter_filename
+                )
+            else:
+                param_filename = os.path.join(
+                                    WaterGAP.home_directory,
+                                    WaterGAP.dir_info.input_directory,
+                                    WaterGAP.json_parameter_file
+                )
+
+            if not WaterGAP.read_json_parameter_file(param_filename):
+                return False
 
         return True
 
@@ -156,8 +188,6 @@ class WaterGAP:
                         break
 
                 if succeed:
-                    filename = os.path.join(WaterGAP.home_directory, WaterGAP.dir_info.input_directory, filename)
-
                     f = None
                     try:
                         f = open(filename, 'w')
@@ -201,30 +231,49 @@ class WaterGAP:
 
                         if key in ['home_directory', 'home output_directory']:
                             WaterGAP.home_directory = value
-
+                        elif key in ['wgap_config_filename',
+                                     'wgap config filename']:
+                            WaterGAP.model_config_filename = value
+                            if WaterGAP.model_version != 'wghm22e':
+                                WaterGAP.set_model_version('wghm22e')
                         elif key in ['system_arguments', 'arguments']:
                             WaterGAP.set_system_arguments(value)
 
-                        elif key in ['parameter_file', 'parameter_filename', 'parameter file',
-                                     'parameter config_filename']: WaterGAP.json_parameter_file = value
+                        elif key in ['parameter_file', 'parameter_filename',
+                                     'parameter file',
+                                     'parameter config_filename']:
+                            WaterGAP.json_parameter_file = value
                         elif key in ['start_year', 'start year']:
                             try: WaterGAP.start_year = int(value)
                             except: pass
                         elif key in ['end_year', 'end year']:
                             try: WaterGAP.end_year = int(value)
                             except: pass
-                        elif key in ['datadir_filename', 'directory_file', 'directory_filename', 'datadir config_filename',
-                                     'output_directory file', 'output_directory config_filename', 'data_directory_file', 'data output_directory file']:
+                        elif key in ['datadir_filename', 'directory_file',
+                                     'directory_filename',
+                                     'datadir config_filename',
+                                     'output_directory file',
+                                     'output_directory config_filename',
+                                     'data_directory_file',
+                                     'data output_directory file']:
                             WaterGAP.directory_filename = value
-                        elif key in ['output_endian_type', 'output endian type', 'endian_type', 'endian type']:
-                            if value == '1': WaterGAP.output_endian_type = FileEndian.little_endian
+                        elif key in ['log_directory', 'log directory', 'log']:
+                            WaterGAP.log_directory = value
+                        elif key in ['output_endian_type', 'output endian type',
+                                     'endian_type', 'endian type']:
+                            if value == '1':
+                                WaterGAP.output_endian_type = FileEndian.little_endian
                             else: WaterGAP.output_endian_type = FileEndian.big_endian
-                        elif key in ['executable', 'model_executable', 'model', 'model executable', 'executable_name',
-                                     'executable name']: WaterGAP.executable = value
-                        elif key in ['grid_cell_count', 'grid cell count', 'ng', 'ngc']:
+                        elif key in ['executable', 'model_executable', 'model',
+                                     'model executable', 'executable_name',
+                                     'executable name']:
+                            WaterGAP.executable = value
+                        elif key in ['grid_cell_count', 'grid cell count',
+                                     'ng', 'ngc']:
                             try: WaterGAP.ngc = int(value)
                             except: pass
-                        elif key in ['station_file', 'station_filename', 'station file', 'station filename']:
+                        elif key in ['station_file', 'station_filename',
+                                     'station file', 'station filename']:
                             WaterGAP.station_filename = value
                         elif key in ['model_version', 'model version']:
                             WaterGAP.set_model_version(value)
@@ -239,13 +288,22 @@ class WaterGAP:
         return succeed
 
     @staticmethod
-    def execute_model(arguments={}, log_file=''):
+    def execute_model(arguments={}, log_file='', error_file=''):
         succeed = True
 
         arg_str = ''
-        for key in arguments.keys(): arg_str += ' -' + key.lower() + ' ' + arguments[key]
-        command_str = os.path.join(WaterGAP.home_directory, WaterGAP.executable) + arg_str
-        if log_file: command_str += '> ' + log_file
+        if WaterGAP.model_version == 'wghm22e':
+            # key 'c' should provide model config file
+            arg_str += ' ' + arguments['c']
+        else:
+            for key in arguments.keys():
+                arg_str += ' -' + key.lower() + ' ' + arguments[key]
+
+        command_str = os.path.join(WaterGAP.home_directory,
+                                   WaterGAP.executable) + arg_str
+
+        if log_file: command_str += ' > ' + log_file
+        if error_file: command_str += ' 2> ' + error_file
 
         try: call(command_str, shell=True)
         except: succeed = False
