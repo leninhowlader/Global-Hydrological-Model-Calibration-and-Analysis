@@ -70,96 +70,102 @@ class WaterGapConfig:
     def read_watergap_config_file(filename_in, execution_mode='OL'):
         config = WaterGapConfig(execution_mode=execution_mode)
 
-        f = open(filename_in, 'r')
-        for line in f:
-            line = line.strip()
-            if line and line[0] != '#':
-                temp = line.split()
+        f = None
+        try:
+            f = open(filename_in, 'r')
+            for line in f:
+                line = line.strip()
+                if line and line[0] != '#':
+                    temp = line.split()
 
-                if len(temp) > 2:
-                    key, value = temp[0].strip(), temp[1].strip()
-                    if key != '' and value != '':
-                        if key == 'runtime_options':
-                            config.option_filename = value
-                        elif key == 'output_options':
-                            config.output_option_filename = value
-                        elif key == 'routing':
-                            config.routing_option_filename = value
-                        elif key == 'stations':
-                            config.station_filename = value
-                        elif key == 'scell_options':
-                            config.singlecell_output_option_filename = value
-                        elif key == 'scells':
-                            config.singlecell_number_filename = value
-                        elif key == 'input_dir':
-                            config.input_directory = value
-                        elif key == 'climate_dir':
-                            config.climate_forcing_data_directory = value
-                        elif key == 'routing_dir':
-                            config.routing_data_directory = value
-                        elif key == 'water_use_dir':
-                            config.water_use_data_directory = value
-                        elif key == 'param_json':
-                            config.parameter_filename = value
-                        elif key == 'glacier_dir':
-                            config.glacier_data_directory = value
-                        elif key == 'output_dir':
-                            config.output_directory = value
-                        elif key == 'start_year':
-                            year = 1900
-                            try: year = int(value)
-                            except: pass
+                    if len(temp) > 2:
+                        key, value = temp[0].strip(), temp[1].strip()
+                        if key != '' and value != '':
+                            if key == 'runtime_options':
+                                config.option_filename = value
+                            elif key == 'output_options':
+                                config.output_option_filename = value
+                            elif key == 'routing':
+                                config.routing_option_filename = value
+                            elif key == 'stations':
+                                config.station_filename = value
+                            elif key == 'scell_options':
+                                config.singlecell_output_option_filename = value
+                            elif key == 'scells':
+                                config.singlecell_number_filename = value
+                            elif key == 'input_dir':
+                                config.input_directory = value
+                            elif key == 'climate_dir':
+                                config.climate_forcing_data_directory = value
+                            elif key == 'routing_dir':
+                                config.routing_data_directory = value
+                            elif key == 'water_use_dir':
+                                config.water_use_data_directory = value
+                            elif key == 'param_json':
+                                config.parameter_filename = value
+                            elif key == 'glacier_dir':
+                                config.glacier_data_directory = value
+                            elif key == 'output_dir':
+                                config.output_directory = value
+                            elif key == 'start_year':
+                                year = 1900
+                                try: year = int(value)
+                                except: pass
 
-                            if year > 1900: config.start_year = year
-                        elif key == 'start_month':
-                            month = 0
-                            try: month = int(value)
-                            except: pass
+                                if year > 1900: config.start_year = year
+                            elif key == 'start_month':
+                                month = 0
+                                try: month = int(value)
+                                except: pass
 
-                            if month > 0: config.start_month = month
-                        elif key == 'end_year':
-                            year = 1900
-                            try: year = int(value)
-                            except: pass
+                                if month > 0: config.start_month = month
+                            elif key == 'end_year':
+                                year = 1900
+                                try: year = int(value)
+                                except: pass
 
-                            if year > 1900: config.end_year = year
-                        elif key == 'end_month':
-                            month = 0
-                            try: month = int(value)
-                            except: pass
+                                if year > 1900: config.end_year = year
+                            elif key == 'end_month':
+                                month = 0
+                                try: month = int(value)
+                                except: pass
 
-                            if month > 0: config.end_month = month
-                        elif key == 'time_step':
-                            step = 0
-                            try: step = int(value)
-                            except: pass
+                                if month > 0: config.end_month = month
+                            elif key == 'time_step':
+                                step = 0
+                                try: step = int(value)
+                                except: pass
 
-                            if step > 0: config.time_step_in_years = step
-                        elif key == 'num_init_years':
-                            nyear = -1
-                            try: nyear = int(value)
-                            except: pass
+                                if step > 0: config.time_step_in_years = step
+                            elif key == 'num_init_years':
+                                nyear = -1
+                                try: nyear = int(value)
+                                except: pass
 
-                            if nyear > -1: config.intial_year_count = nyear
-                        elif key == 'output_state_mean':
-                            config.mean_state_filename = value
-                        elif key == 'output_state_lastday':
-                            config.lastday_state_filename = value
-                        elif key == 'output_state_day':
-                            config.day_state_filename = value
-                        elif key == 'output_snowInElevation_lastday':
-                            config.lastday_snowinelevation_filename = value
-                        elif key == 'additionalOutIn_lastday':
-                            config.lastday_additional_variables_filename = value
-                        elif key == 'wghm_state':
-                            config.wghm_state_filename = value
-                        elif key == 'calibration_parameters':
-                            config.calibration_parameters_filename = value
-                        elif key == 'snowInElevation_startvalues':
-                            config.snowinelevation_startvalue_filename = value
-                        elif key == 'additionalOutIn_startvalues':
-                            config.startvalues_additional_variable_filename \
-                            = value
+                                if nyear > -1: config.intial_year_count = nyear
+                            elif key == 'output_state_mean':
+                                config.mean_state_filename = value
+                            elif key == 'output_state_lastday':
+                                config.lastday_state_filename = value
+                            elif key == 'output_state_day':
+                                config.day_state_filename = value
+                            elif key == 'output_snowInElevation_lastday':
+                                config.lastday_snowinelevation_filename = value
+                            elif key == 'additionalOutIn_lastday':
+                                config.lastday_additional_variables_filename = value
+                            elif key == 'wghm_state':
+                                config.wghm_state_filename = value
+                            elif key == 'calibration_parameters':
+                                config.calibration_parameters_filename = value
+                            elif key == 'snowInElevation_startvalues':
+                                config.snowinelevation_startvalue_filename = value
+                            elif key == 'additionalOutIn_startvalues':
+                                config.startvalues_additional_variable_filename \
+                                = value
+        except: config = None
+        finally:
+            try: f.close()
+            except: pass
 
         return config
 
@@ -205,10 +211,10 @@ class WaterGapConfig:
         return max_length
 
     def write_wgapConfig_file(self, filename_out):
-            succeed = True
+        succeed = True
 
-            f = None
-        #try:
+        f = None
+        try:
             f = open(filename_out, 'w')
 
             # info text
@@ -407,11 +413,11 @@ class WaterGapConfig:
 
             f.write('\n' + '#'.ljust(120, '#') + '\n')
             f.write("end_of_head")
-        # except Exception as ex:
-        #     print(str(ex))
-        #     succeed = False
-        # finally:
+        except Exception as ex:
+            print(str(ex))
+            succeed = False
+        finally:
             try: f.close()
             except: pass # do nothing
 
-            return succeed
+        return succeed
