@@ -316,7 +316,7 @@ class WaterGapConfig:
                     "Time step of simulation in year\n")
 
             f.write("num_init_years".ljust(40, ' ') +
-                    str(self.end_year).ljust(max_length, ' ') +
+                    str(self.intial_year_count).ljust(max_length, ' ') +
                     'number of years for initial simulation runs')
 
 
