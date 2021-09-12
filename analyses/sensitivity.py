@@ -57,7 +57,9 @@ class SensitivityAnalysis:
 
             # step: write new parameter file with update parameter values
             name_specifier = str(iter_no).rjust(6, '0')
-            filename = WaterGAP.json_parameter_file[:-5] + '_' \
+
+            filename = WaterGAP.get_json_parameter_filename()
+            filename = os.path.split(filename)[-1][:-5] + '_' \
                        + name_specifier + '.json'
 
             if WaterGAP.model_version == 'wghm22e':
@@ -89,22 +91,30 @@ class SensitivityAnalysis:
                     return False
                 arguments['d'] = dir_filename
 
+            output_dir = os.path.join(WaterGAP.home_directory, output_dir)
+            WaterGAP.create_output_directory(output_dir)
+
             # step: write model configuration file for WaterGap22e
             if WaterGAP.model_version == 'wghm22e':
                 mconfig_filename = os.path.join(
                         WaterGAP.home_directory,
                         'configuration_wghm_%s.txt'%name_specifier
                 )
+
                 if not WaterGAP.model_config.write_wgapConfig_file(
                         mconfig_filename): return False
+
+                arguments['c'] = mconfig_filename
 
             # step: execute model with new parameters
             if WaterGAP.log_directory:
                 log_file = os.path.join(
+                        WaterGAP.home_directory,
                         WaterGAP.log_directory,
                         '%s.log'%name_specifier
                 )
                 error_file = os.path.join(
+                        WaterGAP.home_directory,
                         WaterGAP.log_directory,
                         '%s.err'%name_specifier
                 )
@@ -120,9 +130,7 @@ class SensitivityAnalysis:
             # step: read the model output and dump predictions
             succeed = True
             dumping_directory = config.output_directory
-            output_directory_name = os.path.join(
-                                            WaterGAP.home_directory,
-                                            WaterGAP.dir_info.output_directory)
+
             if config.dump_model_prediction:
                 attribs = [iter_no]
                 for var in config.sim_variables:
@@ -130,7 +138,7 @@ class SensitivityAnalysis:
                                     WaterGAP.start_year,
                                     WaterGAP.end_year,
                                     additional_attributes=attribs,
-                                    prediction_directory=output_directory_name,
+                                    prediction_directory=output_dir,
                                     dumping_directory=dumping_directory,
                                     prefix_filename=str(node_id))
 
@@ -303,7 +311,8 @@ class SensitivityAnalysis:
             if additional_filename_specifier:
                 name_specifier += '_' + additional_filename_specifier
 
-            filename = WaterGAP.json_parameter_file[:-5] + '_' \
+            filename = WaterGAP.get_json_parameter_filename()
+            filename = os.path.split(filename)[-1][:-5] + '_' \
                        + name_specifier + '.json'
 
             if WaterGAP.model_version == 'wghm22e':
@@ -335,6 +344,9 @@ class SensitivityAnalysis:
                 if not WaterGAP.update_directory_info(output_dir, dir_filename):
                     return False
                 arguments['d'] = dir_filename
+
+            output_dir = os.path.join(WaterGAP.home_directory, output_dir)
+            WaterGAP.create_output_directory(output_dir)
             # end [step]
 
             # step: write model configuration file for WaterGap22e
@@ -343,17 +355,22 @@ class SensitivityAnalysis:
                         WaterGAP.home_directory,
                         'configuration_wghm_%s.txt'%name_specifier
                 )
+
                 if not WaterGAP.model_config.write_wgapConfig_file(
                         mconfig_filename): return False
+
+                arguments['c'] = mconfig_filename
             # end [step]
 
             # step: execute model with new parameters
             if WaterGAP.log_directory:
                 log_file = os.path.join(
+                        WaterGAP.home_directory,
                         WaterGAP.log_directory,
                         '%s.log'%name_specifier
                 )
                 error_file = os.path.join(
+                        WaterGAP.home_directory,
                         WaterGAP.log_directory,
                         '%s.err'%name_specifier
                 )
