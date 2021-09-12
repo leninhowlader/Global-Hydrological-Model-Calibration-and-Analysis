@@ -1233,7 +1233,7 @@ class SimVariable(Variable):
             weights = np.empty(0)
             if self.cell_weights:
                 weights = np.array(self.cell_weights[i])
-                d = (d * weights[None,:]) /weights.sum()
+                d = (d * weights[None,:]).sum(axis=1) / weights.sum()
             else: d = d.sum(axis=1)
 
             try: d_out = np.concatenate((d_out, d[:, None]), axis=1)
