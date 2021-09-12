@@ -86,6 +86,25 @@ class WaterGAP:
     model_config = None
 
     @staticmethod
+    def get_json_parameter_filename():
+        param_filename = ''
+        if WaterGAP.model_version == 'wghm22e':
+            if WaterGAP.model_config.parameter_filename:
+                param_filename = os.path.join(
+                    WaterGAP.home_directory,
+                    WaterGAP.model_config.parameter_filename
+                )
+        else:
+            if WaterGAP.json_parameter_file:
+                param_filename = os.path.join(
+                    WaterGAP.home_directory,
+                    WaterGAP.dir_info.input_directory,
+                    WaterGAP.json_parameter_file
+                )
+
+        return param_filename
+
+    @staticmethod
     def set_system_arguments(argument_str):
         WaterGAP.__system_arguments = argument_str
 
@@ -139,21 +158,16 @@ class WaterGAP:
                 else: return False
 
         if not WaterGAP.json_paramset:
-            if WaterGAP.model_version == 'wghm22e':
-                param_filename = os.path.join(
-                                    WaterGAP.home_directory,
-                                    WaterGAP.model_config.parameter_filename
-                )
-            else:
-                param_filename = os.path.join(
-                                    WaterGAP.home_directory,
-                                    WaterGAP.dir_info.input_directory,
-                                    WaterGAP.json_parameter_file
-                )
+            parameter_filename = WaterGAP.get_json_parameter_filename()
 
-            if not WaterGAP.read_json_parameter_file(param_filename):
+            if not WaterGAP.read_json_parameter_file(parameter_filename):
                 return False
 
+        if WaterGAP.log_directory:
+            log_directory = os.path.join(WaterGAP.home_directory,
+                                         WaterGAP.log_directory)
+
+            if not os.path.exists(log_directory): os.mkdir(log_directory, 0o777)
         return True
 
     @staticmethod
@@ -162,7 +176,10 @@ class WaterGAP:
 
         if not (parameter_list and filename): succeed = False
         else:
-            if not WaterGAP.json_paramset: WaterGAP.read_json_parameter_file(WaterGAP.json_parameter_file)
+            if not WaterGAP.json_paramset:
+                parameter_filename = WaterGAP.get_json_parameter_filename()
+                if parameter_filename:
+                    WaterGAP.read_json_parameter_file(parameter_filename)
 
             if not WaterGAP.json_paramset: succeed = False
             else:
@@ -318,19 +335,25 @@ class WaterGAP:
         succeed = True
         if not (WaterGAP.dir_info or WaterGAP.directory_filename): succeed = False
         else:
-            if not WaterGAP.dir_info: WaterGAP.dir_info = DirInfo.read_directory_file(WaterGAP.directory_filename)
+            if not WaterGAP.dir_info:
+                WaterGAP.dir_info = DirInfo.read_directory_file(
+                                                    WaterGAP.directory_filename)
 
             if WaterGAP.dir_info:
                 WaterGAP.dir_info.output_directory = output_dir
 
-                directory_filename = os.path.join(WaterGAP.home_directory, directory_filename)
-                output_dir = os.path.join(WaterGAP.home_directory, output_dir)
+                directory_filename = os.path.join(WaterGAP.home_directory,
+                                                  directory_filename)
 
-                if not os.path.exists(output_dir): os.mkdir(output_dir, 0o777)
                 if not WaterGAP.dir_info.create_directory_file(directory_filename): succeed = False
             else: succeed = False
 
         return succeed
+
+    @staticmethod
+    def create_output_directory(output_directory):
+        if not os.path.exists(output_directory):
+            os.mkdir(output_directory, 0o777)
 
     @staticmethod
     def remove_files(arguments={}):
