@@ -81,8 +81,10 @@ def main(argv):
 
     # step: run reference-run when necessary
     reference_predictions = {}
-    if config.sensitivity_as_change_in_prediction or len(
-            config.obs_variables) > 0:
+
+    if config.mode == 'sensitivity' and (
+        config.sensitivity_as_change_in_prediction or
+        len(config.obs_variables) == 0):
 
         M = len(config.parameters)          # no. of parameters
 
@@ -95,6 +97,12 @@ def main(argv):
             )
 
             for var in config.sim_variables:
+                # compute spatial scale summary
+                succeed = var.aggregate_prediction_at_spatial_scale()
+
+                # compute anomaly
+                succeed = var.do_anomaly_computation()
+
                 reference_predictions[var.varname] = {
                     'data': var.data_cloud.data.copy(),
                     'indices': var.data_cloud.data_indices.copy()
@@ -132,45 +140,46 @@ def main(argv):
                         additional_attributes=[sample_no]
                     )
 
-            # compute fx
-            if config.sensitivity_as_change_in_prediction:
-                fun = config.function
-                if not fun: fun = stats.root_mean_square_error
+            if config.mode == 'sensitivity':
+                # compute fx
+                if config.sensitivity_as_change_in_prediction:
+                    fun = config.function
+                    if not fun: fun = stats.root_mean_square_error
 
-                data_curr = var.data_cloud.data
-                indicies_curr = var.data_cloud.data_indices
+                    data_curr = var.data_cloud.data
+                    indicies_curr = var.data_cloud.data_indices
 
-                ncol = data_curr.shape[1]
-                fx = [0] * ncol
+                    ncol = data_curr.shape[1]
+                    fx = [0] * ncol
 
-                if sample_no % (M + 1) == 0:
-                    reference_predictions[var.varname] = {
-                        'data': data_curr.copy(),
-                        'indices': indicies_curr.copy()
-                    }
-                else:
-                    data_ref = reference_predictions[var.varname]['data']
-                    indices_ref = reference_predictions[var.varname]['indices']
+                    if sample_no % (M + 1) == 0:
+                        reference_predictions[var.varname] = {
+                            'data': data_curr.copy(),
+                            'indices': indicies_curr.copy()
+                        }
+                    else:
+                        data_ref = reference_predictions[var.varname]['data']
+                        indices_ref = reference_predictions[var.varname]['indices']
 
-                    if (data_ref.shape == data_curr.shape and
-                        indices_ref.shape == indicies_curr.shape and
-                        np.abs(indices_ref-indicies_curr).sum() == 0):
+                        if (data_ref.shape == data_curr.shape and
+                            indices_ref.shape == indicies_curr.shape and
+                            np.abs(indices_ref-indicies_curr).sum() == 0):
 
-                        for i in range(ncol):
-                            fx[i] = fun(data_curr[:,i], data_ref[:,i])
+                            for i in range(ncol):
+                                fx[i] = fun(data_curr[:,i], data_ref[:,i])
 
-                # step: dump fx into binary file
-                fx = np.array([sample_no] + fx) # add sample number
-                f_out = 'fx_%s_%d.%d.unf0'%(
-                    var.varname.lower(), world_rank, ncol + 1
-                )
-                f_out = os.path.join(config.output_directory, f_out)
+                    # step: dump fx into binary file
+                    fx = np.array([sample_no] + fx) # add sample number
+                    f_out = 'fx_%s_%d.%d.unf0'%(
+                        var.varname.lower(), world_rank, ncol + 1
+                    )
+                    f_out = os.path.join(config.output_directory, f_out)
 
-                succeed = WaterGapIO.write_unf(f_out, fx, append=True)
-                # end of step
+                    succeed = WaterGapIO.write_unf(f_out, fx, append=True)
+                    # end of step
 
-            elif len(config.obs_variables) > 1: pass # sub-section to be added
-            else: break
+                elif len(config.obs_variables) > 1: pass # sub-section to be added
+                else: break
     # end [step]
 
     if world_rank == (world_size - 1) and sample_no == (sample_size - 1):
