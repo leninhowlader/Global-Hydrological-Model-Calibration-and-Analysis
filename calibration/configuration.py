@@ -332,7 +332,7 @@ class Configuration:
 
                         if not (key and value): continue
 
-                        if key in ['mode']: config.mode = value
+                        if key in ['mode']: config.mode = value.lower()
 
                         elif key in ['parameter_info_input_filename',
                                      'parameter_info_filename']:
@@ -436,7 +436,7 @@ class Configuration:
                             config.compute_seasonal_statistics = True
                         elif key in ['as_change_in_prediction']:
                             if value.lower() in ['true', 't', '1', 'yes', 'y']:
-                                config.sensitivity_as_change_in_prediction
+                                config.sensitivity_as_change_in_prediction = True
                             else:
                                 config.sensitivity_as_change_in_prediction = False
                         elif key in ['function']:
@@ -523,7 +523,7 @@ class Configuration:
         # step: check if the samples can be gathered in case of sensitivity analysis mode. load the samples.
         # if parameter file is specified instead of defining individual parameters, create the parameter
         # object with provided information in the parameter info file.
-        if self.__mode == 'sensitivity':
+        if self.__mode in ['sensitivity', 'glue']:
             # check the sample file and load samples
             if not self.__input_sample_filename: return 501
             elif not self.samples:
@@ -536,10 +536,15 @@ class Configuration:
             if not self.samples: return 502
 
             # create parameter objects from parameter info file (if given)
-            if self.__parameter_info_input_filename: self.parameters = Parameter.read_parameter_list(self.__parameter_info_input_filename, header=True)
+            if self.__parameter_info_input_filename:
+                self.parameters = Parameter.read_parameter_list(
+                                        self.__parameter_info_input_filename,
+                                        header=True
+                )
 
-            if not (self.sensitivity_as_change_in_prediction or
-                    len(self.obs_variables) > 0): return 600
+            if self.__mode == 'sensitivity':
+                if not (self.sensitivity_as_change_in_prediction or
+                        len(self.obs_variables) > 0): return 600
 
         # step: check completeness of parameters
         if not self.parameters: return 700
