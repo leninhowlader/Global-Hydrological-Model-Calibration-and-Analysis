@@ -359,18 +359,35 @@ class WaterGAP:
     def remove_files(arguments={}):
         if WaterGAP.remove_waterGap_files_after_evaluation:
             try:
-                parameter_file = \
-                os.path.join(WaterGAP.home_directory,
-                             WaterGAP.dir_info.input_directory, arguments['p'])
+                output_dir = ''
+                if WaterGAP.model_version == 'wghm22e':
+                    parameter_file = os.path.join(
+                                        WaterGAP.home_directory,
+                                        WaterGAP.model_config.parameter_filename
+                    )
+                    os.remove(parameter_file)
 
-                dir_file = os.path.join(WaterGAP.home_directory, arguments['d'])
-                os.remove(parameter_file)
-                os.remove(dir_file)
-                output_dir = \
-                os.path.join(WaterGAP.home_directory,
-                             WaterGAP.dir_info.output_directory)
+                    config_file = os.path.join(WaterGAP.home_directory,
+                                               arguments['c'])
+                    os.remove(config_file)
+
+                    output_dir = os.path.join(
+                                        WaterGAP.home_directory,
+                                        WaterGAP.model_config.output_directory
+                    )
+                else:
+                    parameter_file = \
+                    os.path.join(WaterGAP.home_directory,
+                                 WaterGAP.dir_info.input_directory, arguments['p'])
+
+                    dir_file = os.path.join(WaterGAP.home_directory, arguments['d'])
+                    os.remove(parameter_file)
+                    os.remove(dir_file)
+
+                    output_dir = \
+                    os.path.join(WaterGAP.home_directory,
+                                 WaterGAP.dir_info.output_directory)
                 shutil.rmtree(output_dir)
-
             except: return False
 
         return True
