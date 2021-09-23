@@ -400,14 +400,36 @@ class Upstream:
         return world_basins
 
     @staticmethod
+    def find_independent_basin_groups(basin_outlets):
+        '''
+        find each level of independent basins from basin cascades
+
+        :param basin_outlets: (list of tuples of row and column)
+                              basin outlets
+        :return: list of list of tuples of row and column
+        '''
+        basin_outlets = set(basin_outlets)
+
+        supbasins = set(Upstream.find_super_basin(basin_outlets).keys())
+        indbasins = (basin_outlets - supbasins)
+
+        if len(indbasins) == len(basin_outlets): return [list(indbasins)]
+        else:
+            depbasin = basin_outlets - indbasins
+            return ([list(indbasins)] +
+                    Upstream.find_independent_basin_groups(depbasin))
+
+    @staticmethod
     def find_super_basin(basin_outlets):
         '''
         Finds super basins and their sub-basins for given basin outlet cells.
 
         :param basin_outlets: (list of tuples/list or 2-d numpy array) basin outlets as their row and column index pairs
-        :return: (dictionary) super-basins as the key of the output dictionary and list of sub-basins of each super-
+        :return: (dictionary) super-basins as the key of the output dictionary
+                              and list of sub-basins of each super-
                               basin as the value of the key
-                              e.g., {super-basin1: [subbasin1, subbasin2,..], super-basin2: [...], ...}
+                              e.g., {super-basin1: [subbasin1, subbasin2,..],
+                                     super-basin2: [...], ...}
 
         NB: Note that output includes only those super basins that have at least one sub-basins
         '''
@@ -481,7 +503,8 @@ class Upstream:
 
         :param basins: (OrderedDict) all basins and their upstream basin coverage [see more in the documentation of
                                      compute_basin_coverage method]
-        :param super_basin: (dict)   super basins as keys and their sub-basins as value [see more in the description of
+        :param super_basin: (dict)   super basins as keys and their sub-basins
+                                     as value [see more in the description of
                                      find_super_basin method]
         :return: (OrderedDict) disjoint (non-overlapping) basin coverage. the output data structure is similar to the
                                input parameter 'basins'
@@ -505,8 +528,9 @@ class Upstream:
     @staticmethod
     def find_basin_discharge_cell(basins:OrderedDict, super_basin:dict):
         '''
-        Finds list of basin discharge cells specially for super basin. In order to compute the discharge from a super-
-        basin, in addition to discharge from the super-basin outlet cells we need discharges from all sub-basin
+        Finds list of basin discharge cells specially for super basin. In order
+        to compute the discharge from a super-basin, in addition to discharge
+        from the super-basin outlet cells we need discharges from all sub-basin
         discharge. That is,
 
                     super basin discharge = discharge from super basin outlet - sum of all sub-basin discharge
@@ -748,8 +772,22 @@ class Upstream:
             # step-5: create flow direction shapefile
             if succeed and draw_flow_direction:
                 try:
+                    # generate arrow filename
+                    ndx = filename.lower().find('.prj')
+                    if ndx >= 0:
+                        filename = filename[:ndx]
+                    else:
+                        ndx = filename.lower().find('.shp')
+                        if ndx >= 0: filename = filename[:ndx]
+                    filename = filename + '_arrows'
+
                     # create shape object
-                    shp_arrow = shp.Writer(shp.POLYLINE)
+                    if version == 1:
+                        shp_arrow = shp.Writer(shp.POLYLINE)
+                    elif version == 2:
+                        shp_arrow = shp.Writer(filename + '.shp', shp.POLYLINE)
+                    else: return False
+
                     shp_arrow.field('ARROW', 'N', 8)
 
                     # draw arrows in each cell
@@ -758,20 +796,17 @@ class Upstream:
                         for cell in basin:
                             centroid = GlobalGrid.find_centroid(cell[0], cell[1], deg_resolution=0.5)
                             arrow, pointer = Upstream.get_direction_line(centroid)
-                            shp_arrow.line(parts=[arrow, pointer], shapeType=shp.POLYLINEM)
+                            if version == 1:
+                                shp_arrow.line(parts=[arrow, pointer], shapeType=shp.POLYLINEM)
+                            else: shp_arrow.line([arrow, pointer])
                             shp_arrow.record(arrow_id)
                             # shp_arrow.line(parts=[pointer], shapeType=shp.POLYLINE)
                             # shp_arrow.record(arrow_id)
                             arrow_id += 1
 
                     # save direction shapefile
-                    ndx = filename.lower().find('.prj')
-                    if ndx >= 0: filename = filename[:ndx]
-                    else:
-                        ndx = filename.lower().find('.shp')
-                        if ndx >= 0: filename = filename[:ndx]
-                    filename = filename + '_arrows'
-                    shp_arrow.save(filename + '.shp')
+                    if version == 1: shp_arrow.save(filename + '.shp')
+                    else: shp_arrow.close()
 
                     # create projection file for direction shapefile
                     f = open(filename + '.prj', 'w')
