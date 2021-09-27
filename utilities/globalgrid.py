@@ -79,8 +79,12 @@ class GlobalGrid:
             GlobalGrid.__wghm_version = model_version
             GlobalGrid.__wghm_grid_lookup_table = np.array([])
             
-            GlobalGrid.__wghm_grid_lookup_table_filename \
-            = 'data/grid_%s.txt' % model_version
+            if model_version in ['wghm22d', 'wghm22e']:
+                GlobalGrid.__wghm_grid_lookup_table_filename \
+                = 'data/grid_grid_wghm22d.txt'
+            else:
+                GlobalGrid.__wghm_grid_lookup_table_filename \
+                = 'data/grid_%s.txt' % model_version
             
             GlobalGrid.read_wghm_grid_lookup_table()
 
