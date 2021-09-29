@@ -89,10 +89,15 @@ class WaterGAP:
     def get_json_parameter_filename():
         param_filename = ''
         if WaterGAP.model_version == 'wghm22e':
-            if WaterGAP.model_config.parameter_filename:
+            if not WaterGAP.json_parameter_file:
+                WaterGAP.json_parameter_file \
+                = os.path.split(WaterGAP.model_config.parameter_filename)[-1]
+
+            if WaterGAP.json_parameter_file:
                 param_filename = os.path.join(
                     WaterGAP.home_directory,
-                    WaterGAP.model_config.parameter_filename
+                    WaterGAP.model_config.input_directory,
+                    WaterGAP.json_parameter_file
                 )
         else:
             if WaterGAP.json_parameter_file:
