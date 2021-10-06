@@ -178,7 +178,7 @@ class BasinInfo:
                 'cellnum': 28239
             }
 
-            basin_info['garonne_agenais'] = {
+            basin_info['garonne_mas_agenais'] = {
                 'bid': 8, 'name': 'Garonne Basin', 'acronym': 'NA',
                 'station_id': '6125100', 'lon': 0.25, 'lat': 44.25,
                 'cellnum': 30639
