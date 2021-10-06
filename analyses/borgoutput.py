@@ -52,6 +52,7 @@ class BorgOutput:
 
 class RuntimeDynamicReport:
     def __init__(self):
+        self.problemid = -1
         self.nfe = -1
         
         self.sbx = 0
@@ -68,13 +69,19 @@ class RuntimeDynamicReport:
         self.mutation_index = 0
         
         self.solutions = []
-        
+
+    def is_okay(self):
+        if (self.problemid < 0 or self.nfe < 0 or self.archive_size <= 0 or
+            len(self.solutions) != self.archive_size): return False
+        return True
+
     @staticmethod
     def read_runtime_dynamic_file(filename):
         
         reports = []
-        
-        try:
+
+        if True:
+        #try:
             f = open(filename, 'r')
             lines = f.readlines()
             f.close()
@@ -82,10 +89,22 @@ class RuntimeDynamicReport:
             rpt = None
             
             for line in lines:
-                if line.find('NFE') > 0:
-                    if rpt: reports.append(rpt)
-                    
-                    rpt = RuntimeDynamicReport()
+                if not rpt: rpt = RuntimeDynamicReport()
+                else:
+                    if rpt.is_okay():
+                        reports.append(rpt)
+                        rpt = None
+                        continue
+
+                if line.find('Problem no') > 0:
+                    try: x = int(line.split('=')[1])
+                    except: x = -1
+
+                    rpt.problemid = x
+
+                elif line.find('NFE') > 0:
+                    #if rpt: reports.append(rpt)
+                    #rpt = RuntimeDynamicReport()
                     
                     try: x = int(line.split('=')[1])
                     except: x = -1
@@ -161,9 +180,8 @@ class RuntimeDynamicReport:
                 elif line.find('MutationIndex') > 0:
                     try: x = int(line.split('=')[1])
                     except: x = -1
-                    
+
                     rpt.mutation_index = x
-                    
                 else:
                     temp = line.split(' ')
                     if len(temp) > 1:
@@ -173,7 +191,7 @@ class RuntimeDynamicReport:
                         if temp: rpt.solutions.append(temp)
             
             if rpt: reports.append(rpt)
-        except: pass
+        #except: pass
         
         return reports
 
