@@ -104,7 +104,7 @@ class SensitivityAnalysis:
                 if not WaterGAP.model_config.write_wgapConfig_file(
                         mconfig_filename): return False
 
-                arguments['c'] = mconfig_filename
+                arguments['c'] = os.path.split(mconfig_filename)[-1]
 
             # step: execute model with new parameters
             if WaterGAP.log_directory:
@@ -359,7 +359,7 @@ class SensitivityAnalysis:
                 if not WaterGAP.model_config.write_wgapConfig_file(
                         mconfig_filename): return False
 
-                arguments['c'] = mconfig_filename
+                arguments['c'] = os.path.split(mconfig_filename)[-1]
             # end [step]
 
             # step: execute model with new parameters
@@ -385,15 +385,12 @@ class SensitivityAnalysis:
             # end [step]
 
             # step: read the model outputs
-            directory_prediction \
-            = os.path.join(WaterGAP.home_directory, output_dir)
-
             succeed = True
             for var in config.sim_variables:
                 succeed = var.cell_level_predicted_time_series(
                     start_year=WaterGAP.start_year,
                     end_year=WaterGAP.end_year,
-                    prediction_directory=directory_prediction
+                    prediction_directory=output_dir
                 )
 
                 if not succeed: break
