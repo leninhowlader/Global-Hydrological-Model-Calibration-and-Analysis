@@ -387,11 +387,14 @@ class SensitivityAnalysis:
             # step: read the model outputs
             succeed = True
             for var in config.sim_variables:
-                succeed = var.cell_level_predicted_time_series(
-                    start_year=WaterGAP.start_year,
-                    end_year=WaterGAP.end_year,
-                    prediction_directory=output_dir
-                )
+                try:
+                    succeed = var.cell_level_predicted_time_series(
+                        start_year=WaterGAP.start_year,
+                        end_year=WaterGAP.end_year,
+                        prediction_directory=output_dir
+                    )
+                except:
+                    succeed = False
 
                 if not succeed: break
             # end [step]

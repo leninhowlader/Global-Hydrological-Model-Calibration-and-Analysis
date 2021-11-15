@@ -90,11 +90,19 @@ def main(argv):
 
         if start_index%(M+1) != 0:
             ref_sample_no = (start_index//(M+1))*(M+1)
+
             succeed = run_model(
                 config=config,
                 sample_id=ref_sample_no,
                 additional_filename_specifier='ref' + str(world_rank)
             )
+
+            if not succeed:
+                message = 'Samples %d-%d of rank %d could not be run'%(
+                    start_index, end_index, world_rank
+                )
+                io.print_on_screen(message)
+                exit(os.EX_OSERR)
 
             for var in config.sim_variables:
                 # compute spatial scale summary
@@ -114,15 +122,23 @@ def main(argv):
     # and compute fx
     sample_no = -1
     for sample_no in range(start_index, end_index+1):
+        if sample_no % (M + 1) == 0: reference_predictions = {}
+
         message = ('\tSample no. %d is being processed on Computer Node No. %d.'
                    % (sample_no, world_rank))
         io.print_on_screen(message)
+
         succeed = run_model(
             config=config,
             sample_id=sample_no
         )
 
-        if not succeed: break
+        if not succeed:
+            message = 'Samples %d-%d of rank %d could not be run' % (
+                sample_no, end_index, world_rank
+            )
+            io.print_on_screen(message)
+            exit(os.EX_OSERR)
 
         for var in config.sim_variables:
             # compute spatial scale summary
