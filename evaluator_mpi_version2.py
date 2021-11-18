@@ -1,7 +1,10 @@
 #!/usr/local/Python-3.5.2/bin/python3
 __author__ = 'mhasan'
 
-import os, sys, numpy as np
+import os, sys
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
+import numpy as np
 from calibration.configuration import Configuration
 from wgap.watergap import WaterGAP
 from wgap.wgapio import WaterGapIO
