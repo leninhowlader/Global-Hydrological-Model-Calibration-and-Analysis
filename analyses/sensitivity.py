@@ -712,6 +712,89 @@ class SensitivityAnalysis:
             return d_out, colnames
 
         @staticmethod
+        def major_contributors_with_error_bootstrapping(
+                mu: np.ndarray,         # mean si (mean EE)
+                se: np.ndarray,         # standard error of the mean
+                samplesize=100,
+                threshold=0.5
+        ):
+            # step: check inputs
+            e = np.empty(0)
+            if type(mu) is not np.ndarray or mu.shape[0] == 0:
+                return e, []
+
+            if threshold <= 0:
+                __self__ = SensitivityAnalysis.ParameterSelection
+                threshold = __self__.__contribution_threshold
+            # end of step
+
+            # step: attach parameter id
+            nparam = mu.shape[0]
+
+            d_out = np.arange(1, nparam + 1).reshape(nparam, 1)
+            d_out = np.concatenate((d_out, mu.reshape(nparam, 1)), axis=1)
+
+            colnames = ['paramid', 'si']
+            # end of step
+
+            # step: compute ranks [1 to no. of parameters] and sort
+            ranks = (np.argsort(np.argsort(-mu)) + 1).reshape(-1, 1)
+            d_out = np.concatenate((d_out, ranks), axis=1)
+            colnames.append('rank')
+
+            #ii = np.argsort(d_out[:, 2])
+            #d_out = d_out[ii]
+            # end of step
+
+            # step: compute cumulative contribution of (ranked) parameters
+            # [NB: d_out column index 2 is the rank column]
+            m = mu.shape[0]
+            contrib = np.zeros(shape=(m, samplesize))
+            selection = np.zeros(shape=(m, samplesize))
+            for i in range(samplesize):
+                # random si
+                rsi = mu + se * np.random.rand(m) * np.random.choice([-1,1], size=m)
+                tee = np.sum(rsi)  # total elementary effects
+
+                contrib[:, i] = rsi / tee  # contribution of each parameters
+
+                isort = np.argsort(-contrib[:, i] )
+                tcumsum = np.cumsum(contrib[isort, i])
+                tsel = np.zeros(nparam)
+                isel = np.where(tcumsum>=threshold)[0][0]
+                tsel[:isel+1] = 1
+                selection[isort,i] = tsel
+
+            contrib_mean = contrib.mean(axis=1)
+            contrib_min = contrib.min(axis=1)
+            contrib_max = contrib.max(axis=1)
+
+
+            d_out = np.concatenate((d_out, contrib_mean.reshape(-1, 1)), axis=1)
+            colnames.append('contrib')
+            d_out = np.concatenate((d_out, contrib_min.reshape(-1, 1)), axis=1)
+            colnames.append('contrib_min')
+            d_out = np.concatenate((d_out, contrib_max.reshape(-1, 1)), axis=1)
+            colnames.append('contrib_max')
+            # end of step
+
+            # step: select parameters based on (least) contribution threshold
+
+            # find index of first element where cumulative contribution is
+            # higher or equal to the (least) contribution threshold
+            sel = (selection.sum(axis=1)>0).astype(int).reshape(-1,1)
+            d_out = np.concatenate((d_out, sel), axis=1)
+            colnames.append('selection')
+            # end of step
+
+            # step: sort parameters according to parameter id
+            #ii = np.argsort(d_out[:, 0])
+            #d_out = d_out[ii]
+            # end of step
+
+            return d_out, colnames
+
+        @staticmethod
         def compute_ranks(
             si:np.ndarray,
             filename_out:str = ''
