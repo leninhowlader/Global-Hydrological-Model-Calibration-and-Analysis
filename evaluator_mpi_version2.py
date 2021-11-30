@@ -84,12 +84,11 @@ def main(argv):
 
     # step: run reference-run when necessary
     reference_predictions = {}
+    M = len(config.parameters)  # no. of parameters
 
     if config.mode == 'sensitivity' and (
         config.sensitivity_as_change_in_prediction or
         len(config.obs_variables) == 0):
-
-        M = len(config.parameters)          # no. of parameters
 
         if start_index%(M+1) != 0:
             ref_sample_no = (start_index//(M+1))*(M+1)
