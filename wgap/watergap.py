@@ -88,7 +88,7 @@ class WaterGAP:
     @staticmethod
     def get_json_parameter_filename():
         param_filename = ''
-        if WaterGAP.model_version == 'wghm22e':
+        if WaterGAP.model_version == 'wghm2.2e':
             if not WaterGAP.json_parameter_file:
                 WaterGAP.json_parameter_file \
                 = os.path.split(WaterGAP.model_config.parameter_filename)[-1]
@@ -118,13 +118,13 @@ class WaterGAP:
 
     @staticmethod
     def set_model_version(version):
-        if (version in ['wghm22b', 'wghm22d', 'wghm22e'] and
+        if (version in ['wghm2.2b', 'wghm2.2d', 'wghm2.2e'] and
             version != WaterGAP.model_version):
             WaterGAP.model_version = version
 
             # set version to GlobalGrid class
-            # note that version wghm22d and wghm22e use the same grid configuration
-            if version == 'wghm22e': version = 'wghm22d'
+            # note that version wghm2.2d and wghm2.2e use the same grid configuration
+            if version == 'wghm2.2e': version = 'wghm2.2d'
             gg.set_model_version(version)
             if WaterGAP.ngc <= 0: WaterGAP.ngc = gg.get_wghm_cell_count()
 
@@ -144,7 +144,7 @@ class WaterGAP:
     def is_okay():
         if not(WaterGAP.home_directory and WaterGAP.executable): return False
 
-        if WaterGAP.model_version == 'wghm22e':
+        if WaterGAP.model_version == 'wghm2.2e':
             if not WaterGAP.model_config:
                 mconfig = WaterGapConfig.read_watergap_config_file(
                             os.path.join(WaterGAP.home_directory,
@@ -259,8 +259,8 @@ class WaterGAP:
                         elif key in ['wgap_config_filename',
                                      'wgap config filename']:
                             WaterGAP.model_config_filename = value
-                            if WaterGAP.model_version != 'wghm22e':
-                                WaterGAP.set_model_version('wghm22e')
+                            if WaterGAP.model_version != 'wghm2.2e':
+                                WaterGAP.set_model_version('wghm2.2e')
                         elif key in ['system_arguments', 'arguments']:
                             WaterGAP.set_system_arguments(value)
 
@@ -317,7 +317,7 @@ class WaterGAP:
         succeed = True
 
         arg_str = ''
-        if WaterGAP.model_version == 'wghm22e':
+        if WaterGAP.model_version == 'wghm2.2e':
             # key 'c' should provide model config file
             arg_str += ' ' + arguments['c']
         else:
@@ -365,7 +365,7 @@ class WaterGAP:
         if WaterGAP.remove_waterGap_files_after_evaluation:
             try:
                 output_dir = ''
-                if WaterGAP.model_version == 'wghm22e':
+                if WaterGAP.model_version == 'wghm2.2e':
                     parameter_file = os.path.join(
                                         WaterGAP.home_directory,
                                         WaterGAP.model_config.parameter_filename

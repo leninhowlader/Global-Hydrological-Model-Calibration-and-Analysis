@@ -8,7 +8,7 @@ from wgap.wgapio import WaterGapIO as wio
 
 class BasinInfo:
     class GlobalCDA:
-        __model_version = 'wghm22d'
+        __model_version = 'wghm2.2d'
         __model_grid_resolution_deg = 0.5
         
         @staticmethod

@@ -29,7 +29,7 @@
 
 
 # 1. CONTROL VARIABLES - DEFINITION
-model_version = 'wghm22d'
+model_version = 'wghm2.2d'
 target_cells_only = True                    # a flag specifies if target cells are given
 grace_1deg_cells = []                       # container for the GRACE 1-degree cell centroid coordinates (see note 2.1)
 target_wghm_cells = []                      # container for WGHM cell numbers (see note 2.2)

@@ -42,11 +42,11 @@ except:
 class GlobalGrid:
 
     # wghm grid variables
-    __wghm_version = 'wghm22d'
+    __wghm_version = 'wghm2.2d'
     __wghm_cell_areas = []
     __wghm_cell_area_file = 'data/GAREA.UNF0'
     __wghm_grid_lookup_table = np.array([])
-    __wghm_grid_lookup_table_filename = 'data/grid_wghm22d.txt'
+    __wghm_grid_lookup_table_filename = 'data/grid_wghm2.2d.txt'
     __grid_resolution = 0.5     # grid resolution in degrees
 
     @staticmethod
@@ -71,7 +71,7 @@ class GlobalGrid:
         This method sets WGHM model version
 
         :param model_version: (string) WGHM version. parameter value should be 
-                        either 'wghm22b' or 'wghm22d'
+                        either 'wghm2.2b' or 'wghm2.2d'
         :return: None
         '''
 
@@ -79,9 +79,9 @@ class GlobalGrid:
             GlobalGrid.__wghm_version = model_version
             GlobalGrid.__wghm_grid_lookup_table = np.array([])
             
-            if model_version in ['wghm22d', 'wghm22e']:
+            if model_version in ['wghm2.2d', 'wghm2.2e']:
                 GlobalGrid.__wghm_grid_lookup_table_filename \
-                = 'data/grid_grid_wghm22d.txt'
+                = 'data/grid_grid_wghm2.2d.txt'
             else:
                 GlobalGrid.__wghm_grid_lookup_table_filename \
                 = 'data/grid_%s.txt' % model_version

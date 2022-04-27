@@ -62,7 +62,7 @@ class SensitivityAnalysis:
             filename = os.path.split(filename)[-1][:-5] + '_' \
                        + name_specifier + '.json'
 
-            if WaterGAP.model_version == 'wghm22e':
+            if WaterGAP.model_version == 'wghm2.2e':
                 filename = os.path.join(
                     WaterGAP.model_config.input_directory,
                     filename
@@ -83,7 +83,7 @@ class SensitivityAnalysis:
 
             # step: create output output_directory and output_directory file
             output_dir = 'output_' + name_specifier
-            if WaterGAP.model_version == 'wghm22e':
+            if WaterGAP.model_version == 'wghm2.2e':
                 WaterGAP.model_config.output_directory = output_dir
             else:
                 dir_filename = 'data_' + name_specifier + '.dir'
@@ -95,7 +95,7 @@ class SensitivityAnalysis:
             WaterGAP.create_output_directory(output_dir)
 
             # step: write model configuration file for WaterGap22e
-            if WaterGAP.model_version == 'wghm22e':
+            if WaterGAP.model_version == 'wghm2.2e':
                 mconfig_filename = os.path.join(
                         WaterGAP.home_directory,
                         'configuration_wghm_%s.txt'%name_specifier
@@ -315,7 +315,7 @@ class SensitivityAnalysis:
             filename = os.path.split(filename)[-1][:-5] + '_' \
                        + name_specifier + '.json'
 
-            if WaterGAP.model_version == 'wghm22e':
+            if WaterGAP.model_version == 'wghm2.2e':
                 filename = os.path.join(
                     WaterGAP.model_config.input_directory,
                     filename
@@ -337,7 +337,7 @@ class SensitivityAnalysis:
 
             # step: create output directory and directory file
             output_dir = 'output_' + name_specifier
-            if WaterGAP.model_version == 'wghm22e':
+            if WaterGAP.model_version == 'wghm2.2e':
                 WaterGAP.model_config.output_directory = output_dir
             else:
                 dir_filename = 'data_' + name_specifier + '.dir'
@@ -350,7 +350,7 @@ class SensitivityAnalysis:
             # end [step]
 
             # step: write model configuration file for WaterGap22e
-            if WaterGAP.model_version == 'wghm22e':
+            if WaterGAP.model_version == 'wghm2.2e':
                 mconfig_filename = os.path.join(
                         WaterGAP.home_directory,
                         'configuration_wghm_%s.txt'%name_specifier

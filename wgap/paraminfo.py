@@ -535,8 +535,8 @@ class ParameterInfo:
                                    'GWOC', 'PrecipM']
                 params['meuse'] = ['Gamma','RTDM','WLDep','PTCH','GWFM','MRGM',
                                    'GWOC', 'PrecipM']
-                params['seine'] = ['Gamma','RTDM','PTCH','MRGM','GWOC','GWAM',
-                                   'PrecipM']
+                params['seine'] = ['Gamma','RTDM','PTCH', 'GWFM', 'MRGM','GWOC',
+                                   'GWAM', 'PrecipM']
                 params['rhone'] = ['Gamma','RTDM','LKDep','SWOC','PTCH','SNMT',
                                    'GWFM','MRGM','GWOC', 'PrecipM']
                 params['loire'] = ['Gamma','RTDM','PTCH','GWFM','GWOC', 'PrecipM']

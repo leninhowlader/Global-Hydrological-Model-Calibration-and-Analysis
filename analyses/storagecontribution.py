@@ -8,7 +8,7 @@ import matplotlib.dates as mdates
 
 sys.path.append('..')
 from utilities.globalgrid import GlobalGrid
-GlobalGrid.set_model_version('wghm22d')
+GlobalGrid.set_model_version('wghm2.2d')
 from wgap.wgapio import WaterGapIO
 
 # contibution map types:

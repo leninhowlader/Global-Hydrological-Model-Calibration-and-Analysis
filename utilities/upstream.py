@@ -11,7 +11,7 @@ from utilities.enums import FileEndian
 
 class Upstream:
     # default flow-direction file
-    flow_direction_file = 'data/flow-direction_wghm22b.asc'          # flow-direction file
+    flow_direction_file = 'data/flow-direction_wghm2.2b.asc'          # flow-direction file
 
     # static variables
     flow_direction_data = np.array([])
@@ -41,13 +41,13 @@ class Upstream:
         Upstream.read_flow_data(filename)
 
     @staticmethod
-    def read_flow_data(direction_datafile='', unf_input=True, model_version='wghm22d'):
+    def read_flow_data(direction_datafile='', unf_input=True, model_version='wghm2.2d'):
         '''
         The method reads flow-direction data from file
 
         Parameters:
         :param direction_datafile: (string; optional; default = '') name of flow-direction map file
-        :param model_version: (string; optional; default = 'wghm22d') model version
+        :param model_version: (string; optional; default = 'wghm2.2d') model version
         :return: None
         '''
         succeed = True
@@ -819,13 +819,13 @@ class Upstream:
 
     @staticmethod
     def create_shape_with_predictions(filename_output_shape, filename_station, filename_wghm_prediction,
-                                      model_version='wghm22d', basin_ids=[], prediction_file_endian=FileEndian.big_endian,
+                                      model_version='wghm2.2d', basin_ids=[], prediction_file_endian=FileEndian.big_endian,
                                       add_wghm_cnum=True, model_grid_resolution=0.5):
 
         # step: check input parameters
         if not (filename_output_shape or filename_station or filename_wghm_prediction): return False
         if not(os.path.exists(filename_station) and os.path.exists(filename_wghm_prediction)): return False
-        if not model_version.lower() in ['wghm22b', 'wghm22d']: return False
+        if not model_version.lower() in ['wghm2.2b', 'wghm2.2d']: return False
 
         # step: read stations from [station] file
         from utilities.station import Station

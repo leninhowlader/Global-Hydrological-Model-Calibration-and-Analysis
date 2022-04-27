@@ -70,13 +70,14 @@ class RuntimeDynamicReport:
         
         self.solutions = []
 
-    def is_okay(self):
-        if (self.problemid < 0 or self.nfe < 0 or self.archive_size <= 0 or
+    def is_okay(self, mode='multi-problem'):
+        if mode == 'multi-problem' and self.problemid < 0: return False
+        if (self.nfe < 0 or self.archive_size <= 0 or
             len(self.solutions) != self.archive_size): return False
         return True
 
     @staticmethod
-    def read_runtime_dynamic_file(filename):
+    def read_runtime_dynamic_file(filename, mode='multi-problem'):
         
         reports = []
 
@@ -91,7 +92,7 @@ class RuntimeDynamicReport:
             for line in lines:
                 if not rpt: rpt = RuntimeDynamicReport()
                 else:
-                    if rpt.is_okay():
+                    if rpt.is_okay(mode=mode):
                         reports.append(rpt)
                         rpt = None
                         continue
