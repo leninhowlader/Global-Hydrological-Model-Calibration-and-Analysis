@@ -69,6 +69,7 @@ class WaterGAP:
     end_year = 2100
     output_endian_type = FileEndian.big_endian
     log_directory = ''
+    temporary_output_directory = ''
 
     __system_arguments = ''
 
@@ -307,6 +308,9 @@ class WaterGAP:
                             if value.lower() in ['n', 'no', 'false', 'f', '0']:
                                 WaterGAP.remove_waterGap_files_after_evaluation \
                                 = False
+                        elif key in ['temporary_output_directory',
+                                     'temporary output directory']:
+                                WaterGAP.temporary_output_directory = value
 
         except: succeed = False
 

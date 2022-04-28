@@ -50,6 +50,7 @@ class Configuration:
 
     def __init__(self, mode='sensitivity'):
         self.__mode = mode
+        self.__experiment_name = ''
         self.__parameter_info_input_filename = ''
         self.__input_sample_filename = ''
 
@@ -91,6 +92,13 @@ class Configuration:
         self.derived_variables = []
         self.parameters = []
         self.samples = []
+
+    @property
+    def experiment_name(self):
+        return self.__experiment_name
+    @experiment_name.setter
+    def experiment_name(self, name):
+        self.__experiment_name = name
 
     @property
     def sensitivity_as_change_in_prediction(self):
@@ -315,6 +323,8 @@ class Configuration:
     def read_settings(lines, config):
         while lines:
             line = lines.pop(0).strip()
+            line = line.split('#')[0].strip()       # leave out hash comments
+            
             if line:
                 temp = line.strip().split()
                 temp[0] = temp[0].strip().lower()
@@ -332,7 +342,12 @@ class Configuration:
 
                         if not (key and value): continue
 
-                        if key in ['mode']: config.mode = value.lower()
+                        if key in ['mode']: 
+                            config.mode = value.lower()
+
+                        elif key in ['experiment_name', 'experiment name',
+                                     'experiment_id', 'experiment_id']:
+                            config.experiment_name = value
 
                         elif key in ['parameter_info_input_filename',
                                      'parameter_info_filename']:
@@ -523,7 +538,7 @@ class Configuration:
         # step: check if the samples can be gathered in case of sensitivity analysis mode. load the samples.
         # if parameter file is specified instead of defining individual parameters, create the parameter
         # object with provided information in the parameter info file.
-        if self.__mode in ['sensitivity', 'glue']:
+        if self.__mode in ['sensitivity', 'glue', 'se']:  # se = solution evaluation
             # check the sample file and load samples
             if not self.__input_sample_filename: return 501
             elif not self.samples:

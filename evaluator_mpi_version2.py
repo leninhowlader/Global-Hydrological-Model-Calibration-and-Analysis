@@ -32,8 +32,6 @@ def get_start_end_index(world_rank, world_size, sample_size):
     return start_index, end_index
 
 def main(argv):
-
-
     # read node id (rank) and number of nodes (world size) from system
     # arguments
     filename = ''
@@ -96,7 +94,8 @@ def main(argv):
             succeed = run_model(
                 config=config,
                 sample_id=ref_sample_no,
-                additional_filename_specifier='ref' + str(world_rank)
+                additional_filename_specifier='%s_ref_%d'%(
+                                    config.experiment_name.lower(),world_rank)
             )
 
             if not succeed:
@@ -131,8 +130,9 @@ def main(argv):
         io.print_on_screen(message)
 
         succeed = run_model(
-            config=config,
-            sample_id=sample_no
+                    config=config,
+                    sample_id=sample_no,
+                    additional_filename_specifier=config.experiment_name.lower()
         )
 
         if not succeed:

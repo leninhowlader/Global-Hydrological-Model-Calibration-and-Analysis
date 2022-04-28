@@ -309,7 +309,8 @@ class SensitivityAnalysis:
 
             name_specifier = str(sample_id).rjust(6, '0')
             if additional_filename_specifier:
-                name_specifier += '_' + additional_filename_specifier
+                name_specifier = '%s_%s'%(additional_filename_specifier,
+                                          name_specifier)
 
             filename = WaterGAP.get_json_parameter_filename()
             filename = os.path.split(filename)[-1][:-5] + '_' \
@@ -337,6 +338,10 @@ class SensitivityAnalysis:
 
             # step: create output directory and directory file
             output_dir = 'output_' + name_specifier
+            if WaterGAP.temporary_output_directory:
+                output_dir = os.path.join(WaterGAP.temporary_output_directory,
+                                          output_dir)
+                                          
             if WaterGAP.model_version == 'wghm2.2e':
                 WaterGAP.model_config.output_directory = output_dir
             else:
@@ -353,7 +358,8 @@ class SensitivityAnalysis:
             if WaterGAP.model_version == 'wghm2.2e':
                 mconfig_filename = os.path.join(
                         WaterGAP.home_directory,
-                        'configuration_wghm_%s.txt'%name_specifier
+                        '%s_%s.txt'%(WaterGAP.model_config_filename[:-4],
+                                     name_specifier)
                 )
 
                 if not WaterGAP.model_config.write_wgapConfig_file(
