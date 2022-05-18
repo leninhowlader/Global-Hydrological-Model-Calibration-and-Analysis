@@ -524,6 +524,25 @@ class ParameterInfo:
             return param_info
 
         @staticmethod
+        def influential_parameters_EuropeanBasins(experiment_id='SA-QTG'):
+
+            sa_params = OrderedDict()
+            if experiment_id == 'SA-QTG': # 3-variable SA using Q, TWSA, and GWSA
+                sa_params['seine'] = ['Gamma', 'RTDM', 'PTCH', 'GWFM', 'MRGM',
+                                      'GWOC', 'GWAM', 'PrecipM']
+
+            parameters = OrderedDict()
+            for basin in sa_params.keys():
+                temp = ParameterInfo.get_selected_paramter_info(
+                                                param_acronyms=sa_params[basin])
+                parameters[basin] = temp
+
+            parameters = ParameterInfo.GlobalCDA.update_multibasin_parameter_acronym(
+                                                                            parameters)
+
+            return parameters
+
+        @staticmethod
         def GFB_sensitive_parameters(expid='SA-QTG'):
 
             params = OrderedDict()
