@@ -76,7 +76,7 @@ def main(argv):
     except: return 100 
 
     ## read in the arguments
-    for i in range(len(argv)): argv[i] = argv[i].lower()
+    # for i in range(len(argv)): argv[i] = argv[i].lower()
 
     argnames  = ['--observation-file', '--simulation-file', '--output-file',
                  '--nsample', '--output-directory', '--compute-anomaly',
