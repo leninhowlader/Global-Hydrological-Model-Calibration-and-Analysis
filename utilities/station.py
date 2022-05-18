@@ -4,6 +4,7 @@ import sys, os, numpy as np
 sys.path.append('..')
 from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid as gg
+from utilities.basininfo import BasinInfo
 
 class Station:
     station_datafile = 'data/ALLSTATIONS.DAT'
@@ -133,3 +134,48 @@ class Station:
         if data: succeed = io.write_flat_file(filename, data, separator=' ')
 
         return succeed
+
+    class GlobalCDA:
+        @staticmethod
+        def create_watergap_station_file_FGB(
+            filename_out:str,
+            basin_names=(), 
+            entire_basin=True
+        ):
+            succeed = True
+
+            excluded_basins = ['vilaine', 'adour']
+
+            basins = {}
+            if entire_basin:
+                basins = BasinInfo.GlobalCDA.GermanFrenchBasin_Entire()
+            else:
+                basins = BasinInfo.GlobalCDA.GermanFrenchBasin_Level0()
+
+            if basin_names:
+                excluded_basins += list(set(basins.keys()) - set(basin_names))
+                
+            for b in excluded_basins:
+                try: t = basins.pop(b)
+                except: pass
+
+            station_data = []
+            curr_id = 0
+            for k, v in basins.items():
+                row = []
+                if int(v['station_id']) < 0: 
+                    curr_id += 1
+                    row.append('%d'%curr_id)
+                else: row.append(v['station_id'])
+
+                row.append(v['lon'])
+                row.append(v['lat'])
+                
+                station_data.append(row)
+
+            succeed = Station.write_stations(
+                stations=station_data, 
+                filename=filename_out
+            )
+
+            return succeed
