@@ -3,6 +3,7 @@ from cmath import exp
 from email.headerregistry import HeaderRegistry
 from glob import glob
 import os, sys
+from tabnanny import verbose
 from analyses.glue import Glue
 
 ## List of global variables
@@ -21,6 +22,7 @@ end_year = -1
 conversion_factor_sim = 1
 conversion_factor_obs = 1
 basinid = 0
+verbose = True
 
 def set_value(key, value):
     try: 
@@ -30,10 +32,6 @@ def set_value(key, value):
         elif key == '--output-file': globals()['filename_out'] = value
         elif key == '--nsample': globals()['samples_per_process'] = int(value)
         elif key == '--output-directory':  globals()['directory_out'] = value
-        elif key == '--compute-anomaly':
-            if value.lower() in ['true', 't', 'yes', 'y', '1']: 
-                globals()['compute_anomaly'] = True
-            else:  globals()['compute_anomaly'] = False
         elif key == '--reference-period-start': 
             globals()['reference_period_start_year'] = int(value)
         elif key == '--reference-period-end': 
@@ -45,6 +43,14 @@ def set_value(key, value):
         elif key == '--conversion-factor-obs': 
             globals()['conversion_factor_obs'] = float(value)
         elif key == '--basin-id': globals()['basinid'] = int(value)
+        elif key == '--compute-anomaly':
+            if value.lower() in ['true', 't', 'yes', 'y', '1']: 
+                globals()['compute_anomaly'] = True
+            else:  globals()['compute_anomaly'] = False
+        elif key == '--verbose':
+            if value.lower() in ['true', 't', 'yes', 'y', '1']: 
+                globals()['compute_anomaly'] = True
+            else:  globals()['compute_anomaly'] = False
     except: pass
     
 def main(argv):
@@ -76,7 +82,7 @@ def main(argv):
                  '--nsample', '--output-directory', '--compute-anomaly',
                  '--reference-period-start', '--reference-period-end',
                  '--start-year', '--end-year', '--conversion-factor-sim', 
-                 '--conversion-factor-obs', '--basin-id']
+                 '--conversion-factor-obs', '--basin-id', '--verbose']
     
     ## read function names
     # note that multiple fun names can be provided as command line
@@ -176,6 +182,7 @@ options=(
     --conversion-factor-sim  1
     --conversion-factor-obs 1
     --basin-id 0
+    --verbose true
 )
 funs=(nse kge rmse alpha beta)
 
