@@ -1,4 +1,4 @@
-*.*
+*
 !.gitignore
 !analyses/*.py
 !calibration/*.py
