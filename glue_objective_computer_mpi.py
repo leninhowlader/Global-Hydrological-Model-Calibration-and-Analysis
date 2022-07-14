@@ -49,8 +49,8 @@ def set_value(key, value):
             else:  globals()['compute_anomaly'] = False
         elif key == '--verbose':
             if value.lower() in ['true', 't', 'yes', 'y', '1']: 
-                globals()['compute_anomaly'] = True
-            else:  globals()['compute_anomaly'] = False
+                globals()['verbose'] = True
+            else:  globals()['verbose'] = False
     except: pass
     
 def main(argv):
