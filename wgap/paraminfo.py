@@ -543,7 +543,7 @@ class ParameterInfo:
             return parameters
 
         @staticmethod
-        def GFB_sensitive_parameters(expid='SA-QTG'):
+        def FGB_sensitive_parameters(expid='SA-QTG'):
 
             params = OrderedDict()
             if expid == 'SA-QTG':
