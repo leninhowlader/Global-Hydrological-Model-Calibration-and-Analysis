@@ -57,8 +57,9 @@ class Glue:
 
         ## compute anomalies [if necessary]
         if compute_anomaly:
-            start_year, end_year = period_ref_mean
-            ref_mean = obs[(obs.year>=start_year)&(obs.year<=end_year)].obs.mean()
+            ref_start_year, ref_end_year = period_ref_mean
+            ref_mean = obs[(obs.year>=ref_start_year)&(
+                            obs.year<=ref_end_year)].obs.mean()
             obs.iloc[:, -1] -= ref_mean
         ##
 
@@ -96,7 +97,9 @@ class Glue:
             sim = sim_df[sim_df.sid==sid].iloc[:,1:]
             
             if compute_anomaly:
-                ref_mean = sim[(sim.year>=start_year)&(sim.year<=end_year)].sim.mean()
+                ref_start_year, ref_end_year = period_ref_mean
+                ref_mean = sim[(sim.year>=ref_start_year)&
+                               (sim.year<=ref_end_year)].sim.mean()
                 sim.iloc[:, -1] -= ref_mean
             
             simobs = sim.merge(obs, how='inner', on=['year', 'month'])
