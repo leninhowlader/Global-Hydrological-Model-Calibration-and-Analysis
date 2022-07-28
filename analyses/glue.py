@@ -241,6 +241,108 @@ class Glue:
         return probabilities / probabilities.sum()
 
     @staticmethod
+    def apply_glue(
+        fx,
+        thresholds,
+        method_multivar='combined',
+        multivar_combfunc_name='weighted sum',
+        multivar_combfunc=None,
+        weights=(),
+        allstep_probs=False
+    ):
+        """
+        The function estimated posterior parameter probability based on GLUE 
+        method
+
+        Parameters:
+        :param fx: (n-d numpy array) objective function values for each sample
+        :param thresholds: (float or tuple of floats) behevioral model selection
+                           threshold(s). all models below the threshold will be
+                           assigned zero probabilities
+        :param metho_multivar: (string) method of glue for multivariable case
+        :param multivar_combfunc_name: (string) name of the function to combine
+                            function values for multivariable case
+        :param multivar_combfunc: (function) signature of function to combine
+                            objectives
+        :param weights: (tuple of floats) weights for each variable
+        :param allstep_probs: (bool) if true, all priors and posteriors in all 
+                            steps will be returned
+        :return (n-d numpy array) posterior probabilities
+        """
+
+        def weighted_sum(fx, weights): return (fx * weights).sum(axis=1)
+        def products(fx): return fx.prod(axis=1)
+
+        if fx.ndim == 1: fx = fx[:, np.newaxis]
+        nsample, nvar = fx.shape
+
+        if type(thresholds) is float: thresholds = [thresholds] * nvar
+        if len(thresholds) == 0: return np.empty(0)
+        if len(thresholds) != nvar: thresholds = (list(thresholds) * nvar)[:nvar]
+
+        if len(weights) != nvar: 
+            weights = (list(weights) + [1] * nvar)[:nvar]
+        weights = np.array(weights)[np.newaxis, :]
+
+        prior = np.ones(nsample)
+        if allstep_probs: 
+            probs_out = Glue.rescale_probabilities(prior).reshape(-1, 1)
+
+        if method_multivar == 'combined':
+            if multivar_combfunc: fx_comb = multivar_combfunc(fx)
+            else:
+                combfunc = multivar_combfunc_name.lower()
+                if combfunc in ['weighted sum', 'weighted_sum']:
+                    fx_comb = weighted_sum(fx=fx, weights=weights)
+                elif combfunc in ['product', 'multiplication', 'prod']:
+                    fx_comb = products(fx=fx)
+                else: fx_comb = fx.sum(axis=1)
+            
+            jj = np.ones(nsample, dtype=bool)
+            for i in range(nvar):
+                jj &= (fx[:,i]>=thresholds[i])
+            
+            fx_comb[~jj] = 0
+            likelihood = fx_comb.copy()
+            posterior = Glue.compute_posterior(
+                    prior=prior,
+                    likelihood=likelihood,
+                    scale=likelihood.sum()
+                )
+
+            if posterior.sum() != 1.0: 
+                posterior = Glue.rescale_probabilities(posterior)
+            
+            if allstep_probs: 
+                probs_out = np.concatenate((probs_out, posterior.reshape(-1,1)),
+                                            axis=1)
+        else: # sequential
+            for i in range(nvar):
+                curr_fx = fx[:,i]
+                jj = (curr_fx>=thresholds[i])
+
+                curr_fx[~jj] = 0
+                likelihood = curr_fx
+                
+                posterior = Glue.compute_posterior(
+                    prior=prior,
+                    likelihood=likelihood,
+                    scale=likelihood.sum()
+                )
+
+                if posterior.sum() != 1.0: 
+                    posterior = Glue.rescale_probabilities(posterior)
+                
+                if allstep_probs: 
+                    probs_out = np.concatenate((probs_out, 
+                                                posterior.reshape(-1,1)),
+                                                axis=1)
+                prior = posterior.copy()
+
+        if allstep_probs: return probs_out
+        return posterior
+
+    @staticmethod
     def empirical_cdf(
         x:np.ndarray, 
         probs:np.ndarray
