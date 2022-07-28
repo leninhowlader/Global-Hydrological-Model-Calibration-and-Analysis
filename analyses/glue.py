@@ -1,6 +1,4 @@
-
 import os, numpy as np, pandas as pd
-from tabnanny import verbose
 from datetime import datetime, timedelta
 
 from wgap.wgapio import WaterGapIO
@@ -29,7 +27,8 @@ class Glue:
         sample_id_end=20000,
         conversion_factor_sim=1,
         conversion_factor_obs=1,
-        verbose=False
+        verbose=False,
+        observation_series_count=1
     ):
         '''
         notes:
@@ -48,19 +47,22 @@ class Glue:
             start_year = end_year = -1
 
         while len(funnames) < len(funs): funnames += ('fx_%02d'%len(funnames),)
+        if observation_series_count < 1: observation_series_count = 1
 
         ## read observation dataset
+        nseries = observation_series_count
+        columns = ['year', 'month'] + ['obs_%02d'%(i+1) for i in range(nseries)]
         obs = pd.read_csv(filename_obs)
-        obs = obs.iloc[:, -3:]  # keep last three columns
-        obs.columns = ['year', 'month', 'obs']
+        obs = obs.iloc[:, -(nseries + 2):]  # keep last three columns
+        obs.columns = columns
         ##
 
         ## compute anomalies [if necessary]
         if compute_anomaly:
             ref_start_year, ref_end_year = period_ref_mean
-            ref_mean = obs[(obs.year>=ref_start_year)&(
-                            obs.year<=ref_end_year)].obs.mean()
-            obs.iloc[:, -1] -= ref_mean
+            ref_mean = obs[(obs.year>=ref_start_year)&(obs.year<=ref_end_year)
+                          ].iloc[:,2:].mean(axis=0).values
+            obs.iloc[:, 2:] -= ref_mean
         ##
 
         ## filter data according to years
@@ -70,7 +72,7 @@ class Glue:
 
         ## apply conversion factor to observation dataset
         if conversion_factor_obs != 1:
-            obs.loc[:,'obs'] *= conversion_factor_obs
+            obs.iloc[:,2:] *= conversion_factor_obs
         ##
         
         ## read simulation data (unf files) and crop dataset for a basin
@@ -90,38 +92,78 @@ class Glue:
             sim_df.loc[:, 'sim'] *= conversion_factor_sim
         ##
         
-        sids = np.unique(d[:,0]).astype(int)
-        fx = []
-        if verbose: tm0 = datetime.now()
-        for sid in sids:
-            sim = sim_df[sim_df.sid==sid].iloc[:,1:]
+        if nseries == 1:
+            sids = np.unique(d[:,0]).astype(int)
+            fx = []
+            if verbose: tm0 = datetime.now()
+            for sid in sids:
+                sim = sim_df[sim_df.sid==sid].iloc[:,1:]
+                
+                if compute_anomaly:
+                    ref_start_year, ref_end_year = period_ref_mean
+                    ref_mean = sim[(sim.year>=ref_start_year)&
+                                (sim.year<=ref_end_year)].sim.mean()
+                    sim.iloc[:, -1] -= ref_mean
+                
+                simobs = sim.merge(obs, how='inner', on=['year', 'month'])
+                simobs = simobs.dropna()
+
+                s, o = simobs.iloc[:,-2].values, simobs.iloc[:,-1].values
+                fx.append([fun(s, o) for fun in funs])
+                
+                if verbose and (sid+1)%Glue.__verbose_frequency==0: 
+                    tm1 = datetime.now()
+                    print('%d samples have been proceed [%0.2f]'%(sid+1, (tm1-tm0).total_seconds()))
+                    tm0 = tm1
             
-            if compute_anomaly:
-                ref_start_year, ref_end_year = period_ref_mean
-                ref_mean = sim[(sim.year>=ref_start_year)&
-                               (sim.year<=ref_end_year)].sim.mean()
-                sim.iloc[:, -1] -= ref_mean
+            fx = np.array(fx)
+            fx = np.insert(fx, 0, sids[np.newaxis, :], axis=1)
+
+        else:
+            sids = np.unique(d[:,0]).astype(int)
             
-            simobs = sim.merge(obs, how='inner', on=['year', 'month'])
+            fx = []
+            if verbose: tm0 = datetime.now()
+            for sid in sids:
+                sim = sim_df[sim_df.sid==sid].iloc[:,1:]
+                
+                if compute_anomaly:
+                    ref_start_year, ref_end_year = period_ref_mean
+                    ref_mean = sim[(sim.year>=ref_start_year)&
+                                (sim.year<=ref_end_year)].sim.mean()
+                    sim.iloc[:, -1] -= ref_mean
+                
+                fx_sid = []
+                for i in range(nseries):
+                    simobs = sim.merge(obs.iloc[:, [0, 1, 2+i]], how='inner', on=['year', 'month'])
+                    simobs = simobs.dropna()
+
+                    s, o = simobs.iloc[:,-2].values, simobs.iloc[:,-1].values
+                    fx_sid.append([fun(s, o) for fun in funs])
+                fx.append(fx_sid)
+
+                if verbose and (sid+1)%Glue.__verbose_frequency==0: 
+                    tm1 = datetime.now()
+                    print('%d samples have been proceed [%0.2f]'%(sid+1, (tm1-tm0).total_seconds()))
+                    tm0 = tm1
             
-            s, o = simobs.sim.values, simobs.obs.values
-            fx.append([fun(s, o) for fun in funs])
-            
-            if verbose and (sid+1)%Glue.__verbose_frequency==0: 
-                tm1 = datetime.now()
-                print('%d samples have been proceed [%0.2f]'%(sid+1, (tm1-tm0).total_seconds()))
-                tm0 = tm1
-        fx = np.array(fx)
-        
-        df_out = pd.DataFrame(data=fx, columns=funnames)
-        df_out.insert(0, 'sid', sids)
-        
-        return df_out
+            fx = np.array(fx)
+            fx = np.insert(fx, 0, sids[np.newaxis,:, np.newaxis], axis=1)
+
+        return fx
     
     @staticmethod
     def map_objective_functions(
         funnames
     ):
+        """
+        The function maps objective functions and returns the signatures of 
+        given function names
+
+        Parameters:
+        :param funnames: (list of string) list of function names
+        :return (list) list of function signatures
+        """
         sse = stats.sum_squared_error
         mse = stats.mean_square_error
         rmse = stats.root_mean_square_error
@@ -160,3 +202,117 @@ class Glue:
             elif fun in ['gamma']: funs.append(gamma)
             else: funs.append(dummy)
         return tuple(funs)
+
+    @staticmethod
+    def compute_posterior(
+        prior:np.ndarray,
+        likelihood:np.ndarray,
+        scale:float=1
+    ):
+        """
+        The function computes posterior probabilities given prior, data 
+        likelihood and optionally the merginalizing constant
+
+        Posterior probabilities,
+            P (A | B) = P (B | A) x P(A) / P(B)
+
+        Parameters:
+        :param prior: (1-d array of floats) prior probalibities i.e., P(theta)
+        :param likelihood: (1-d array of floats) likelihood given data i.e. P(data|theta)
+        :param scale: (float) merginalizing constant P(data)
+        :return (1-d array) posterior probabilities i.e, P (theta | data)
+        """
+
+        return prior * likelihood / scale
+
+    @staticmethod
+    def rescale_probabilities(
+        probabilities
+    ): 
+        """
+        The function rescale probabilities to make the sum of all probabilities 
+        to unity.
+
+        Parameters:
+        :param probabilities: (1-d array) probability quantities
+        :return (1-d array) scaled probabilities
+        """
+        
+        return probabilities / probabilities.sum()
+
+    @staticmethod
+    def empirical_cdf(
+        x:np.ndarray, 
+        probs:np.ndarray
+    ):
+        """
+        The function computes the empirical cummulative distribution function
+
+        Parameters:
+        :param x: (1-d numpy array) quantities for whose cdf to be computed
+        :param probs: (1-d numpy array) probabilities of quantities in x
+        :return (1d-array, 1-d array) 
+                (1) sorted x values (2) cummulative probabilities
+        """
+
+        ii = np.argsort(x)
+        cdf = np.cumsum(probs[ii])
+
+        return x[ii], cdf
+
+    @staticmethod
+    def estimated_empirical_pdf(
+        x:np.ndarray,
+        probs:np.ndarray,
+        step:float=0,
+        nintervals:int=1000,
+        bounds:tuple=(),
+        window=50
+    ):
+        """
+        The function estimate propability density function for a given variate
+
+        Parameters:
+        :param x: (1-d numpy array) quantities for whose cdf to be computed
+        :param probs: (1-d numpy array) probabilities of quantities in x
+        :param step: (float) step or interval size
+        :param nintervals: (int) (optional) No. of interval; used only when step 
+                                 is not provided
+        :param bounds: (tuple of float) (optional) lower and upper bound pair
+        :param window: (int) window size for computing moving average. moving
+                             average will only be computed when window > 1
+        :return (1d-array, 1-d array) 
+                (1) class intervals of x (2) (smoothed) probabilities
+        
+        """
+
+
+        ## inner function for computing moving averages
+        def moving_average(x, window=window):
+            return np.array([np.mean(x[i:i+window]) 
+                            for i in range(x.shape[0] - window)])
+        ## end of inner function
+
+        if not bounds: lb, ub = np.min(x), np.max(x)
+        else: lb, ub = bounds
+
+        if step == 0: step = (ub-lb) / nintervals
+        
+        intervals, densities = [], []
+        for b in np.arange(lb, ub, step):
+            ii = np.where((x>b)&(x<=b+step))
+
+            densities.append(probs[ii].sum()/step)
+            #intervals.append((probs[ii]*x[ii]).sum())
+            intervals.append(b+step/2)
+        
+        intervals = np.array(intervals)
+        densities = np.array(densities)
+
+        if window > 1: 
+            densities = moving_average(x=densities, window=window)
+            intervals = moving_average(x=intervals, window=window)
+        
+        return intervals, densities
+
+        

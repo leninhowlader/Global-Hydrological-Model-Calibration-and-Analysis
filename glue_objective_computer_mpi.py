@@ -1,9 +1,4 @@
-from ast import arg, expr_context
-from cmath import exp
-from email.headerregistry import HeaderRegistry
-from glob import glob
-import os, sys
-from tabnanny import verbose
+import os, sys, numpy as np, pandas as pd
 from analyses.glue import Glue
 
 ## List of global variables
@@ -23,6 +18,7 @@ conversion_factor_sim = 1
 conversion_factor_obs = 1
 basinid = 0
 verbose = True
+observation_series_count = 1
 
 def set_value(key, value):
     try: 
@@ -30,19 +26,31 @@ def set_value(key, value):
         elif key == '--simulation-file':
             globals()['filename_prediction_summary'] = value
         elif key == '--output-file': globals()['filename_out'] = value
-        elif key == '--nsample': globals()['samples_per_process'] = int(value)
+        elif key == '--nsample': 
+            try: globals()['samples_per_process'] = int(value)
+            except: pass
         elif key == '--output-directory':  globals()['directory_out'] = value
         elif key == '--reference-period-start': 
-            globals()['reference_period_start_year'] = int(value)
+            try: globals()['reference_period_start_year'] = int(value)
+            except: pass
         elif key == '--reference-period-end': 
-            globals()['reference_period_end_year'] = int(value)
-        elif key == '--start-year': globals()['start_year'] = int(value)
-        elif key == '--end-year': globals()['end_year'] = int(value)
+            try: globals()['reference_period_end_year'] = int(value)
+            except: pass
+        elif key == '--start-year': 
+            try: globals()['start_year'] = int(value)
+            except: pass 
+        elif key == '--end-year': 
+            try: globals()['end_year'] = int(value)
+            except: pass
         elif key == '--conversion-factor-sim': 
-            globals()['conversion_factor_sim'] = float(value)
+            try: globals()['conversion_factor_sim'] = float(value)
+            except: pass
         elif key == '--conversion-factor-obs': 
-            globals()['conversion_factor_obs'] = float(value)
-        elif key == '--basin-id': globals()['basinid'] = int(value)
+            try: globals()['conversion_factor_obs'] = float(value)
+            except: pass
+        elif key == '--basin-id': 
+            try: globals()['basinid'] = int(value)
+            except: pass
         elif key == '--compute-anomaly':
             if value.lower() in ['true', 't', 'yes', 'y', '1']: 
                 globals()['compute_anomaly'] = True
@@ -51,13 +59,16 @@ def set_value(key, value):
             if value.lower() in ['true', 't', 'yes', 'y', '1']: 
                 globals()['verbose'] = True
             else:  globals()['verbose'] = False
+        elif key == '--observation-series-count':
+            try: globals()['observation_series_count'] = int(value)
+            except: pass
     except: pass
     
 def main(argv):
     global filename_observation
     global filename_prediction_summary
     global filename_out
-    #global samples_per_process
+    global samples_per_process
     global directory_out
     global fun, funnames
     global compute_anomaly
@@ -67,6 +78,7 @@ def main(argv):
     global conversion_factor_sim
     global conversion_factor_obs
     global basinid
+    global observation_series_count
 
     if len(argv) < 3: exit(os.EX_NOINPUT)
     world_rank, world_size = -1, -1
@@ -82,7 +94,8 @@ def main(argv):
                  '--nsample', '--output-directory', '--compute-anomaly',
                  '--reference-period-start', '--reference-period-end',
                  '--start-year', '--end-year', '--conversion-factor-sim', 
-                 '--conversion-factor-obs', '--basin-id', '--verbose']
+                 '--conversion-factor-obs', '--basin-id', '--verbose',
+                 '--observation-series-count']
     
     ## read function names
     # note that multiple fun names can be provided as command line
@@ -128,7 +141,7 @@ def main(argv):
     funs = Glue.map_objective_functions(funnames=funnames)
     
     if filename_out:
-        obj_df = Glue.compute_objective(
+        fx = Glue.compute_objective(
                     filename_obs=filename_observation,
                     filename_simunf=filename_prediction_summary,
                     funs=funs,
@@ -141,12 +154,35 @@ def main(argv):
                     sample_id_start=sample_id_start,
                     sample_id_end=sample_id_end,
                     conversion_factor_sim=conversion_factor_sim,
-                    conversion_factor_obs=conversion_factor_obs
+                    conversion_factor_obs=conversion_factor_obs,
+                    observation_series_count=observation_series_count
         )
-        temp = os.path.splitext(filename_out)
-        filename_out = os.path.join(directory_out, 
-                                    '%s_%d%s'%(temp[0], world_rank, temp[1]))
-        obj_df.to_csv(filename_out, index=False, header=False, mode='w')
+
+        if fx.ndim == 2:
+            obj_df = pd.DataFrame(data=fx, columns=None)
+            obj_df.iloc[:, 0] = obj_df.iloc[:, 0].astype(int)
+        
+            temp = os.path.splitext(filename_out)
+            filename_out = os.path.join(directory_out, 
+                                        '%s_%d%s'%(temp[0], world_rank, temp[1]))
+            obj_df.to_csv(filename_out, index=False, header=False, mode='w')
+        elif fx.ndim == 3:
+            if fx.shape[2] == len(funnames):
+                for i in range(fx.shape[2]):
+                    obj_df = pd.DataFrame(data=fx, columns=None)
+                    obj_df.iloc[:, 0] = obj_df.iloc[:, 0].astype(int)
+                
+                    temp = os.path.splitext(filename_out)
+                    filename_out = os.path.join(directory_out, 
+                        '%s_%s_%d%s'%(temp[0], funnames[i], world_rank, temp[1])
+                    )
+                    
+                    obj_df.to_csv(
+                        filename_out, index=False, header=False, mode='w'
+                    )
+
+            else: return 203
+        else: return 202
     else: return 201
 
     return os.EX_OK
@@ -156,25 +192,26 @@ def create_example_bashfile(filename_out):
 #!/usr/bin/bash
 #SBATCH --job-name=GlueObjCom
 #SBATCH --partition=qdefault
-#SBATCH --ntasks=20
+#SBATCH --ntasks=100
 #SBATCH --cpus-per-task=1  
 #SBATCH --mem-per-cpu=500  
 #SBATCH --time=0-05:00:00
-#SBATCH -e report/GlueObjectiveComputation.err
-#SBATCH -o report/GlueObjectiveComputation.out
+#SBATCH -e report/GlueObjectiveComputation_GWSA.err
+#SBATCH -o report/GlueObjectiveComputation_GWSA.out
 
 module load Python/Python-3.6.9
 module load openmpi/openmpi-4.1.0
 
 
 directory_out="objectives_1e5"
+output_filename="objectives_gwsa_entirebasin"                     #without extension
 options=(
-    --observation-file ../observations/q_km3pmon_calib_seine_6122100.csv
-    --simulation-file output/discharge_km3.5.unf0
+    --observation-file ~/observations/poc_FGB/gwsa_mm_2003_2016_seine.csv
+    --simulation-file output/groundwater_mm.5.unf0
     --output-directory $directory_out
-    --output-file discharge_fx.csv
-    --nsample 5000
-    --compute-anomaly false
+    --output-file "$output_filename".csv
+    --nsample 1000
+    --compute-anomaly true
     --reference-period-start 2003
     --reference-period-end 2014
     --start-year 2003
@@ -183,20 +220,21 @@ options=(
     --conversion-factor-obs 1
     --basin-id 0
     --verbose true
+    --observation-series-count 1
 )
-funs=(nse kge rmse alpha beta)
+funs=(nse kge rmse alpha beta gamma r ioa rsr mae sse)
 
 mkdir -p $directory_out
-rm -rf $directory_out/*
+#rm -rf $directory_out/*
 
 app="~/ProjectWGHM/glue_objective_computer_mpi.py"
 mpirun ./wrapper python3 $app ${options[@]} "${funs[@]/#/--fun }"
 #app="/mnt/d/mhasan/Code\&Script/ProjectWGHM/glue_objective_computer_mpi.py"
 #mpirun -n 3 ./wrapper python3 "$app" ${options[@]} "${funs[@]/#/--fun }"
 
-mkdir $directory_out/summary
-cat $directory_out/*.* >> $directory_out/summary/combined.dat
-rm $directory_out/*.*
+echo sid "${funs[@]/#/, }" >> $directory_out/"$output_filename".csv
+cat $directory_out/"$output_filename"_*.* >> $directory_out/"$output_filename".csv
+rm $directory_out/"$output_filename"_*.*
     """
 
     try:
