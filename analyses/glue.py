@@ -417,4 +417,51 @@ class Glue:
         
         return intervals, densities
 
+    @staticmethod
+    def prediction_interval(
+        preds:np.ndarray,
+        probs:np.ndarray=np.empty(0),
+        alpha:float=0.05,
+        columns_represent_timeseries:bool=True
+    ):
+        """
+        The function computes prediction interval empirically.
+
+        Parameters:
+        :param preds: (2-d numpy array) prediction time series
+        :param probs: (1-d numpy array; optional) probabilities associate with 
+                            each prediction. if not given, all prediction series
+                            will be treated as equally probable
+        :param alpha: (float) error level
+        :param columns_represent_timeseries: (bool) a flag describs the orientation
+                            of the prediction time series. if the flag is true,
+                            each column will be considered as a prediction series
+        :return (1-d numpy array, 1-d numpy array) lower and upper limits
+        """
+        lows, highs = np.empty(0), np.empty(0)
+        
+        if not (0<alpha<=1): return lows, highs
+        if not columns_represent_timeseries: preds = preds.T
+        if preds.ndim != 2: return lows, highs
+        
+        ntimestep, nprediction = preds.shape
+        if ntimestep == 0 or nprediction == 0: return lows, highs
+
+        if probs.shape[0] != nprediction: 
+            probs = np.ones(nprediction) / nprediction
+        
+        half_alpha = alpha/2
+
+        lows, highs = [], []
+        for i in range(ntimestep):
+            jj = np.argsort(preds[i, :])
+
+            csum = probs[jj].cumsum()
+            kk = jj[(csum>=half_alpha) & (csum <=(1-half_alpha))]
+            lows.append(preds[i,kk].min())
+            highs.append(preds[i,kk].max())
+        lows, highs = np.array(lows), np.array(highs)
+
+        return lows,  highs
+
         
