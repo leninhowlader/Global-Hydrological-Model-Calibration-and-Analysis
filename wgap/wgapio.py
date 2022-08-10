@@ -14,8 +14,8 @@ from utilities.globalgrid import GlobalGrid as gg
 from utilities.enums import FileEndian
 
 class WaterGapIO:
-    __model_homedirectory = ''
-    __model_input_data_directory = ''
+    __model_homedirectory = 'D:/mhasan/Code&Script/WaterGapGHM/WaterGap_home'
+    __model_input_data_directory = os.path.join(__model_homedirectory, 'INPUT')
     
     @staticmethod
     def set_model_home_directory(home_directory): 
@@ -106,6 +106,7 @@ class WaterGapIO:
 
         # step: read model output file
         d = np.fromfile(filename, dtype=dtype)
+        d = d.byteswap().newbyteorder()
 
         # step: reshape data if ncol is larger than 1
         if ncol > 1:
