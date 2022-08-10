@@ -1,4 +1,5 @@
 #modified on: 13-Nov-2014
+from os import times
 import sys
 sys.path.append('..')
 import numpy as np
@@ -302,3 +303,78 @@ class stats:
     def ratio(d1, d2): # ratio of d1 to d2
         d1, d2 = np.array(d1), np.array(d2)
         return (d1/d2).tolist()
+
+    @staticmethod
+    def average_uncertainty_band_width(
+        ensemble:np.ndarray,
+        column_represents_timeseries:bool=True,
+        reference_means:np.ndarray=np.empty(0)
+    ):
+        """
+        Computes the average uncertainty band width (AUBW) for an ensemble of 
+        time-series.
+            AUBW = (1/n) * Σ((max_t - min_t)/mean_t)
+
+        Parameters:
+        @param ensemble: (2-d numpy array) ensemble of time-series
+        @param column_represents_timeseries: (bool, optional, default=True) flag
+                        showing the orientation of time-series in the ensemble 
+                        dataset. if the flag is true, each column of ensemble 
+                        will be considered as a member time-series. Otherwise,
+                        the rows will be treated as ensemble member
+        @param reference_mean: (1-d numpy array, optional) if provided, the
+                        reference means will be used to scale the width of 
+                        uncertainty for a single time step. if  not provided,
+                        the ensemble mean will be used as reference mean.
+        @return (1-d numpy array) Average uncertainty band width 
+
+        Reference:
+        (1) Jin, X., Xu, C.-Y., Zhang, Q., and Singh, V. P. (2010). Parameter 
+        and modeling uncertainty simulated by GLUE and a formal Bayesian method 
+        for a conceptual hydrological model. J. Hydrol., 383 (3-4), 147–155, 
+        https://doi.org/10.1016/j.jhydrol.2009.12.028
+        """
+        ensemble = np.array(ensemble)
+        reference_means = np.array(reference_means)
+
+        if ensemble.shape[0] == 0 or ensemble.ndim != 2: return None
+        if not column_represents_timeseries: ensemble = ensemble.T
+
+        if reference_means.shape[0] != ensemble.shape[0]:
+            reference_means = np.nanmean(ensemble, axis=0)[:,np.newaxis]
+            
+        
+        mins = ensemble.min(axis=1)
+        maxs = ensemble.max(axis=1)
+        
+        aubw = np.nanmean((maxs-mins)/reference_means)
+
+        return aubw
+
+    @staticmethod
+    def ub_coverage(
+        timeseries:np.ndarray,
+        low_bound:np.ndarray,
+        high_bound:np.ndarray
+    ):
+        """
+        Computes uncertainty band (UB) coverage i.e., percentage of number of 
+        monthly values of a timeseries that fall within defined uncertainty band 
+        of a lower and higher bounds. the statistic describes quality of 
+        prediction for a simulated timeseries for being within the uncertainty
+        bound of observation data.
+
+        Parameters:
+        @param timeseries: (1-d numpy array) prediction time-series
+        @param low_bound: (1-d numpy array) the lower bound of the uncertainty 
+        @param high_bound: (1-d numpy array) the higher bound of uncertainty 
+        @return (float, within 0 and 1) percentage of number of values bounded 
+                        witinin uncertainty bounds
+
+        """
+
+        n = timeseries.shape[0]
+        if n == 0 or low_bound.shape[0] != n or high_bound.shape[0] != n:
+            return None
+        
+        return np.sum((timeseries>=low_bound)&(timeseries<=high_bound))/n
