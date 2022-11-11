@@ -718,7 +718,7 @@ class SensitivityAnalysis:
             return d_out, colnames
 
         @staticmethod
-        def major_contributors_with_error_bootstrapping(
+        def major_contributors_with_uncertainty_monte_carlo_simulation(
                 mu: np.ndarray,         # mean si (mean EE)
                 se: np.ndarray,         # standard error of the mean
                 samplesize=100,
@@ -738,9 +738,10 @@ class SensitivityAnalysis:
             nparam = mu.shape[0]
 
             d_out = np.arange(1, nparam + 1).reshape(nparam, 1)
-            d_out = np.concatenate((d_out, mu.reshape(nparam, 1)), axis=1)
+            d_out = np.concatenate((d_out, mu.reshape(nparam, 1),
+                                    se.reshape(nparam, 1)), axis=1)
 
-            colnames = ['paramid', 'si']
+            colnames = ['paramid', 'si', 'se']
             # end of step
 
             # step: compute ranks [1 to no. of parameters] and sort
