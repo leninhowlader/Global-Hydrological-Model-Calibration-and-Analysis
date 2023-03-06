@@ -1,5 +1,6 @@
 *
 !.gitignore
+!algorithm/*.py
 !analyses/*.py
 !calibration/*.py
 !observation/*.py
