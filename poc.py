@@ -39,9 +39,14 @@ nconts = 0
 def model_evaluation(*vars):
     global config
 
+    # update parameters and create parameter file
+    # run model
+    # compute objectives and constraints
+
     x, y = vars[0], vars[1]
     objs = [x**2 + y**2, (x-2)**2 + y**2]
     cons = []
+    
     return (objs, cons)
 
 def BORG_Initialize(random_seed):
@@ -93,27 +98,36 @@ def BORG_Problem_Description():
 
         print('Problem definition:', file=out)
 
-        line = '\tModel parameter(s):'.rjust(46) + 'Min'.rjust(10) + 'Max'.rjust(10)
+        line = '\tModel parameter(s):'.ljust(56) + 'Min'.ljust(10) + 'Max'.ljust(10)
         print(line, file=out)
         
         for param in config.parameters:
-            line = (param.parameter_name.rjust(40) 
+            line = ('\t\t' + param.parameter_name.ljust(40) 
                     + str(param.get_lower_bound()).rjust(10) 
                     + str(param.get_upper_bound()).rjust(10))
             print(line, file=out)
 
-        print('\tVariables:', file=out)
-        line = '\tObservation Variables'.rpad(35) + 'Prediction variable'.rjust(35)
+        print('\n\tVariables:', file=out)
+        line = '\tObservation Variables'.rjust(35) + 'Prediction variable'.rjust(35)
         print(line, file=out)
 
         line = '--------------------'.rjust(35) + '--------------------'.rjust(35)
         print(line, file=out)
 
+        for i in range(len(config.obs_variables)):
+            var = config.obs_variables[i]
+            line = ('\t\t(%02d) '%(i+1) + var.varname.ljust(30) 
+                    + var.counter_variable.ljust(30))
+            print(line, file=out)
         
-    
+        n = config.get_parameter_count()
+        print('\n\tTotal number of decision variables: %d'%n, file=out)
 
-    
-    pass
+        n = config.get_objective_count()
+        print('\tTotal number of objectives: %d'%n, file=out)
+        
+        n = config.get_constraints_count()
+        print('\tTotal number of constraints: %d'%n, file=out)
 
 def main(argv):
     global config, world_rank, world_size
@@ -156,6 +170,8 @@ def main(argv):
 
     # define problem
     problem = BORG_Optimization_Problem()
+    
+    BORG_Problem_Description()
 
     # solve optimization problem
     max_evaluations = config.maximum_iteration
