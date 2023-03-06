@@ -296,9 +296,12 @@ class ObsVariable(Variable):
         Variable.__init__(self)
         self.counter_variable = ''
         self.function = ObjectiveFunction.not_specified
+        self.epsilon = 0.05
 
     def get_function_name(self):
         return ObjectiveFunction.get_function_name(self.function)
+    
+    def get_epsilon(self): return self.epsilon
 
     def is_okay(self):
         if not Variable.is_okay(self) or not self.counter_variable or self.function == ObjectiveFunction.not_specified: return False
@@ -372,6 +375,11 @@ class ObsVariable(Variable):
                                 var.counter_variable = value
                             elif key in ['function', 'evaluation function', 'objective function', 'evaluation_function', 'objective_function']:
                                 var.function = ObjectiveFunction.find_function(value)
+                            elif key in [
+                                'borg_epsilon', 'borg epsilon', 'epsilon'
+                            ]: 
+                                try: var.epsilon = float(value)
+                                except: pass
             except: return None
 
     @staticmethod

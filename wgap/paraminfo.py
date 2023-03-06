@@ -9,7 +9,7 @@ class ParameterInfo:
                 'log_scale': False,
                 'min': 0.3,
                 'max': 3.0,
-                'nominal': 0.7,
+                'nominal': 2.0,
                 'optimal': None,
                 'distribution': 'uniform'
     }

@@ -47,7 +47,8 @@ class Configuration:
     [B] compute_seasonal_statistics/seasonal_statistics
     [B] seasonal_statistics_output_filename
     '''
-
+    __optionnames = {}
+    
     def __init__(self, mode='sensitivity'):
         self.__mode = mode
         self.__experiment_name = ''
@@ -65,6 +66,10 @@ class Configuration:
 
         self.__save_parameter_values = False
         self.__parameter_value_output_filename = ''
+        self.__objective_values_output_filename = ''
+        self.__runtime_dynamics_output_filename = ''
+        self.__runtime_dynamics_frequency = -1
+
 
         self.__dump_model_prediction = True
 
@@ -197,6 +202,30 @@ class Configuration:
         self.__calibration_result_output_filename = filename
 
     @property
+    def objective_values_output_filename(self):
+        return os.path.join(self.output_directory, 
+                            self.__objective_values_output_filename)
+    @objective_values_output_filename.setter
+    def objective_values_output_filename(self, filename):
+        self.__objective_values_output_filename = filename
+    
+    @property
+    def runtime_dynamics_output_filename(self):
+        f = os.path.join(self.output_directory,
+                         self.__runtime_dynamics_output_filename)
+        return f
+    @runtime_dynamics_output_filename.setter
+    def runtime_dynamics_output_filename(self, filename):
+        self.__runtime_dynamics_output_filename = filename
+    
+    @property
+    def runtime_dynamics_frequency(self):
+        return self.__runtime_dynamics_frequency
+    @runtime_dynamics_frequency.setter
+    def runtime_dynamics_frequency(self, frequency:int):
+        self.__runtime_dynamics_frequency = frequency
+
+    @property
     def compute_prediction_efficiency(self):
         return self.__compute_prediction_efficiency
     @compute_prediction_efficiency.setter
@@ -275,6 +304,21 @@ class Configuration:
 
         return count
 
+    def get_constraints_count(self): return 0
+
+    def get_parameter_bounds(self):
+        lower, upper = [], []
+
+        for p in self.parameters:
+            lower.append(p.get_lower_bound())
+            upper.append(p.get_upper_bound())
+
+        return lower, upper
+    
+    def get_epsilons(self):
+        epsilons = [var.get_epsilon() for var in self.obs_variables]
+        return epsilons
+
     @staticmethod
     def read_configuration_file(filename):
         config = Configuration()
@@ -321,6 +365,8 @@ class Configuration:
 
     @staticmethod
     def read_settings(lines, config):
+        optionnames = Configuration.__optionnames
+
         while lines:
             line = lines.pop(0).strip()
             line = line.split('#')[0].strip()       # leave out hash comments
@@ -345,48 +391,45 @@ class Configuration:
                         if key in ['mode']: 
                             config.mode = value.lower()
 
-                        elif key in ['experiment_name', 'experiment name',
-                                     'experiment_id', 'experiment_id']:
+                        elif key in optionnames['experiment_name']:
                             config.experiment_name = value
 
-                        elif key in ['parameter_info_input_filename',
-                                     'parameter_info_filename']:
+                        elif key in optionnames['parameter_info']:
                             config.parameter_info_filename = value
 
-                        elif key in ['input_sample_filename',
-                                     'sample_filename']:
+                        elif key in optionnames['sample_filename']:
                             config.input_sample_filename = value
 
-                        elif key in ['parallel_evaluation',
-                                     'do_parallel_evaluation']:
+                        elif key in optionnames['parallel_computation']:
+
                             if value.lower() in ['y', 'yes', 'true', 't', '1']:
                                 config.parallel_evaluation = True
                             else: config.parallel_evaluation = False
 
-                        elif key in ['maximum_iteration']:
+                        elif key in optionnames['maximum_iteration']:
+
                             try: max_iter = int(value)
                             except: max_iter = 0
 
                             config.maximum_iteration = max_iter
 
-                        elif key in ['compute_upstream_from_station_file',
-                                     'upstream_from_station_file']:
+                        elif key in optionnames['compute_upstream']:
+
                             if value.lower() in ['y', 'yes', 'true', 't', '1']:
                                 config.compute_upstream_from_station_file = True
                             else:
                                 config.compute_upstream_from_station_file \
                                 = False
 
-                        elif key in ['disjoint_basin_extent']:
+                        elif key in optionnames['disjoint_basins']:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']:
                                 config.disjoint_basin_extent = True
                             else: config.disjoint_basin_extent = False
 
-                        elif key in ['output_directory']:
+                        elif key in optionnames['output_directory']:
                             config.output_directory = value
 
-                        elif key in ['calibration_output_filename',
-                                     'output_filename']:
+                        elif key in optionnames['result_outfile']:
                             config.calibration_result_output_filename = value
 
                         elif key in ['save_parameter_values']:
@@ -394,14 +437,24 @@ class Configuration:
                                 config.save_parameter_values = True
                             else: config.save_parameter_values = False
 
-                        elif key in ['parameter_value_output_filename']:
+                        elif key in optionnames['parameter_outfile']:
                             config.parameter_value_output_filename = value
+                            config.save_parameter_values = True
 
-                        elif key in ['dump_model_prediction',
-                                     'save_model_prediction']:
+                        elif key in optionnames['save_simulation_output']:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']:
                                 config.dump_model_prediction = True
                             else: config.dump_model_prediction = False
+                        
+                        elif key in optionnames['objective_outfile']:
+                            config.objective_values_output_filename = value
+                        
+                        elif key in optionnames['runtime_dynamics_outfile']:
+                            config.runtime_dynamics_output_filename = value
+                            
+                        elif key in optionnames['runtime_dynamics_frequency']:
+                            try: config.runtime_dynamics_frequency = int(value)
+                            except: config.runtime_dynamics_frequency = -1
 
                         elif key in ['compute_prediction_efficiency'
                                      'compute_model_efficiency']:
@@ -838,3 +891,80 @@ Name of the File: %s
         f.close()
 
         return True
+    
+    __optionnames['experiment_name'] = (
+        'experiment_name', 'experiment name', 'experiment_id', 'experiment_id',
+        'calibration_id', 'calibration_name', 'calibration id', 
+        'calibration name'
+    )
+
+    __optionnames['maximum_iteration'] = (
+        'maximum_iteration', 'maximum iteration', 'max iter', 'max_iter'
+    )
+
+    __optionnames['parameter_info'] = (
+        'parameter_info_input_filename', 'parameter_info_filename'
+    )
+
+    __optionnames['parallel_computation'] = (
+        'parallel_evaluation', 'do_parallel_evaluation', 'parallel_evaluations',
+        'parallel_evaluation', 'parallel evaluations', 'parallel evaluation', 
+        'parallel', 'parallelization'
+    )
+
+    __optionnames['output_directory'] = ('output_directory')
+    
+    __optionnames['save_simulation_output'] = (
+        'save_simulation_output', 'save simulation output', 
+        'dump_model_prediction', 'save_model_prediction'
+    )
+    __optionnames['objective_outfile'] = (
+        'objective_filename', 'objective_output_filename', 
+        'save_function_values', 'save function values', 'save_function_value', 
+        'save function value', 'funvalue_dumpfile', 'funvalue dumpfile'
+    )
+    
+    __optionnames['parameter_outfile'] = (
+        'save_param_values' , 'save param values' , 'save_param_value' , 
+        'save param value', 'parameter_dumpfile', 'parameter dumpfile',
+        'parameter_value_output_filename'
+    )
+    
+    __optionnames['result_outfile'] = (
+        'result_outfile', 'calibration_output_filename', 'output_filename',
+        'result_filelname', 'result_dumpfile', 'output_filename'
+    )
+
+    __optionnames['runtime_dynamics_outfile'] = (
+        'runtime_dynamics_filename', 'runtime dynamics filename'
+    )
+
+    __optionnames['runtime_dynamics_frequency'] = (
+        'runtime_dynamics_write_frequency', 'runtime_report_frequency', 
+        'runtime report frequency', 'runtime dynamics write frequency'
+    )
+
+    __optionnames['replace_nan'] = ()
+    
+    __optionnames['compute_upstream'] = (
+        'compute_upstream_from_station_file', 'upstream_from_station_file',
+        'target_cells_from_station_file', 'target_cell_from_station_file',
+        'target cells from station file', 'target cell from station file'
+    )
+    
+    __optionnames['disjoint_basins'] = (
+        'disjoint_basin_extent', 'disjoint basin extent'
+    )
+
+    __optionnames['many_calibration'] = ()
+    __optionnames['parameter_indexfile'] = ()
+    __optionnames['objective_indexfile'] = ()
+    __optionnames['report_outfile'] = ()
+    __optionnames['sleep_time'] = ()
+
+    ## Calibration options for sensitivity analysis
+    __optionnames['sample_filename'] = (
+        'input_sample_filename', 'sample_filename'
+    )
+    __optionnames['change_from_refsimulation'] = ()
+    __optionnames['function_to_compute_change'] = ()

@@ -316,8 +316,14 @@ class WaterGapIO:
 
 
     @staticmethod
-    def read_netcdf(filename:str, cells_xy:np.ndarray, varname_data:str, dimname_lon:str= 'lon', dimname_lat:str= 'lat',
-                    dimname_time='time'):
+    def read_netcdf(
+        filename:str, 
+        cells_xy:np.ndarray, 
+        varname_data:str, 
+        dimname_lon:str= 'lon', 
+        dimname_lat:str= 'lat',
+        dimname_time='time'
+    ):
 
         d = np.array([])
         if not os.path.exists(filename): return d

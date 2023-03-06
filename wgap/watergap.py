@@ -61,6 +61,7 @@ class DirInfo:
         else: return None
 
 class WaterGAP:
+    
     home_directory = ''
     json_parameter_file = ''
     directory_filename = ''
@@ -85,6 +86,83 @@ class WaterGAP:
 
     model_config_filename = ''
     model_config = None
+
+    repetitions_on_failure = 0
+    sleep_time = 0
+
+    __optionnames = {}
+    
+    __optionnames['home_directory'] = (
+        'home_directory', 'home directory', 'model_home_directory',
+        'model home directory'
+    )
+    
+    __optionnames['model_executable'] = (
+        'model_executable', 'model executable', 'executable', 'model',
+        'executable_name', 'executable name'
+    )
+
+    __optionnames['model_configfile'] = (
+        'wgap_config_filename', 'wgap config filename', 'model_config_filename'
+    )
+
+    __optionnames['additional_arguments'] = (
+        'arguments', 'system_arguments', 'additional_arguments'
+    )
+
+    __optionnames['parameter_filename'] = (
+        'parameter_file', 'parameter file', 'parameter_filename', 
+        'parameter filename'
+    )
+    __optionnames['start_year'] = ('start_year', 'start year')
+    __optionnames['end_year'] = ('end_year', 'end year')
+    
+    __optionnames['directory_filename'] = (
+        'data_directory_file', 'data directory file', 'directory_filename',
+        'directory filename'
+    )
+    
+    __optionnames['log_directory'] = ('log', 'log_directory', 'log directory')
+
+    __optionnames['output_endian_type'] = (
+        'output_endian_type', 'output endian type', 'endian_type', 'endian type'
+    )
+    __optionnames['cell_count'] = (
+        'grid_cell_count', 'grid cell count', 'ng', 'cell_count', 'cell count'
+    )
+
+    __optionnames['model_version'] = ('model_version', 'model version')
+
+    __optionnames['temporary_output_directory'] = (
+        'temporary_output_directory', 'temporary output directory'
+    )
+
+    __optionnames['dummy_model_execution'] = ()
+    __optionnames['remove_model_output'] = (
+        'delete_files', 'delete files', 'remove_modelfiles_after_evaluation',
+        'remove modelfiles after evaluation'
+    )
+    
+    __optionnames['station_filename'] = (
+        'station_file', 'station_filename', 'station file', 'station filename'
+    )
+    
+    __optionnames['rowindex_file'] = ()
+    __optionnames['colindex_file'] = ()
+    __optionnames['flowdirection_file'] = ()
+    __optionnames['area_file'] = ()
+    __optionnames['gcrc_file'] = ()
+    
+    __optionnames['sleep_time'] = (
+        'sleep_time_after_unsuccessful_run', 'sleep time after unsuccessful run',
+        'sleep_time_between_repetitions', 'sleep time between repetitions', 
+        'sleep_time', 'sleep time'
+    )
+
+    __optionnames['repetitions_on_failure'] = (
+        'max_repetitions_upon_failing_model_run', 'max_repetitions'
+    )
+    
 
     @staticmethod
     def get_json_parameter_filename():
@@ -244,6 +322,8 @@ class WaterGAP:
     @staticmethod
     def read_model_settings(list_of_lines):
         succeed = True
+        optionnames = WaterGAP.__optionnames
+
         try:
             while list_of_lines:
                 line = list_of_lines.pop(0).strip()
@@ -255,62 +335,67 @@ class WaterGAP:
                     if len(temp) == 2:
                         key, value = temp[0].strip().lower(), temp[1].strip()
 
-                        if key in ['home_directory', 'home output_directory']:
+                        if key in optionnames['home_directory']:
                             WaterGAP.home_directory = value
-                        elif key in ['wgap_config_filename',
-                                     'wgap config filename']:
+                        
+                        elif key in optionnames['model_configfile']:
                             WaterGAP.model_config_filename = value
                             if WaterGAP.model_version != 'wghm2.2e':
                                 WaterGAP.set_model_version('wghm2.2e')
-                        elif key in ['system_arguments', 'arguments']:
+                        
+                        elif key in optionnames['additional_arguments']:
                             WaterGAP.set_system_arguments(value)
 
-                        elif key in ['parameter_file', 'parameter_filename',
-                                     'parameter file',
-                                     'parameter config_filename']:
+                        elif key in optionnames['parameter_filename']:
                             WaterGAP.json_parameter_file = value
-                        elif key in ['start_year', 'start year']:
+                        
+                        elif key in optionnames['start_year']:
                             try: WaterGAP.start_year = int(value)
                             except: pass
-                        elif key in ['end_year', 'end year']:
+                        
+                        elif key in optionnames['end_year']:
                             try: WaterGAP.end_year = int(value)
                             except: pass
-                        elif key in ['datadir_filename', 'directory_file',
-                                     'directory_filename',
-                                     'datadir config_filename',
-                                     'output_directory file',
-                                     'output_directory config_filename',
-                                     'data_directory_file',
-                                     'data output_directory file']:
+                        
+                        elif key in optionnames['directory_filename']:
                             WaterGAP.directory_filename = value
-                        elif key in ['log_directory', 'log directory', 'log']:
+                        
+                        elif key in optionnames['log_directory']:
                             WaterGAP.log_directory = value
-                        elif key in ['output_endian_type', 'output endian type',
-                                     'endian_type', 'endian type']:
+                        
+                        elif key in optionnames['output_endian_type']:
                             if value == '1':
                                 WaterGAP.output_endian_type = FileEndian.little_endian
                             else: WaterGAP.output_endian_type = FileEndian.big_endian
-                        elif key in ['executable', 'model_executable', 'model',
-                                     'model executable', 'executable_name',
-                                     'executable name']:
+                        
+                        elif key in optionnames['model_executable']:
                             WaterGAP.executable = value
-                        elif key in ['grid_cell_count', 'grid cell count',
-                                     'ng', 'ngc']:
+                        
+                        elif key in optionnames['cell_count']:
                             try: WaterGAP.ngc = int(value)
                             except: pass
-                        elif key in ['station_file', 'station_filename',
-                                     'station file', 'station filename']:
+                        
+                        elif key in optionnames['station_filename']:
                             WaterGAP.station_filename = value
-                        elif key in ['model_version', 'model version']:
+                        
+                        elif key in optionnames['model_version']:
                             WaterGAP.set_model_version(value)
-                        elif key in ['remove_modelfiles_after_evaluation',
-                                     'remove modelfiles after evaluation']:
+                        
+                        elif key in optionnames['remove_model_output']:
                             if value.lower() in ['n', 'no', 'false', 'f', '0']:
                                 WaterGAP.remove_waterGap_files_after_evaluation \
                                 = False
-                        elif key in ['temporary_output_directory',
-                                     'temporary output directory']:
+                        
+                        elif key in optionnames['temporary_output_directory']:
                                 WaterGAP.temporary_output_directory = value
+                        
+                        elif key in optionnames['repetitions_on_failure']:
+                            try: WaterGAP.repetitions_on_failure = int(value)
+                            except: WaterGAP.repetitions_on_failure = 0
+                        
+                        elif key in optionnames['']:
+                            try: WaterGAP.sleep_time = float(value)
+                            except: WaterGAP.sleep_time = 0
 
         except: succeed = False
 
