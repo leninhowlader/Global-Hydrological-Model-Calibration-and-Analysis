@@ -55,20 +55,21 @@ class DataCloud:
 
     def data_length(self): return len(self.data)
 
-    def index_count(self):
-        if self.__index_count == -1:
-            if not self.data_indices: self.__index_count = 0
-            else:
-                self.__index_count = 99999
-                for i in range(len(self.data_indices)):
-                    if len(self.data_indices[i]) < self.__index_count: self.__index_count = len(self.data_indices[i])
-                if self.__index_count == 99999: self.__index_count = 0
-        return self.__index_count
+    def index_count(self): return self.data_indices.shape[1]
 
-    def sort(self, algorithm=SortAlgorithm.bubble_sort):
+    # def sort(self, algorithm=SortAlgorithm.bubble_sort):
+    #     if not self.sorted:
+    #         if algorithm == SortAlgorithm.bubble_sort: self.bubble_sort()
+    #         else: self.heap_sort()
+
+    #         self.sorted = True
+
+    def sort(self):
         if not self.sorted:
-            if algorithm == SortAlgorithm.bubble_sort: self.bubble_sort()
-            else: self.heap_sort()
+            n = self.data_indices.shape[1]
+            ii = np.lexsort([self.data_indices[:,i] for i in reversed(range(n))])
+            self.data_indices = self.data_indices[ii]
+            self.data = self.data[ii]
 
             self.sorted = True
 
@@ -172,6 +173,59 @@ class DataCloud:
             else: ndx2 += 1
 
         return dt1, dt2
+
+    @staticmethod
+    def index_coupling(cloud1, cloud2):
+        def compare(x1, x2):
+            for i in range(len(x1)):
+                if x1[i] > x2[i]: return 1
+                elif x1[i] < x2[i]: return 2    
+            return 0
+        
+        ii, jj = [], []
+
+        cloud1.sort()
+        cloud2.sort()
+
+        indices1, indices2 = cloud1.data_indices, cloud2.data_indices
+
+        i, j = 0, 0
+        n1, n2 = indices1.shape[0], indices2.shape[0]
+        if indices1.shape[1] != indices2.shape[1]: 
+            return np.empty(0), np.empty(0)
+
+        while i < n1 and j < n2:
+            r = compare(indices1[i], indices2[j])
+            if r == 0:
+                ii.append(i)
+                jj.append(j)
+                
+                i += 1
+                j += 1
+            elif r == 1: j += 1
+            else: i += 1
+        
+        return np.array(ii), np.array(jj)
+
+    @staticmethod
+    def arithmetic_operation(cloud1, cloud2, func='+'):
+        cloud = DataCloud()
+        
+        try:
+            ii, jj = DataCloud.index_coupling(cloud1, cloud2)
+            cloud.data_indices = cloud1.data_indices[ii].copy()
+            if func == '+':
+                cloud.data = cloud1.data[ii] + cloud2.data[jj]
+            elif func == '-':
+                cloud.data = cloud1.data[ii] - cloud2.data[jj]
+            elif func == '*':
+                cloud.data = cloud1.data[ii] * cloud2.data[jj]
+            elif func == '/':
+                cloud.data = cloud1.data[ii] / cloud2.data[jj]
+            cloud.sorted = True
+        except: pass
+
+        return cloud
 
     @staticmethod
     def mathop_between_clouds(cloud1, cloud2, fun='+'):
@@ -1338,11 +1392,12 @@ class DerivedVariable(Variable):
             for i in range(len(temp)): temp[i] = temp[i].strip()
 
             try:
+                
                 cloud1 = self.find_variable(temp[0], simvars, obsvars).data_cloud
 
                 for i in range(1, len(temp)):
                     cloud2 = self.find_variable(temp[i], simvars, obsvars).data_cloud
-                    succeed, cloud1 = DataCloud.mathop_between_clouds(cloud1, cloud2, fun='+')
+                    cloud1 = DataCloud.arithmetic_operation(cloud1, cloud2, fun='+')
                     if not succeed: break
 
                 if succeed: self.data_cloud = cloud1
