@@ -2,6 +2,7 @@ import sys, os, numpy as np
 from core.configuration import Configuration
 from wgap.watergap import WaterGAP
 from algorithm.borg import *
+from analyses.calibration import Calibration, BorgMOEA
 
 config = None
 libborg_path = './algorithm/libborg.so'
@@ -36,101 +37,10 @@ nconts = 0
 #
 ###
 
-def model_evaluation(*vars):
-    global config
-
-    # update parameters and create parameter file
-    # run model
-    # compute objectives and constraints
-
-    x, y = vars[0], vars[1]
-    objs = [x**2 + y**2, (x-2)**2 + y**2]
-    cons = []
-    
-    return (objs, cons)
-
-def BORG_Initialize(random_seed):
-    global libborg_path, libmpi_path, libc_path
-
-    BorgConfiguration.setStandardCLibrary(libc_path)
-    BorgConfiguration.setBorgLibrary(libborg_path)
-    BorgConfiguration.seed(random_seed)
-    BorgConfiguration.startedMPI = False
-
-def MPI_Start():
-    global world_rank, world_size
-    
-    BorgConfiguration.startMPI(libmpi_path)
-    
-    world_rank = BorgConfiguration.getWorldRank()
-    world_size = BorgConfiguration.getWorldSize()
-
-def MPI_Stop():
-    BorgConfiguration.stopMPI()
-
-
-def BORG_Optimization_Problem():
-    global config, nvars, nobjs, nconts
-    
-    nvars = config.get_parameter_count()
-    nobjs = config.get_objective_count()
-    nconts = config.get_constraints_count()
-
-    problem = Borg(nvars, nobjs, nconts, function=model_evaluation)
-
-    # set bounds of decision variables
-    lower_bound, upper_bound = config.get_parameter_bounds()
-    problem.setBounds(lower_bound, upper_bound)
-    # [end]
-
-    # set epsilons for objectives
-    epsilons = config.get_epsilons()
-    problem.setEpsilons(epsilons)
-    # [end]
-
-    return problem
-
-def BORG_Problem_Description():
-    global config, world_rank
-    
-    if world_rank == 0:
-        out = sys.stdout
-
-        print('Problem definition:', file=out)
-
-        line = '\tModel parameter(s):'.ljust(56) + 'Min'.ljust(10) + 'Max'.ljust(10)
-        print(line, file=out)
-        
-        for param in config.parameters:
-            line = ('\t\t' + param.parameter_name.ljust(40) 
-                    + str(param.get_lower_bound()).rjust(10) 
-                    + str(param.get_upper_bound()).rjust(10))
-            print(line, file=out)
-
-        print('\n\tVariables:', file=out)
-        line = '\tObservation Variables'.rjust(35) + 'Prediction variable'.rjust(35)
-        print(line, file=out)
-
-        line = '--------------------'.rjust(35) + '--------------------'.rjust(35)
-        print(line, file=out)
-
-        for i in range(len(config.obs_variables)):
-            var = config.obs_variables[i]
-            line = ('\t\t(%02d) '%(i+1) + var.varname.ljust(30) 
-                    + var.counter_variable.ljust(30))
-            print(line, file=out)
-        
-        n = config.get_parameter_count()
-        print('\n\tTotal number of decision variables: %d'%n, file=out)
-
-        n = config.get_objective_count()
-        print('\tTotal number of objectives: %d'%n, file=out)
-        
-        n = config.get_constraints_count()
-        print('\tTotal number of constraints: %d'%n, file=out)
 
 def main(argv):
     global config, world_rank, world_size
+    global libborg_path, libmpi_path, libc_path
 
     is_silent_mode = False
     random_seed = 37
@@ -150,46 +60,49 @@ def main(argv):
                 i += 1
     if not filename_config: filename_config = argv[argc - 1]
 
+    # set borg, mpi, and std C libraries
+    BorgMOEA.set_borg_library(libborg_path)
+    BorgMOEA.set_stdandard_C_library(libc_path)
+    BorgMOEA.set_mpi_library(libmpi_path)
+
+    # initialize BORG
+    BorgMOEA.BORG_Initialize(random_seed=random_seed)
+
+    # initialize MPI
+    world_size, world_rank = BorgMOEA.MPI_Start()
+
     # read configuration file
     config = Configuration.read_configuration_file(filename=filename_config)
     
     errcode = config.is_okay_errcode(skip_observation=False)
     if errcode != 0: 
-        print('Configuration check was not successful.')
+        if world_rank == 0:
+            print('Configuration check was not successful.')
+        
+        BorgMOEA.MPI_Stop()
         return errcode
     
     if not WaterGAP.is_okay():
-        print('Wrong model configuration!')
+        if world_rank == 0:
+            print('Wrong model configuration!')
+        BorgMOEA.MPI_Stop()
         return -1
 
-    # initialize BORG
-    BORG_Initialize(random_seed=random_seed)
-
-    # initialize MPI
-    MPI_Start()
-
     # define problem
-    problem = BORG_Optimization_Problem()
+    eval_func = Calibration.model_evaluation
+    succeed = BorgMOEA.BORG_Optimization_Problem_Create(
+        poc_config=config, 
+        eval_func=eval_func
+    )
     
-    BORG_Problem_Description()
+    if world_rank == 0: 
+        BorgMOEA.BORG_Problem_Description(config_poc=config, out=sys.stdout)
 
     # solve optimization problem
-    max_evaluations = config.maximum_iteration
-    results = problem.solveMPI(
-        islands=1,
-        maxEvaluations=max_evaluations
-    )
-
-    # print output 
-    if results:
-        try:
-            f = open(config.calibration_result_output_filename, 'w')
-            results.display(out=f, separator=' ')
-            f.close()
-        except: pass
+    succeed = BorgMOEA.BORG_SolveProblem(config_poc=config)
     
     # Stop MPI
-    MPI_Stop()
+    BorgMOEA.MPI_Stop()
 
     return 0
 
@@ -202,10 +115,12 @@ def test_evaluation(*vars):
     return (objs, cons)
 
 def test(argv):
-    BORG_Initialize()
+    global world_rank, world_size
+    BorgMOEA.BORG_Initialize(random_seed=37)
 
-    MPI_Start()
+    world_size, world_rank = BorgMOEA.MPI_Start()
 
+    from algorithm.borg import Borg
     borg = Borg(2, 2, 0, function=test_evaluation)
     borg.setBounds([-50, 50], [-50, 50])
     borg.setEpsilons(0.01, 0.01)
@@ -213,11 +128,11 @@ def test(argv):
     result = borg.solveMPI(maxEvaluations=1000)
     if result: result.display()
 
-    MPI_Stop()
+    BorgMOEA.MPI_Stop()
 
     if world_rank == 0: print("Hi I am from master")
     else: print("I am worker no. %d" %world_rank)
 
     return 0
 
-if __name__ == '__main__': main(sys.argv)
+if __name__ == '__main__': test(sys.argv)

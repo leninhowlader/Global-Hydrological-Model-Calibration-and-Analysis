@@ -2,7 +2,7 @@
 !.gitignore
 !algorithm/*.py
 !analyses/*.py
-!calibration/*.py
+!core/*.py
 !observation/*.py
 !utilities/*.py
 !utilities/data/*

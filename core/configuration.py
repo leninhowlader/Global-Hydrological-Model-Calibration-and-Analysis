@@ -97,6 +97,13 @@ class Configuration:
         self.parameters = []
         self.samples = []
 
+        self.__one_problem = True
+
+    @property
+    def single_problem_mode(self): return self.__one_problem
+    @single_problem_mode.setter
+    def single_problem_mode(self, flag:bool): self.__one_problem = flag
+
     @property
     def experiment_name(self):
         return self.__experiment_name
