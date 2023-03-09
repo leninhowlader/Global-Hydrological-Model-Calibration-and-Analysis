@@ -37,7 +37,6 @@ Created on Tue Nov 12 15:26:49 2019
 import os, sys, numpy as np, pandas as pd
 from collections import OrderedDict
 
-sys.path.append('F:/mhasan/Code&Script/ProjectWGHM')
 from wgap.wgapio import WaterGapIO
 
 class SnowCoverage:

@@ -1,8 +1,8 @@
 
 import sys, os, pandas as pd, numpy as np
 
-from calibration.configuration import  Configuration
-from calibration.stats import stats
+from core.configuration import  Configuration
+from core.stats import stats
 from wgap.watergap import WaterGAP
 
 

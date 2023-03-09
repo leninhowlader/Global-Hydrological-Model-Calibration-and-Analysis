@@ -1,5 +1,5 @@
 import sys, os
-sys.path.append('..')
+
 from utilities.globalgrid import GlobalGrid
 from utilities.fileio import FileInputOutput as io
 from datetime import datetime

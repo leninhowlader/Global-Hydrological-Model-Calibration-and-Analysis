@@ -1,5 +1,5 @@
 import os, math, sys
-sys.path.append('..')
+
 from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid
 

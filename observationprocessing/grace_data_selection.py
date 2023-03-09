@@ -131,7 +131,7 @@ cell_info_using_station_file = 'F:/mhasan/experiments/PCWGAPWB/SA/basins/STATION
 
 # IMPORT STATEMENTS
 import sys, tarfile, os
-sys.path.extend('..')
+
 from utilities.globalgrid import GlobalGrid
 from datetime import datetime
 from utilities.fileio import FileInputOutput as io

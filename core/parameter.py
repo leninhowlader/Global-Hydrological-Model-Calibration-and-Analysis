@@ -1,7 +1,7 @@
 __author__ = 'mhasan'
 
 import sys
-sys.path.append('..')
+
 from utilities.fileio import FileInputOutput as io
 
 class Parameter:

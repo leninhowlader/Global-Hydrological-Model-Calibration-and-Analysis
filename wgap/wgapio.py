@@ -1,5 +1,5 @@
 import os, sys, numpy as np, pandas as pd
-sys.path.append('..')
+
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange

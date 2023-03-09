@@ -86,7 +86,7 @@ output_file_area = 'output/ganges_areas_hardinge_bridge.txt'                    
 
 # IMPORT STATEMENTS
 import os, sys
-sys.path.append('..')
+
 from utilities.globalgrid import GlobalGrid
 from utilities.fileio import FileInputOutput as io
 from utilities.upstream import Upstream

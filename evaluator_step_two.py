@@ -51,7 +51,7 @@ flag_compute_anomaly = True
 
 # import required modules and classes
 import os, numpy as np
-from calibration.configuration import Configuration
+from core.configuration import Configuration
 from wgap.wgapio import WaterGapIO
 from wgap.watergap import WaterGAP
 from utilities.fileio import FileInputOutput as io

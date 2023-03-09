@@ -1,5 +1,5 @@
 import sys, os, numpy as np
-from calibration.configuration import Configuration
+from core.configuration import Configuration
 from wgap.watergap import WaterGAP
 from algorithm.borg import *
 

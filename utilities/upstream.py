@@ -4,7 +4,7 @@ __author__ = 'mhasan'
 
 import sys, os, math, numpy as np
 from collections import OrderedDict
-sys.path.append('..')
+
 from utilities.globalgrid import GlobalGrid
 from utilities.enums import FileEndian
 

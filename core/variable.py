@@ -1,10 +1,9 @@
 __author__ = 'mhasan'
 
 import sys, numpy as np, os
-sys.path.append('..')
 from utilities.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
 from utilities.fileio import FileInputOutput as io
-from calibration.stats import stats
+from core.stats import stats
 from calendar import isleap
 from collections import OrderedDict
 from wgap.wgapio import WaterGapIO

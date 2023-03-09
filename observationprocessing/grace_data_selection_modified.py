@@ -130,7 +130,7 @@ wghm_cellinfo_from_station_file = 'F:/mhasan/experiments/PCWGAPWB/SA/basins/STAT
 
 # IMPORT STATEMENTS
 import sys, tarfile, os
-sys.path.extend('..')
+
 from utilities.globalgrid import GlobalGrid
 GlobalGrid.set_model_version(model_version)
 from datetime import datetime

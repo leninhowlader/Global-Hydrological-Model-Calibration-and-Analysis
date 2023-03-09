@@ -1,7 +1,6 @@
 import sys, numpy as np
 from collections import OrderedDict
 
-sys.path.append('..')
 from utilities.globalgrid import GlobalGrid as gg
 from utilities.upstream import Upstream as up
 from wgap.wgapio import WaterGapIO as wio

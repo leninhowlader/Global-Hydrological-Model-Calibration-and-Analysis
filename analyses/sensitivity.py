@@ -8,12 +8,10 @@ from collections import OrderedDict
 from copy import deepcopy
 from matplotlib import pyplot as plt
 
-
-sys.path.append('..')
 from wgap.wgapio import WaterGapIO
 from wgap.watergap import WaterGAP
-from calibration.configuration import Configuration
-from calibration.seasonalstats import SeasonalStatistics
+from core.configuration import Configuration
+from core.seasonalstats import SeasonalStatistics
 from utilities.fileio import FileInputOutput as io
 
 class SensitivityAnalysis:

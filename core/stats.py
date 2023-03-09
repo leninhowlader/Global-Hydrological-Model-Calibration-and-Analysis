@@ -1,7 +1,4 @@
 #modified on: 13-Nov-2014
-from os import times
-import sys
-sys.path.append('..')
 import numpy as np
 from utilities.enums import ObjectiveFunction, DataNormalization
 

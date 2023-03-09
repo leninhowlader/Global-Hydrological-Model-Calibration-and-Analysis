@@ -2,7 +2,7 @@
 __author__ = 'mhasan'
 
 import os, sys
-from calibration.configuration import Configuration
+from core.configuration import Configuration
 from wgap.watergap import WaterGAP
 from utilities.fileio import FileInputOutput as io
 from analyses.sensitivity import SensitivityAnalysis

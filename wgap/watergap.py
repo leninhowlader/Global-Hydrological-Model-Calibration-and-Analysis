@@ -1,13 +1,13 @@
 __author__ = 'mhasan'
 
 import json, os, sys
-sys.path.append('..')
 from copy import deepcopy
-from utilities.enums import FileEndian, PredictionType
 from subprocess import call
 import shutil
-from calibration.variable import DataCloud
-from calibration.stats import stats
+
+from utilities.enums import FileEndian, PredictionType
+from core.variable import DataCloud
+from core.stats import stats
 from collections import OrderedDict
 from utilities.globalgrid import GlobalGrid as gg
 from wgap.wgapconfig import WaterGapConfig

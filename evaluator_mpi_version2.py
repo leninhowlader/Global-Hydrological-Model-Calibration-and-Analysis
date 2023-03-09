@@ -5,12 +5,12 @@ import os, sys
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
 import numpy as np
-from calibration.configuration import Configuration
+from core.configuration import Configuration
 from wgap.watergap import WaterGAP
 from wgap.wgapio import WaterGapIO
 from utilities.fileio import FileInputOutput as io
 from analyses.sensitivity import SensitivityAnalysis
-from calibration.stats import stats
+from core.stats import stats
 
 run_model = SensitivityAnalysis.SampleEvaluation.run_model
 

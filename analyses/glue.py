@@ -2,7 +2,7 @@ import os, numpy as np, pandas as pd
 from datetime import datetime, timedelta
 
 from wgap.wgapio import WaterGapIO
-from calibration.stats import stats
+from core.stats import stats
 
 class Glue:
     __verbose_frequency = 200

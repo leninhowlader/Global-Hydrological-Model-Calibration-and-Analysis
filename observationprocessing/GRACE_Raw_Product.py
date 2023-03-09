@@ -9,7 +9,7 @@ unit_conversion_factor = 10**-6
 
 from netCDF4 import Dataset
 import numpy as np, sys, os
-sys.path.append('..')
+
 from utilities.globalgrid import GlobalGrid
 from utilities.fileio import FileInputOutput as io
 

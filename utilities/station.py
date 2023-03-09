@@ -1,7 +1,7 @@
 __author__ = 'mhasan'
 
 import sys, os, numpy as np
-sys.path.append('..')
+
 from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid as gg
 from utilities.basininfo import BasinInfo

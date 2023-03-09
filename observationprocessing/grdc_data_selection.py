@@ -43,7 +43,7 @@ output_file = 'brahmaputra_discharge.txt'                # output config_filenam
 
 #---------------------------:) DO NOT CHANGE ANYTHING BELOW IF YOU ARE NOT CONFIDENT :)----------------------------------#
 import os, sys
-sys.path.append('..')
+
 from datetime import datetime
 from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid

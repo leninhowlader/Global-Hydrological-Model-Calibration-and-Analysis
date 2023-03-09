@@ -1,7 +1,6 @@
 import os, sys, numpy as np
 from netCDF4 import Dataset
 
-sys.path.append('..')
 from utilities.globalgrid import GlobalGrid
 # from wgap.wgapio import WaterGapIO
 

@@ -1,8 +1,8 @@
 
 import sys, numpy as np
-sys.path.append('..')
-from calibration.variable import DataCloud
-from calibration.stats import stats
+
+from core.variable import DataCloud
+from core.stats import stats
 from collections import OrderedDict
 
 

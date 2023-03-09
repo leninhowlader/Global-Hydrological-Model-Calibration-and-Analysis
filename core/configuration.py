@@ -3,16 +3,15 @@ __author__ = 'mhasan'
 import sys, os, numpy as np
 from datetime import datetime
 
-if '..' not in sys.path: sys.path.append('..')
-from calibration.variable import ObsVariable, SimVariable, DerivedVariable
+from core.variable import ObsVariable, SimVariable, DerivedVariable
 from wgap.watergap import WaterGAP
-from calibration.parameter import Parameter
+from core.parameter import Parameter
 from utilities.fileio import FileInputOutput as io
 from utilities.station import Station
 from utilities.upstream import Upstream
 from utilities.globalgrid import GlobalGrid as gg
 from wgap.paraminfo import ParameterInfo
-from calibration.stats import stats
+from core.stats import stats
 
 class Configuration:
     '''
