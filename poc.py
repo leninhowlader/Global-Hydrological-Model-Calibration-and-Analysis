@@ -134,9 +134,6 @@ def test(argv):
 
     BorgMOEA.MPI_Stop()
 
-    if world_rank == 0: print("Hi I am from master")
-    else: print("I am worker no. %d" %world_rank)
-
     return 0
 
 if __name__ == '__main__': main(sys.argv)
