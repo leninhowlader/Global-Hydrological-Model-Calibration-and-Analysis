@@ -7,6 +7,7 @@ from wgap.watergap import WaterGAP
 from core.stats import stats
 from core.variable import DataCloud
 from algorithm.borg import *
+from utilities.fileio import FileInputOutput
 
 class Calibration:
     __nvars = 0
@@ -88,11 +89,12 @@ class Calibration:
 
         # assign id for each model run
         Calibration.__id_local += 1
-        id_modelrun = int(my_rank * 1e5 + Calibration.__id_local)
-        filename_specifier = '%s_%d'%(config.experiment_name, id_modelrun)
+        evaluation_num = int(my_rank * 1e5 + Calibration.__id_local)
+        filename_specifier = '%s_%d'%(config.experiment_name, evaluation_num)
         #
 
-        messages.append('\n\nModel evaluation started with ID-%d:'%id_modelrun)
+        messages.append(
+            '\n\nModel evaluation started with ID-%d:'%evaluation_num)
         t0 = datetime.now()
         # end [step-x]
 
@@ -239,7 +241,8 @@ class Calibration:
         # end [step-x]
 
         # [step-x] write predictions, parameter values, objectives etc..
-
+        Calibration.write_parameter_values(evaluation_num=evaluation_num)
+        Calibration.write_objective_values(evaluation_num, objs)
         # end [step-x]
 
         t3 = datetime.now()
@@ -248,6 +251,9 @@ class Calibration:
             %((t3-t0).total_seconds()/60)
         )
 
+        #for line in messages: print(line, file=sys.stdout)
+        FileInputOutput.print_on_screen(messages)
+        
         return (objs, conts)
     
     @staticmethod
