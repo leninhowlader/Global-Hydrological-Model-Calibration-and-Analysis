@@ -5,8 +5,8 @@ from algorithm.borg import *
 from analyses.calibration import Calibration, BorgMOEA
 
 config = None
-libborg_path = './algorithm/libborg.so'
-libmpi_path = './algorithm/libmpi.so'
+libborg_path = '/home/mhasan/ProjectWGHM/algorithm/libborg.so'
+libmpi_path = 'libmpi.so'
 libc_path = ''
 world_rank = -1
 world_size = 0
@@ -89,7 +89,11 @@ def main(argv):
         return -1
 
     # define problem
+    Calibration.set_calibration_configurations(config)
     eval_func = Calibration.model_evaluation
+    Calibration.set_world_rank(world_rank)
+    Calibration.set_world_size(world_size)
+    
     succeed = BorgMOEA.BORG_Optimization_Problem_Create(
         poc_config=config, 
         eval_func=eval_func
