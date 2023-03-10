@@ -1,5 +1,6 @@
 import os, sys, numpy as np
 from collections import OrderedDict
+from datetime import datetime
 
 from core.configuration import Configuration
 from wgap.watergap import WaterGAP
@@ -27,7 +28,7 @@ class Calibration:
     @staticmethod
     def get_nobjs(): return Calibration.__nobjs
     @staticmethod
-    def set_nojbs(nobjs:int): Calibration.__nobjs = nobjs
+    def set_nobjs(nobjs:int): Calibration.__nobjs = nobjs
 
     @staticmethod
     def get_nconts(): return Calibration.__nconts
@@ -49,6 +50,11 @@ class Calibration:
     @staticmethod
     def set_calibration_configurations(config:Configuration):
         Calibration.__config = config
+
+        Calibration.__nvars = config.get_parameter_count()
+        Calibration.__nobjs = config.get_objective_count()
+        Calibration.__nconts = config.get_constraints_count()
+        
     
     @staticmethod
     def is_okay():
@@ -86,12 +92,17 @@ class Calibration:
         filename_specifier = '%s_%d'%(config.experiment_name, id_modelrun)
         #
 
-        messages.append('\n\nModel evaluation started with ID-%d'%id_modelrun)
+        messages.append('\n\nModel evaluation started with ID-%d:'%id_modelrun)
+        t0 = datetime.now()
         # end [step-x]
 
 
         ## [step-x]: update parameters
         Calibration.update_parameters(vars)
+        for i in range(nvars):
+            param = Calibration.__config.parameters[i]
+            messages.append('\t(%02d) %s: %f'%(
+                i, param.parameter_name.ljust(40), param.parameter_value))
         
         filename = WaterGAP.get_json_parameter_filename()
         filename = os.path.split(filename)[-1][:-5] + '_' \
@@ -165,10 +176,16 @@ class Calibration:
         # end [step-x]
 
         # [step-x]: execute model with new parameters
+        t1 = datetime.now()
+        messages.append('\tModel execution started at %s'%str(t1))
         if not WaterGAP.execute_model(
             arguments, log_file=log_file, error_file=error_file):
             WaterGAP.remove_files(arguments)
             return (objs, conts)
+        t2 = datetime.now()
+        messages.append('\tExecution ended at %s'%str(t2))
+        messages.append(
+            '\tTotal duration (in min): %0.2f'%((t2-t1).total_seconds()/60))
         # end [step-x]
 
         # [step-x] read simulation output
@@ -204,18 +221,32 @@ class Calibration:
         # 
         temp = Calibration.compute_objectives()
         if len(temp) == nobjs:
-            for i in range(nobjs): nobjs[i] = temp[i]
+            for i in range(nobjs): objs[i] = temp[i]
+        messages.append('\tObjectives: %s'%(','.join(
+                                    ['%0.2f'%temp[i] for i in range(nobjs)])))
         # end [step-x]
 
         # [step-x] compte constraints
         temp = Calibration.compute_constraints()
         if len(temp) == nconts:
             for i in range(nconts): conts[i] = temp[i]
+        messages.append('\tConstraints: %s'%(','.join(
+                                    ['%0.2f'%temp[i] for i in range(nconts)])))
         # end [step-x]
 
         # [step-x] remove simulation output files
         WaterGAP.remove_files(arguments)
         # end [step-x]
+
+        # [step-x] write predictions, parameter values, objectives etc..
+
+        # end [step-x]
+
+        t3 = datetime.now()
+        messages.append(
+            '\tTotal duration of model evaluation [in min]: %0.2f'
+            %((t3-t0).total_seconds()/60)
+        )
 
         return (objs, conts)
     
@@ -314,8 +345,39 @@ class Calibration:
     def update_parameters(vars):
         config = Calibration.__config
         
-        for i in len(vars):
+        for i in range(len(vars)):
             config.parameters[i].parameter_value = vars[i]
+    
+    @staticmethod
+    def write_parameter_values(evaluation_num):
+        filename = Calibration.__config.parameter_value_output_filename
+        if filename:
+            filename = '%s_%d_.%s'%(
+                filename[:-4], Calibration.__world_rank, filename[-3:]
+            )
+
+            values = [evaluation_num] +  [
+                p.parameter_value for p in  Calibration.__config.parameters]
+
+            f = open(filename, 'a')
+            f.write(','.join([str(x) for x in values]) + '\n')
+            f.close()
+    
+    @staticmethod
+    def write_objective_values(evaluation_num, objs):
+        filename = Calibration.__config.objective_values_output_filename
+        if filename:
+            filename = '%s_%d_.%s'%(
+                filename[:-4], Calibration.__world_rank, filename[-3:]
+            )
+
+            values = [str(evaluation_num)] + [
+                str(x) for x in objs
+            ]
+            
+            f = open(filename, 'a')
+            f.write(','.join(values) + '\n')
+            f.close()
 
 class BorgMOEA:
     __libborg_path = './algorithm/libborg.so'
@@ -353,12 +415,13 @@ class BorgMOEA:
 
             # set bounds of decision variables
             lower_bound, upper_bound = poc_config.get_parameter_bounds()
-            problem.setBounds(lower_bound, upper_bound)
+            bounds = [[lower_bound[i], upper_bound[i]] for i in range(nvars)]
+            problem.setBounds(*bounds)
             # [end]
 
             # set epsilons for objectives
             epsilons = poc_config.get_epsilons()
-            problem.setEpsilons(epsilons)
+            problem.setEpsilons(*epsilons)
             # [end]
 
             BorgMOEA.__borg_problem_array.clear()
@@ -431,7 +494,9 @@ class BorgMOEA:
 
             results = problem.solveMPI(
                 islands=1,
-                maxEvaluations=max_evaluations
+                maxEvaluations=max_evaluations,
+                runtime=config_poc.runtime_dynamics_output_filename,
+                runtimeFrequency=config_poc.runtime_dynamics_frequency
             )
             succeed = True
 
