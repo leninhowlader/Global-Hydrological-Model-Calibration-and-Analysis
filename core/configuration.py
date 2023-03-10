@@ -578,12 +578,19 @@ class Configuration:
         # step: check completeness of observation variables (if any). Try to load the observation data
         if not skip_observation:
             if len(self.obs_variables) > 0:
-                if not ObsVariable.data_collection(self.obs_variables): return 300
+                # if not ObsVariable.data_collection(self.obs_variables): return 300
+                if not ObsVariable.read_observations(self.obs_variables): 
+                    return 300
 
                 varnum = 0
                 for var in self.obs_variables:
                     varnum += 1
                     if not var.is_okay(): return (300 + varnum)
+                
+                # for var in self.obs_variables:
+                #     var.data_cloud.data = np.array(var.data_cloud.data)
+                #     var.data_cloud.data_indices \
+                #     = np.array(var.data_cloud.data_indices) 
 
         # step: check completeness of derived variables (if any)
         if len(self.derived_variables) > 0:
