@@ -394,7 +394,7 @@ class Configuration:
 
                         if not (key and value): continue
 
-                        if key in ['mode']: 
+                        if key in optionnames['experiment_type']: 
                             config.mode = value.lower()
 
                         elif key in optionnames['experiment_name']:
@@ -898,6 +898,10 @@ Name of the File: %s
 
         return True
     
+    __optionnames['experiment_type'] = (
+        'experiment_type', 'experiment type', 'mode'
+    )
+
     __optionnames['experiment_name'] = (
         'experiment_name', 'experiment name', 'experiment_id', 'experiment_id',
         'calibration_id', 'calibration_name', 'calibration id', 
