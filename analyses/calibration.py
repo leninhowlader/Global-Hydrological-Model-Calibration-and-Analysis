@@ -299,7 +299,7 @@ class Calibration:
                 f = stats.objective_function(
                         fun=fun, 
                         sim=sim, 
-                        obs=o
+                        obs=obs
                     )
                 objs.append(f)
 
