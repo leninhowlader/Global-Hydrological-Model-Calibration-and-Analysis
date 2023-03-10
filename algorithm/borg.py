@@ -443,7 +443,7 @@ class Borg:
             BorgConfiguration.libborg.BORG_Algorithm_ms_initialization(c_int(initialization));
 
         if runtime:
-            BorgConfiguration.libborg.BORG_Algorithm_output_runtime(c_char_p(runtime));
+            BorgConfiguration.libborg.BORG_Algorithm_output_runtime(c_wchar_p(runtime));
 
         if runtimeFrequency > 0:
             BorgConfiguration.libborg.BORG_Algorithm_output_frequency(
