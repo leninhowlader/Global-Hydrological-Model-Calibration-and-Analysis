@@ -1,6 +1,6 @@
 __author__ = 'mhasan'
 
-import sys, numpy as np, os
+import sys, os, numpy as np, pandas as pd
 from utilities.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
 from utilities.fileio import FileInputOutput as io
 from core.stats import stats
@@ -436,7 +436,71 @@ class ObsVariable(Variable):
             except: return None
 
     @staticmethod
-    def data_collection(obs_vars):
+    def read_observations(obs_variables):
+        succeed = True
+        
+        for var in obs_variables:
+            succeed = False
+
+            file_type = var.data_source.file_type
+            if file_type == FileType.flat:
+                filename = var.data_source.filename
+                separator = var.data_source.separator
+                header = var.data_source.header
+                skiplines = var.data_source.skip_lines
+
+                if not header: header=None
+                else: header = 'infer'
+
+                df = pd.read_csv(
+                    filename, sep=separator, skiprows=skiplines, header=header
+                )
+                if df.shape[0] > 0: succeed = True
+                
+                # get data from the data frame
+                if succeed:
+                    colname = var.data_source.data_column_name
+                    try:
+                        var.data_cloud.data = df.loc[:, colname].values
+                    except: pass
+                    
+                    if len(var.data_cloud.data) == 0:
+                        colnum = var.data_source.data_column_num - 1
+                        if colnum >= 0:
+                            try: 
+                                var.data_cloud.data = df.iloc[:, colnum].values
+                            except: pass
+                    
+                    if len(var.data_cloud.data) == 0: succeed = False
+                ##
+
+                # read indices
+                if succeed:
+                    colnames = var.data_source.data_index_column_names
+                    try:
+                        var.data_cloud.data_indices = df.loc[:, colnames].values
+                    except: pass
+
+                    if len(var.data_cloud.data_indices) == 0:
+                        colnums = var.data_source.data_index_column_nums
+                        colnums = [(x-1) for x in colnums]
+                        try:
+                            indices = df.iloc[:, colnums].values 
+                            var.data_cloud.data_indices = indices
+                        except: succeed = False
+
+                    if len(var.data_cloud.data_indices) == 0: succeed = False
+                ##
+
+            if succeed: var.data_cloud.sort()
+            else: break
+        
+        return succeed
+
+                
+
+    @staticmethod
+    def data_collection2(obs_vars):
         succeed = True
 
         # find distinct data-sources
