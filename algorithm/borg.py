@@ -392,8 +392,16 @@ class Borg:
         """ Sets the lower and upper decision variable bounds at the given index. """
         BorgConfiguration.libborg.BORG_Problem_set_bounds(self.reference, index, c_double(lowerBound), c_double(upperBound))
 
-    def solveMPI(self, islands=1, maxTime=None, maxEvaluations=None, initialization=None, runtime=None,
-            allEvaluations=None):
+    def solveMPI(
+        self, 
+        islands=1, 
+        maxTime=None, 
+        maxEvaluations=None, 
+        initialization=None, 
+        runtime=None,
+        runtimeFrequency=0,
+        allEvaluations=None
+    ):
         """ Runs the master-slave or multi-master Borg MOEA using MPI.
 
         islands        - The number of islands
@@ -437,6 +445,11 @@ class Borg:
         if runtime:
             BorgConfiguration.libborg.BORG_Algorithm_output_runtime(c_char_p(runtime));
 
+        if runtimeFrequency > 0:
+            BorgConfiguration.libborg.BORG_Algorithm_output_frequency(
+                c_int(runtimeFrequency)
+            )
+        
         if allEvaluations:
             BorgConfiguration.libborg.BORG_Algorithm_output_evaluations(c_char_p(allEvaluations));
 
