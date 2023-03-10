@@ -245,8 +245,13 @@ class FileInputOutput:
 
         f = open(lockfile, 'w')
         if FileInputOutput.acquire_lock(f):
-            print(message)
+            if type(message) is str: print(message)
+            
+            if type(message) is list:
+                for m in message: print(m)
+
             FileInputOutput.release_lock(f)
+        
         f.close()
 
     @staticmethod
