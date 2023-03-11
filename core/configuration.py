@@ -158,8 +158,7 @@ class Configuration:
 
     @property
     def parameter_value_output_filename(self):
-        return os.path.join(self.__output_directory,
-                            self.__parameter_value_output_filename)
+        return self.__parameter_value_output_filename
     @parameter_value_output_filename.setter
     def parameter_value_output_filename(self, filename):
         self.__parameter_value_output_filename = filename
@@ -201,25 +200,21 @@ class Configuration:
 
     @property
     def calibration_result_output_filename(self):
-        return os.path.join(self.__output_directory,
-                            self.__calibration_result_output_filename)
+        return self.__calibration_result_output_filename
     @calibration_result_output_filename.setter
     def calibration_result_output_filename(self, filename):
         self.__calibration_result_output_filename = filename
 
     @property
     def objective_values_output_filename(self):
-        return os.path.join(self.output_directory, 
-                            self.__objective_values_output_filename)
+        return self.__objective_values_output_filename
     @objective_values_output_filename.setter
     def objective_values_output_filename(self, filename):
         self.__objective_values_output_filename = filename
     
     @property
     def runtime_dynamics_output_filename(self):
-        f = os.path.join(self.output_directory,
-                         self.__runtime_dynamics_output_filename)
-        return f
+        return self.__runtime_dynamics_output_filename
     @runtime_dynamics_output_filename.setter
     def runtime_dynamics_output_filename(self, filename):
         self.__runtime_dynamics_output_filename = filename
