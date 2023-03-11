@@ -184,26 +184,45 @@ class stats:
     @staticmethod
     def objective_function(fun, sim, obs, normalize=DataNormalization.none, scale_r=1, scale_alpha=1, scale_beta=1):
         sim, obs = np.array(sim), np.array(obs)
-        if normalize != DataNormalization.none and fun in [ObjectiveFunction.root_mean_square_error,
-                   ObjectiveFunction.mean_absolute_error, ObjectiveFunction.mean_square_error]:
-            sim, obs = stats.normalize(sim, obs, normalize)
+        if (normalize != DataNormalization.none and fun in [
+            ObjectiveFunction.root_mean_square_error,
+            ObjectiveFunction.mean_absolute_error, 
+            ObjectiveFunction.mean_square_error
+        ]): sim, obs = stats.normalize(sim, obs, normalize)
 
-        if fun == ObjectiveFunction.root_mean_square_error: return stats.root_mean_square_error(sim, obs)
-        elif fun == ObjectiveFunction.coefficient_of_determination: return stats.coefficient_of_determination(sim, obs)
-        elif fun == ObjectiveFunction.mean_absolute_percentage_error: return stats.mean_absolute_percentage_error(sim, obs)
-        elif fun == ObjectiveFunction.index_of_agreement:return stats.index_of_agreement(sim, obs)
-        elif fun == ObjectiveFunction.mean_absolute_error: return stats.mean_absolute_error(sim, obs)
-        elif fun == ObjectiveFunction.mean_square_error: return stats.mean_square_error(sim, obs)
-        elif fun == ObjectiveFunction.percentage_bias: return stats.percentage_bias(sim, obs)
-        elif fun == ObjectiveFunction.ratio_of_rmse_and_obs_stdv: return  stats.rmse_stdv_ratio(sim, obs)
-        elif fun == ObjectiveFunction.nash_sutcliffe_efficiency: return stats.nash_sutcliffe_efficiency(sim, obs)
-        elif fun == ObjectiveFunction.kling_gupta_efficiency: return stats.kling_gupta_efficiency(sim, obs)
-        elif fun == ObjectiveFunction.scaled_kling_gupta_efficiency: return stats.scaled_kling_gupta_efficiency(sim, obs, scale_r, scale_alpha, scale_beta)
-        elif fun == ObjectiveFunction.pearson_correlation_coefficient: return stats.pearson_correlation_coefficient(sim, obs)
-        elif fun == ObjectiveFunction.KGE_alpha: return stats.KGE_alpha(sim, obs)
-        elif fun == ObjectiveFunction.KGE_beta: return stats.KGE_beta(sim, obs)
-        elif fun == ObjectiveFunction.KGE_dAlpha: return stats.KGE_dAlpha(sim, obs)
-        elif fun == ObjectiveFunction.KGE_dBeta: return stats.KGE_dBeta(sim, obs)
+        if fun == ObjectiveFunction.root_mean_square_error: 
+            return stats.root_mean_square_error(sim, obs)
+        elif fun == ObjectiveFunction.coefficient_of_determination: 
+            return -stats.coefficient_of_determination(sim, obs)
+        elif fun == ObjectiveFunction.mean_absolute_percentage_error: 
+            return stats.mean_absolute_percentage_error(sim, obs)
+        elif fun == ObjectiveFunction.index_of_agreement:
+            return -stats.index_of_agreement(sim, obs)
+        elif fun == ObjectiveFunction.mean_absolute_error: 
+            return stats.mean_absolute_error(sim, obs)
+        elif fun == ObjectiveFunction.mean_square_error: 
+            return stats.mean_square_error(sim, obs)
+        elif fun == ObjectiveFunction.percentage_bias: 
+            return stats.percentage_bias(sim, obs)
+        elif fun == ObjectiveFunction.ratio_of_rmse_and_obs_stdv: 
+            return  stats.rmse_stdv_ratio(sim, obs)
+        elif fun == ObjectiveFunction.nash_sutcliffe_efficiency: 
+            return -stats.nash_sutcliffe_efficiency(sim, obs)
+        elif fun == ObjectiveFunction.kling_gupta_efficiency: 
+            return -stats.kling_gupta_efficiency(sim, obs)
+        elif fun == ObjectiveFunction.scaled_kling_gupta_efficiency: 
+            return -stats.scaled_kling_gupta_efficiency(
+                                sim, obs, scale_r, scale_alpha, scale_beta)
+        elif fun == ObjectiveFunction.pearson_correlation_coefficient: 
+            return -stats.pearson_correlation_coefficient(sim, obs)
+        elif fun == ObjectiveFunction.KGE_alpha: 
+            return -stats.KGE_alpha(sim, obs)
+        elif fun == ObjectiveFunction.KGE_beta: 
+            return -stats.KGE_beta(sim, obs)
+        elif fun == ObjectiveFunction.KGE_dAlpha: 
+            return -stats.KGE_dAlpha(sim, obs)
+        elif fun == ObjectiveFunction.KGE_dBeta: 
+            return -stats.KGE_dBeta(sim, obs)
         else: return np.nan
 
     @staticmethod
