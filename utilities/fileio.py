@@ -2,7 +2,7 @@
 # Date: April, 2016
 
 # This script provides supplementary functions for reading and writing files.
-
+import os
 from datetime import datetime
 import struct, time
 
@@ -22,6 +22,13 @@ class FileInputOutput:
     @staticmethod
     def set_on_screen_lock(lockfile):
         FileInputOutput.__on_screen_lock = lockfile
+
+    @staticmethod
+    def delete_lock_file(lockname=''):
+        if not lockname: lockname = FileInputOutput.__on_screen_lock
+        
+        try: os.remove(lockname)
+        except: pass
 
     @staticmethod
     def read_flat_file(
