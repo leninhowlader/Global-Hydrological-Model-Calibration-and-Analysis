@@ -101,9 +101,10 @@ class Calibration:
 
         ## [step-x]: update parameters
         Calibration.update_parameters(vars)
+        messages.append('\tParameter values: ')
         for i in range(nvars):
             param = Calibration.__config.parameters[i]
-            messages.append('\t(%02d) %s: %f'%(
+            messages.append('\t[%02d] %s: %f'%(
                 i, param.parameter_name.ljust(40), param.parameter_value))
         
         filename = WaterGAP.get_json_parameter_filename()
@@ -179,7 +180,7 @@ class Calibration:
 
         # [step-x]: execute model with new parameters
         t1 = datetime.now()
-        messages.append('\tModel execution started at %s'%str(t1))
+        messages.append('\n\tModel execution started at %s'%str(t1))
         if not WaterGAP.execute_model(
             arguments, log_file=log_file, error_file=error_file):
             WaterGAP.remove_files(arguments)
@@ -224,7 +225,7 @@ class Calibration:
         temp = Calibration.compute_objectives()
         if len(temp) == nobjs:
             for i in range(nobjs): objs[i] = temp[i]
-        messages.append('\tObjectives: %s'%(','.join(
+        messages.append('\n\tObjectives: %s'%(','.join(
                                     ['%0.2f'%temp[i] for i in range(nobjs)])))
         # end [step-x]
 
@@ -232,7 +233,9 @@ class Calibration:
         temp = Calibration.compute_constraints()
         if len(temp) == nconts:
             for i in range(nconts): conts[i] = temp[i]
-        messages.append('\tConstraints: %s'%(','.join(
+        
+        if nconts == 0: messages.append('\tConstraints: NA')
+        else: messages.append('\tConstraints: %s'%(','.join(
                                     ['%0.2f'%temp[i] for i in range(nconts)])))
         # end [step-x]
 
@@ -303,7 +306,7 @@ class Calibration:
                     )
                 objs.append(f)
 
-            if obs.ndim == 2 and (sim.ndim == 1 or sim.shape[1] == 1):
+            elif obs.ndim == 2 and (sim.ndim == 1 or sim.shape[1] == 1):
                 # this case might arrise when observation is perturbed with in 
                 # the confidence interval. in such a case, no. of objectives 
                 # would depend on the number of perturbed observation 
@@ -393,6 +396,9 @@ class BorgMOEA:
     __poc_config = None
     __borg_problem_array = []
     __nproblems = 1         # Number of optimization problems
+
+    __world_size = 0
+    __world_rank = -1
 
     @staticmethod
     def set_borg_library(path): BorgMOEA.__libborg_path = path 
@@ -484,10 +490,10 @@ class BorgMOEA:
     def MPI_Start():
         BorgConfiguration.startMPI(BorgMOEA.__libmpi_path)
         
-        world_rank = BorgConfiguration.getWorldRank()
-        world_size = BorgConfiguration.getWorldSize()
+        BorgMOEA.__world_rank = BorgConfiguration.getWorldRank()
+        BorgMOEA.__world_size = BorgConfiguration.getWorldSize()
 
-        return world_size, world_rank
+        return BorgMOEA.__world_size, BorgMOEA.__world_rank
 
     @staticmethod
     def BORG_SolveProblem(config_poc):
@@ -514,6 +520,9 @@ class BorgMOEA:
                 f.close()
             except: pass
         
+        # delete lock file
+        if BorgMOEA.__world_rank == 0: FileInputOutput.delete_lock_file()
+
         return succeed
 
     @staticmethod
