@@ -81,7 +81,7 @@ class GlobalGrid:
             
             if model_version in ['wghm2.2d', 'wghm2.2e']:
                 GlobalGrid.__wghm_grid_lookup_table_filename \
-                = 'data/grid_grid_wghm2.2d.txt'
+                = 'data/grid_wghm2.2d.txt'
             else:
                 GlobalGrid.__wghm_grid_lookup_table_filename \
                 = 'data/grid_%s.txt' % model_version
