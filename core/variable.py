@@ -1,6 +1,8 @@
 __author__ = 'mhasan'
 
 import sys, os, numpy as np, pandas as pd
+from datetime import datetime
+
 from utilities.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
 from utilities.fileio import FileInputOutput as io
 from core.stats import stats
@@ -1269,7 +1271,7 @@ class SimVariable(Variable):
         '''
 
         # step-01: validate inputs
-        if start_year < 1901 or end_year > 2016: return False
+        if start_year < 1901 or end_year > 2019: return False
         if not os.path.exists(prediction_directory): return False
 
         if start_year > end_year: end_year = start_year
