@@ -674,8 +674,12 @@ class Upstream:
             if disjoint_basin:
                 basins = Upstream.compute_basin_extent(basin_outlets)
                 super_basins = Upstream.find_super_basin(basin_outlets)
-                disjoint_basins = Upstream.compute_disjoint_basin_extent(basins, super_basins)
-                for key, value in disjoint_basins.items(): list_of_basins.append(value)
+                disjoint_basins = Upstream.compute_disjoint_basin_extent(
+                    basins, 
+                    super_basins
+                )
+                for key, value in disjoint_basins.items(): 
+                    list_of_basins.append(value)
 
                 basins, super_basins, disjoint_basins = None, None, None
             else:
@@ -708,7 +712,7 @@ class Upstream:
                 shp_basin.autoBalance = 1
 
                 # add shape attributes
-                shp_basin.field('BASIN', 'N', 8)
+                shp_basin.field('BASIN_ID', 'C', 40)
                 if add_wghm_cnum: shp_basin.field('CNUM', 'N', 8)
 
                 # generate basin IDs, if not given
@@ -729,11 +733,11 @@ class Upstream:
                                                                        basin[j][1],
                                                                        base_resolution=0.5)
                                 shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
-                                shp_basin.record(basin_id, cnum)
+                                shp_basin.record(str(basin_id), cnum)
                         else:
                             for j in range(len(basin)):
                                 shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
-                                shp_basin.record(basin_id)
+                                shp_basin.record(str(basin_id))
                 else: # version == 2
                     for i in range(len(list_of_basins)):
                         basin = list_of_basins[i]

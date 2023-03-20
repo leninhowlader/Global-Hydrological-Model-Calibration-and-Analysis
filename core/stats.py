@@ -62,6 +62,14 @@ class stats:
     def nash_sutcliffe_efficiency(sim, obs):
         obs_mean = np.mean(obs)
         return 1 - (np.sum((obs-sim)**2)/np.sum((obs-obs_mean)**2))
+    
+    @staticmethod
+    def nse_observation_uncertainty(sim, obs, lb, ub):
+        ii = (sim<lb)|(sim>ub)
+        err_var = np.sum((sim[ii]-obs[ii])**2)
+        obs_var = np.sum((obs-obs.mean())**2)
+
+        return 1 - err_var / obs_var
 
     @staticmethod
     def mean_absolute_error(sim, obs):
@@ -182,7 +190,17 @@ class stats:
         return 1- np.sqrt((scale_r * (r - 1)) ** 2 + (scale_alpha * (alpha - 1)) ** 2 + (scale_beta * (beta - 1)) ** 2)
 
     @staticmethod
-    def objective_function(fun, sim, obs, normalize=DataNormalization.none, scale_r=1, scale_alpha=1, scale_beta=1):
+    def objective_function(
+        fun, 
+        sim, 
+        obs, 
+        normalize=DataNormalization.none, 
+        scale_r=1, 
+        scale_alpha=1, 
+        scale_beta=1,
+        lb=np.empty(0),
+        ub=np.empty(0)
+    ):
         sim, obs = np.array(sim), np.array(obs)
         if (normalize != DataNormalization.none and fun in [
             ObjectiveFunction.root_mean_square_error,
@@ -208,6 +226,10 @@ class stats:
             return  stats.rmse_stdv_ratio(sim, obs)
         elif fun == ObjectiveFunction.nash_sutcliffe_efficiency: 
             return -stats.nash_sutcliffe_efficiency(sim, obs)
+        elif fun == ObjectiveFunction.NSE_observation_uncertainty:
+            return -stats.nse_observation_uncertainty(
+                sim=sim, obs=obs, lb=lb, ub=ub
+            )
         elif fun == ObjectiveFunction.kling_gupta_efficiency: 
             return -stats.kling_gupta_efficiency(sim, obs)
         elif fun == ObjectiveFunction.scaled_kling_gupta_efficiency: 

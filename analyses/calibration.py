@@ -291,6 +291,11 @@ class Calibration:
 
             obs = obsvar.data_cloud.data[ii]
             sim = var.data_cloud.data[jj]
+
+            lb, ub = np.empty(0), np.empty(0)
+            if obsvar.has_uncertainty_bound:
+                lb = obsvar.data_cloud.lower_bound[ii]
+                ub = obsvar.data_cloud.upper_bound[ii]
             
             if ((sim.ndim == 1 or sim.shape[1] == 1) and 
                 (obs.ndim == 1 or obs.shape[1] == 1)):
@@ -302,7 +307,9 @@ class Calibration:
                 f = stats.objective_function(
                         fun=fun, 
                         sim=sim, 
-                        obs=obs
+                        obs=obs,
+                        lb=lb,
+                        ub=ub
                     )
                 objs.append(f)
 
@@ -322,7 +329,9 @@ class Calibration:
                     f = stats.objective_function(
                         fun=fun, 
                         sim=sim, 
-                        obs=o
+                        obs=o,
+                        lb=lb,
+                        ub=ub
                     )
                     objs.append(f)
 
@@ -335,7 +344,9 @@ class Calibration:
                     o = obs[:, i].flatten()
                     for j in range(sim.shape[1]):
                         s = sim[:, j].flatten()
-                        f = stats.objective_function(fun=fun, sim=s, obs=o)
+                        f = stats.objective_function(
+                            fun=fun, sim=s, obs=o, lb=lb, ub=ub
+                        )
                         objs.append(f)
             
             else: objs.append(np.nan)

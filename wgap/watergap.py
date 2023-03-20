@@ -518,7 +518,7 @@ class WaterGAP:
         for obs_var in obs_vars:
             for sim_var in sim_vars:
                 if (obs_var.counter_variable == sim_var.varname):
-                    sim, obs = DataCloud.cloud_coupling(sim_var.data_cloud, obs_var.data_cloud)
+                    sim, obs, lb, ub = DataCloud.cloud_coupling(sim_var.data_cloud, obs_var.data_cloud)
                     if sim and obs:
                         s, r = stats.all_efficiencies(sim, obs)
                         results.append([iter_no, obs_var.varname, sim_var.varname] + r)

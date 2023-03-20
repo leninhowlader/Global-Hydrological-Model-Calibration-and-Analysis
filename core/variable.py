@@ -43,6 +43,8 @@ class DataCloud:
         self.data_indices = []          # two dimensional array
         self.sorted = False
         self.__index_count = -1
+        self.lower_bound = np.empty(0)
+        self.upper_bound = np.empty(0)
 
     def is_okay(self):
         if not self.data: return False
@@ -72,6 +74,12 @@ class DataCloud:
             ii = np.lexsort([self.data_indices[:,i] for i in reversed(range(n))])
             self.data_indices = self.data_indices[ii]
             self.data = self.data[ii]
+
+            if self.lower_bound.shape[0] > 0:
+                self.lower_bound = self.lower_bound[ii]
+            
+            if self.upper_bound.shape[0] > 0: 
+                self.upper_bound = self.upper_bound[ii]
 
             self.sorted = True
 
@@ -158,7 +166,7 @@ class DataCloud:
         except: return CompareResult.incompatible
 
     @staticmethod
-    def cloud_coupling(cloud1, cloud2):
+    def cloud_coupling_old(cloud1, cloud2):
         dt1, dt2 = [], []
 
         ndx1, ndx2 = 0, 0
@@ -175,6 +183,24 @@ class DataCloud:
             else: ndx2 += 1
 
         return dt1, dt2
+    
+    @staticmethod
+    def cloud_coupling(cloud1, cloud2):
+        dt1, dt2, lb, ub = np.empty(0), np.empty(0), np.empty(0), np.empty(0)
+
+        ii, jj = DataCloud.index_coupling(cloud1, cloud2)
+        dt1 = cloud1.data[ii]
+        dt2 = cloud2.data[jj]
+
+        if cloud1.lower_bound.shape[0] > 0:
+            lb = cloud1.lower_bound[ii]
+            ub = cloud2.lower_bound[ii]
+        
+        elif cloud2.lower_bount.shape[0] > 0:
+            lb = cloud1.lower_bound[jj]
+            ub = cloud2.lower_bound[jj]
+        
+        return dt1, dt2, lb, ub
 
     @staticmethod
     def index_coupling(cloud1, cloud2):
@@ -224,6 +250,10 @@ class DataCloud:
                 cloud.data = cloud1.data[ii] * cloud2.data[jj]
             elif func == '/':
                 cloud.data = cloud1.data[ii] / cloud2.data[jj]
+            
+            ## decision to be made regarding the uncertainty bound if present.
+            ##
+
             cloud.sorted = True
         except: pass
 
@@ -347,11 +377,37 @@ class Variable:
         else: return True
 
 class ObsVariable(Variable):
+    __optionnames = {}
+    __optionnames['varname'] = [
+        'var_name', 'varname', 'var name', 'variable_name', 'variable name'
+    ]
+    __optionnames['data_column_name'] = ['data_column_name', 'data column name']
+    __optionnames['data_column_number'] = [
+        'data_column_number', 'data column number'
+    ]
+
+    __optionnames['index_column_names'] = [
+        'index_column_names', 'index column names'
+    ]
+    __optionnames['index_column_numbers'] = [
+        'index_column_numbers', 'index column numbers'
+    ]
+    __optionnames['filename'] = ['data_file', 'data file', 'filename']
+    __optionnames['file_type'] = ['data_file_type', 'data file type']
+
     def __init__(self):
         Variable.__init__(self)
         self.counter_variable = ''
         self.function = ObjectiveFunction.not_specified
         self.epsilon = 0.05
+
+        self.is_multiset = False
+        self.multiset_data_column_names = []
+        self.multiset_data_column_nums = []
+
+        self.has_uncertainty_bound = False
+        self.lower_bound_column_name = ''
+        self.upper_bound_column_name = ''
 
     def get_function_name(self):
         return ObjectiveFunction.get_function_name(self.function)
@@ -359,11 +415,16 @@ class ObsVariable(Variable):
     def get_epsilon(self): return self.epsilon
 
     def is_okay(self):
-        if not Variable.is_okay(self) or not self.counter_variable or self.function == ObjectiveFunction.not_specified: return False
+        if (not Variable.is_okay(self) 
+            or not self.counter_variable 
+            or self.function == ObjectiveFunction.not_specified
+        ): return False
         else: return True
 
     @staticmethod
     def read_variables(lines):
+        optionnames = ObsVariable.__optionnames
+
         variables = []
 
         var = None
@@ -383,36 +444,66 @@ class ObsVariable(Variable):
                         for i in range(len(temp)): temp[i] = temp[i].strip()
                         if len(temp) >= 2:
                             key, value = temp[0], temp[1]
-                            if key in ['var_name', 'varname', 'var name', 'variable_name', 'variable name']: var.varname = value
-                            elif key in ['data_column_name', 'data column name']: var.data_source.data_column_name = value
-                            elif key in ['data_column_number', 'data column number']:
-                                num = -1
-                                try: num = int(value.strip())
-                                except: pass
-                                var.data_source.data_column_num = num
-                            elif key in ['index_column_names', 'index column names']:
+                            if key in optionnames['varname']: 
+                                var.varname = value
+                            elif key in optionnames['data_column_name']:
+                                if value.find(',') >= 0:
+                                    temp = value.split(',')
+                                    for i in range(len(temp)): temp[i].strip()
+                                    for i in reversed(range(len(temp))):
+                                        if temp[i] == '': temp.pop(i)
+                                    
+                                    if len(temp) > 0: 
+                                        var.is_multiset = True
+                                        var.data_source.data_column_name = temp
+                                else:
+                                    var.data_source.data_column_name = value
+                            elif key in optionnames['data_column_number']:
+                                
+                                if value.find(',') >= 0:
+                                    temp=value.split(',')
+                                    for i in reversed(range(len(temp))):
+                                        try: temp[i] = int(temp[i])
+                                        except: temp.pop(i)
+                                    
+                                    if len(temp) > 0:
+                                        var.is_multiset = True
+                                        var.data_source.data_column_num = temp
+                                else:
+                                    num = -1
+                                    try: num = int(value.strip())
+                                    except: pass
+                                    var.data_source.data_column_num = num
+                            elif key in ['lower_bound_column_name']:
+                                var.lower_bound_column_name = value
+                            elif key in ['upper_bound_column_name']:
+                                var.upper_bound_column_name = value
+                            elif key in optionnames['index_column_names']:
                                 temp = value.strip().split(',')
                                 for i in reversed(range(len(temp))):
                                     temp[i] = temp[i].strip()
                                     if not temp[i]: temp.pop(i)
                                 var.data_source.data_index_column_names = temp
-                            elif key in ['index_column_numbers', 'index column numbers']:
+                            elif key in optionnames['index_column_numbers']:
                                 temp = value.strip().split(',')
                                 for i in reversed(range(len(temp))):
                                     try: temp[i] = int(temp[i].strip())
                                     except: temp.pop(i)
                                 var.data_source.data_index_column_nums = temp
-                            elif key in ['data_file', 'data file', 'data config_filename']: var.data_source.filename = value
-                            elif key in ['data_file_type', 'data file type']:
+                            elif key in optionnames['filename']: 
+                                var.data_source.filename = value
+                            elif key in optionnames['file_type']:
                                 value = value.lower()
-                                if value in ['csv', 'text', 'flat', 'flatfile', 'flat file']: var.data_source.file_type = FileType.flat
+                                if value in ['csv', 'text', 'flat', 'flatfile', 'flat file']: 
+                                    var.data_source.file_type = FileType.flat
                                 else: var.data_source.file_type = FileType.binary
                             elif key in ['separator', 'seperator']:
                                 if value: var.data_source.separator = value
                                 else: var.data_source.separator = ' '
                             elif key == "header":
                                 value = value.lower()
-                                if value in ['yes', 'y', 'true', 't', '1']: var.data_source.header = True
+                                if value in ['yes', 'y', 'true', 't', '1']: 
+                                    var.data_source.header = True
                                 else: var.data_source.header = False
                             elif key in ['skip_lines', 'skip lines']:
                                 count = 0
@@ -467,11 +558,15 @@ class ObsVariable(Variable):
                     except: pass
                     
                     if len(var.data_cloud.data) == 0:
-                        colnum = var.data_source.data_column_num - 1
-                        if colnum >= 0:
-                            try: 
-                                var.data_cloud.data = df.iloc[:, colnum].values
-                            except: pass
+                        if var.is_multiset:
+                            colnum = []
+                            for x in var.data_source.data_column_num: 
+                                colnum.append(x-1)
+                        else: colnum = var.data_source.data_column_num - 1
+                        
+                        try: 
+                            var.data_cloud.data = df.iloc[:, colnum].values
+                        except: pass
                     
                     if len(var.data_cloud.data) == 0: succeed = False
                 ##
@@ -494,12 +589,27 @@ class ObsVariable(Variable):
                     if len(var.data_cloud.data_indices) == 0: succeed = False
                 ##
 
+                ## read uncertainty bounds
+                if succeed:
+                    lb, ub = np.empty(0), np.empty(0)
+                    if var.lower_bound_column_name:
+                        colname = var.lower_bound_column_name
+                        lb = df.loc[:, colname].values
+
+                    if var.upper_bound_column_name:
+                        colname = var.upper_bound_column_name
+                        ub = df.loc[:, colname].vlaues 
+                    
+                    if lb.shape[0] > 0 and lb.shape == ub.shape:
+                        var.data_cloud.lower_bound = lb
+                        var.data_cloud.upper_bound = ub
+                        var.has_uncertainty_bound = True
+                ###
+
             if succeed: var.data_cloud.sort()
             else: break
         
-        return succeed
-
-                
+        return succeed   
 
     @staticmethod
     def data_collection2(obs_vars):
