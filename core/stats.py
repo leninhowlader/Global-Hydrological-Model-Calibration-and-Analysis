@@ -65,8 +65,11 @@ class stats:
     
     @staticmethod
     def nse_observation_uncertainty(sim, obs, lb, ub):
-        ii = (sim<lb)|(sim>ub)
-        err_var = np.sum((sim[ii]-obs[ii])**2)
+        err_var = 0
+        ii, jj = (sim < lb), (sim > ub)
+        err_var += np.sum((lb[ii]-sim[ii])**2)  
+        err_var += np.sum((sim[jj]-ub[jj])**2)
+        
         obs_var = np.sum((obs-obs.mean())**2)
 
         return 1 - err_var / obs_var
