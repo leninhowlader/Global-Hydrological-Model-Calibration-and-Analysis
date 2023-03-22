@@ -105,6 +105,7 @@ class ObjectiveFunction(Enum):
         elif func == ObjectiveFunction.KGE_beta: return 'kge-beta'
         elif func == ObjectiveFunction.KGE_dAlpha: return 'kge-dAlpha'
         elif func == ObjectiveFunction.KGE_dBeta: return 'kge-dBeta'
+        elif func == ObjectiveFunction.NSE_observation_uncertainty: return 'nse-ou'
         else: return 'n/a'
 
 class DataNormalization(Enum):
