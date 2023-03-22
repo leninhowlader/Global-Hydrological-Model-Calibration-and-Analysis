@@ -598,7 +598,7 @@ class ObsVariable(Variable):
 
                     if var.upper_bound_column_name:
                         colname = var.upper_bound_column_name
-                        ub = df.loc[:, colname].vlaues 
+                        ub = df.loc[:, colname].values 
                     
                     if lb.shape[0] > 0 and lb.shape == ub.shape:
                         var.data_cloud.lower_bound = lb
