@@ -1561,9 +1561,9 @@ class DerivedVariable(Variable):
         else: return True
 
     def derive_data(self, simvars=[], obsvars=[]):
-        succeed = True
+        succeed = self.evaluate_equation(simvars, obsvars)
 
-        if self.evaluate_equation(simvars, obsvars):
+        if succeed:
             temp = self.equation.split('+')
             for i in range(len(temp)): temp[i] = temp[i].strip()
 
@@ -1573,12 +1573,11 @@ class DerivedVariable(Variable):
 
                 for i in range(1, len(temp)):
                     cloud2 = self.find_variable(temp[i], simvars, obsvars).data_cloud
-                    cloud1 = DataCloud.arithmetic_operation(cloud1, cloud2, fun='+')
-                    if not succeed: break
-
-                if succeed: self.data_cloud = cloud1
+                    cloud1 = DataCloud.arithmetic_operation(cloud1, cloud2, func='+')
+                    
             except: succeed = False
-        else: succeed = False
+
+            if succeed: self.data_cloud = cloud1
 
         return succeed
 
