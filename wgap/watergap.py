@@ -393,7 +393,7 @@ class WaterGAP:
                             try: WaterGAP.repetitions_on_failure = int(value)
                             except: WaterGAP.repetitions_on_failure = 0
                         
-                        elif key in optionnames['']:
+                        elif key in optionnames['sleep_time']:
                             try: WaterGAP.sleep_time = float(value)
                             except: WaterGAP.sleep_time = 0
 
