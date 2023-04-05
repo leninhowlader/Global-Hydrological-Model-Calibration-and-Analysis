@@ -704,6 +704,48 @@ class ObsVariable(Variable):
         return succeed
 
 class SimVariable(Variable):
+    __optionnames = {}
+    __optionnames['varname'] = (
+        'var_name', 'varname', 'var name', 'variable_name', 'variable name'
+    )
+    __optionnames['filename'] = (
+        'filename', 'data_file', 'data file', 'data config_filename'
+    )
+    __optionnames['temporal_resolution'] = (
+        'temporal_resolution', 'value_type', 'value type', 'data_type', 
+        'data type', 'prediction_type', 'prediction_type'
+    )
+    __optionnames['spatial_aggregation'] = (
+        'spatial_aggregation', 'spatial aggregation', 'zonal_average', 
+        'zonal average', 'zone flag',  'zone_flag', 'group stats', 
+        'group_stats', 'aggregation'
+    )
+    __optionnames['cellnums'] = (
+        'target_grid_cells', 'target_cells', 'target cells', 'target grid cells'
+    )
+    __optionnames['compute_anomaly'] = (
+        'anomaly_computation', 'compute anomalies', 'compute anomaly' , 
+        'anomaly', 'anomalies', 'calculate anomalies', 'calculate anomaly',
+        'compute_anomaly'
+    )
+    __optionnames['weights'] = (
+        'weights', 'cell weights', 'cell_weights'
+    )
+    __optionnames['area_as_weight'] = (
+        'area_as_weight', 'cell_area_as_weight', 'use cell areas for weights'
+    )
+    __optionnames['basin_outlets_only'] = (
+        'basin_outlets_only', 'basin outlets only', 'basin_outlet_only', 
+        'basin outlet only'
+    )
+    __optionnames['spatial_scale'] = (
+        'spatial_scale', 'scale'
+    )
+    __optionnames['conversion_factor'] = (
+        'conversion_factor', 'conversion factor', 'unit conversion factor',
+        'unit_conversion_factor'
+    )
+    
     def __init__(self):
         Variable.__init__(self)
         self.data_source.file_type = FileType.wghm_binary
@@ -720,6 +762,14 @@ class SimVariable(Variable):
 
         self.__has_aggregated = False
         self.__has_anomaly_computed = False
+
+        self.__conversion_factor = 1
+        self.__has_conversion_applied = True
+
+    @property
+    def conversion_factor(self): return self.__conversion_factor
+    @conversion_factor.setter
+    def conversion_factor(self, factor): self.__conversion_factor = factor
 
     @property
     def cell_area_as_weight(self): return self.__cell_area_as_weight
@@ -774,13 +824,15 @@ class SimVariable(Variable):
 
         return True
 
-    def compute_anomalies(self):
-        if self.compute_anomaly: self.data_cloud.data = stats.compute_anomalies(self.data_cloud.data)
+    # def compute_anomalies(self):
+    #     if self.compute_anomaly: 
+    #         self.data_cloud.data = stats.compute_anomalies(self.data_cloud.data)
 
     @staticmethod
     def read_variables(lines):
         variables = []
 
+        options = SimVariable.__optionnames
         var = None
         while lines:
             try:
@@ -798,79 +850,111 @@ class SimVariable(Variable):
                         for i in range(len(temp)): temp[i] = temp[i].strip()
                         if len(temp) >= 2:
                             key, value = temp[0], temp[1]
-                            if key in ['var_name', 'varname', 'var name', 'variable_name', 'variable name']: var.varname = value
-                            elif key in ['data_file', 'data file', 'data config_filename']: var.data_source.filename = value
-                            elif key in ['value_type', 'value type', 'data_type', 'data type', 'prediction_type', 'prediction_type']:
+                            if key in options['varname']: var.varname = value
+                            elif key in options['filename']: 
+                                var.data_source.filename = value
+                            elif key in options['temporal_resolution']:
                                 value = value.lower()
-                                if value in ['monthly', 'month']: var.data_source.prediction_type = PredictionType.monthly
-                                elif value in ['yearly', 'annual', 'year']: var.data_source.prediction_type = PredictionType.yearly
-                                elif value in ['daily', 'day']: var.data_source.prediction_type = PredictionType.daily
-                            elif key in ['zonal_average', 'zonal average', 'zone flag', 'zone_flag', 'group stats', 'group_stats',
-                                         'spatial aggregation', 'aggregation',
-                                         'spatial_aggregation']:
+                                if value in ['monthly', 'month']: 
+                                    var.data_source.prediction_type \
+                                    = PredictionType.monthly
+                                elif value in ['yearly', 'annual', 'year']: 
+                                    var.data_source.prediction_type \
+                                    = PredictionType.yearly
+                                elif value in ['daily', 'day']: 
+                                    var.data_source.prediction_type \
+                                    = PredictionType.daily
+                            elif key in options['spatial_aggregation']:
                                 value = value.lower()
-                                if value in ['yes', 'y', '1', 'true', 't']: var.group_stats = True
+                                if value in ['yes', 'y', '1', 'true', 't']: 
+                                    var.group_stats = True
                                 else: var.group_stats = False
-                            elif key in ['target_grid_cells', 'target_cells', 'target cells', 'target grid cells']:
+                            elif key in options['cellnums']:
                                 if value.find(':') > 0:
                                     temp = value.split(':')
-                                    for i in range(len(temp)): temp[i] = temp[i].strip()
-                                    if len(temp) == 2 and temp[0].lower() == 'filename':
+                                    for i in range(len(temp)): 
+                                        temp[i] = temp[i].strip()
+
+                                    if (len(temp) == 2 and 
+                                        temp[0].lower() == 'filename'):
                                         filename, temp_str = temp[1], ''
 
                                         fs = None
                                         try:
                                             fs = open(filename, 'r')
-                                            for l in fs.readlines(): temp_str += l
+                                            for l in fs.readlines(): 
+                                                temp_str += l
                                         except: temp_str = None
                                         finally:
                                             try: fs.close()
                                             except: pass
                                         
                                         if temp_str:
-                                            var.basin_cell_list = SimVariable.read_groups(temp_str, type='int')
+                                            var.basin_cell_list \
+                                            = SimVariable.read_groups(
+                                                temp_str, type='int'
+                                            )
                                             temp_str = None
-                                else: var.basin_cell_list = SimVariable.read_groups(value, type='int')
-                            elif key in ['compute anomalies', 'compute anomaly' , 'anomaly', 'anomalies', 'calculate anomalies',
-                                         'calculate anomaly']:
+                                else: 
+                                    var.basin_cell_list \
+                                    = SimVariable.read_groups(value, type='int')
+
+                            elif key in options['compute_anomaly']:
                                 value = value.lower()
-                                if value in ['yes', 'y', '1', 'true', 't']: var.compute_anomaly = True
+                                if value in ['yes', 'y', '1', 'true', 't']: 
+                                    var.compute_anomaly = True
                                 else: var.compute_anomaly = False
-                            elif key in ['weights', 'cell weights', 'cell_weights']:
+                            elif key in options['weights']:
                                 if value.find(':') > 0:
                                     temp = value.split(':')
-                                    for i in range(len(temp)): temp[i] = temp[i].strip()
-                                    if len(temp) ==2 and temp[0].lower() == 'filename':
+                                    for i in range(len(temp)):
+                                        temp[i] = temp[i].strip()
+                                    
+                                    if (len(temp) ==2 and 
+                                        temp[0].lower() == 'filename'):
                                         filename, temp_str = temp[1], ''
 
                                         fs = None
                                         try:
                                             fs = open(filename, 'r')
-                                            for l in fs.readlines(): temp_str += l
+                                            for l in fs.readlines(): 
+                                                temp_str += l
                                         except: temp_str = None
                                         finally:
                                             try: fs.close()
                                             except: pass
 
                                         if temp_str:
-                                            var.cell_weights = SimVariable.read_groups(temp_str)
+                                            var.cell_weights \
+                                            = SimVariable.read_groups(temp_str)
                                             temp_str = None
-                                else: var.cell_weights = SimVariable.read_groups(value)
-                            elif key in ['area_as_weight', 'cell_area_as_weight', 'use cell areas for weights']:
+                                else: 
+                                    var.cell_weights \
+                                    = SimVariable.read_groups(value)
+
+                            elif key in options['area_as_weight']:
                                 value = value.lower()
-                                if value in ['yes', 'y', '1', 'true', 't']: var.cell_area_as_weight = True
+                                if value in ['yes', 'y', '1', 'true', 't']: 
+                                    var.cell_area_as_weight = True
                                 else: var.cell_area_as_weight = False
-                            elif key in ['basin_outlets_only', 'basin outlets only', 'basin_outlet_only', 'basin outlet only']:
+                            elif key in options['basin_outlets_only']:
                                 value = value.lower()
-                                if value in ['yes', 'y', '1', 'true', 't']: var.basin_outlets_only = True
+                                if value in ['yes', 'y', '1', 'true', 't']: 
+                                    var.basin_outlets_only = True
                                 else: var.basin_outlets_only = False
                             elif key in ['consider_super_basins', 'consider super basins']:
                                 # NB: this option will only be used when basin_outlets_only flag is set true
                                 value = value.lower()
-                                if value in ['yes', 'y', '1', 'true', 't']: var.boo_consider_super_basins = True
+                                if value in ['yes', 'y', '1', 'true', 't']: 
+                                    var.boo_consider_super_basins = True
                                 else: var.boo_consider_super_basins = False
-                            elif key in ['spatial_scale', 'scale']:
+                            elif key in options['spatial_scale']:
                                 var.spatial_scale = value.lower()
+                            elif key in options['conversion_factor']:
+                                try: 
+                                    var.conversion_factor = float(value)
+                                    var.__has_conversion_applied = False
+                                except: pass
             except: return None
 
     @staticmethod
@@ -1495,6 +1579,11 @@ class SimVariable(Variable):
 
         return True
 
+    def apply_conversion_factor(self):
+        if (self.conversion_factor != 1 and not self.__has_conversion_applied):
+            self.data_cloud.data *= self.conversion_factor
+            self.__has_conversion_applied = True
+
     def dump_data_into_binary_file(
             self,
             directory_out,
@@ -1532,6 +1621,7 @@ class DerivedVariable(Variable):
         self.equation = ''
         self.equ_evaluated = False
         self.compute_anomaly = False
+        self.__has_anomaly_computed = False
 
     def is_okay(self):
         if not self.varname or not self.equation: return False
@@ -1581,9 +1671,18 @@ class DerivedVariable(Variable):
 
         return succeed
 
-    def compute_anomalies(self):
-        if self.compute_anomaly: self.data_cloud.data = stats.compute_anomalies(self.data_cloud.data)
+    # def compute_anomalies(self):
+    #     if self.compute_anomaly: 
+    #         self.data_cloud.data -= self.data_cloud.data.mean()
 
+    def do_anomaly_computation(self):
+        if self.compute_anomaly and not self.__has_anomaly_computed:
+            self.data_cloud.data = np.array(self.data_cloud.data)
+            self.data_cloud.data -= self.data_cloud.data.mean(axis=0).reshape(
+                                                                        1, -1)
+
+            self.__has_anomaly_computed = True
+    
     def find_variable(self, varname, variables, additional_variables=[]):
         var = None
 
