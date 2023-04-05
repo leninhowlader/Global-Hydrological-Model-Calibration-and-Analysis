@@ -6,6 +6,7 @@ from analyses.calibration import Calibration, BorgMOEA
 
 config = None
 libborg_path = '/home/mhasan/ProjectWGHM/algorithm/libborg.so'
+# libborg_path = '/scratch/fuchs/agdoell/hosseini/watergap-calibration-and-analysis-with-python/algorithm/libborg.so'
 libmpi_path = 'libmpi.so'
 libc_path = ''
 world_rank = -1
