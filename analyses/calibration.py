@@ -201,6 +201,7 @@ class Calibration:
                     prediction_directory=output_dir
                 )
             except:
+                WaterGAP.remove_files(arguments)
                 succeed = False
 
             # [sub-step] compute spatial summary
@@ -208,7 +209,11 @@ class Calibration:
             # [end]
 
             # [sub-step] compute anomaly
-            if succeed: succeed = var.do_anomaly_computation()
+            if succeed: var.do_anomaly_computation()
+            # [end]
+
+            # [sub-step] apply conversion factor
+            var.apply_conversion_factor()
             # [end]
             
             if not succeed: break
@@ -218,6 +223,7 @@ class Calibration:
         ## compute values of derived variable
         for var in config.derived_variables:
             var.derive_data(simvars=config.sim_variables)
+            var.do_anomaly_computation()
         # end [step-x]
         
         # [step-x] compute objectives
