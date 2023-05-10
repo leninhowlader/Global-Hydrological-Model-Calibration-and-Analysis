@@ -54,8 +54,8 @@ class Configuration:
         self.__parameter_info_input_filename = ''
         self.__input_sample_filename = ''
 
-        self.__do_parallel_evaluation = False
-        self.__max_iterations = 0
+        self.__do_parallel_evaluation = True
+        self.__max_iterations = 20000
 
         self.__compute_upstream_from_station_file = True
         self.__disjoint_basin_extent = True
@@ -395,7 +395,7 @@ class Configuration:
                         elif key in optionnames['experiment_name']:
                             config.experiment_name = value
 
-                        elif key in optionnames['parameter_info']:
+                        elif key in optionnames['parameter_description_filename']:
                             config.parameter_info_filename = value
 
                         elif key in optionnames['sample_filename']:
@@ -914,8 +914,8 @@ Name of the File: %s
         'maximum_iteration', 'maximum iteration', 'max iter', 'max_iter'
     )
 
-    __optionnames['parameter_info'] = (
-        'parameter_info_input_filename', 'parameter_info_filename'
+    __optionnames['parameter_description_filename'] = (
+        'parameter_info', 'parameter_info_input_filename', 'parameter_info_filename'
     )
 
     __optionnames['parallel_computation'] = (

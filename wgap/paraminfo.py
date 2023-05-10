@@ -500,6 +500,38 @@ class ParameterInfo:
             return param_info
 
         @staticmethod
+        def GBB_selected_parameters():
+            param_info = OrderedDict()
+
+            params_gan = [
+                'gammaHBV_runoff_coeff', 'root_depth_multiplier',
+                'river_roughness_coeff_mult', 'wetland_depth', 
+                'surfacewater_outflow_coefficient', 'PT_coeff_humid',
+                'rg_max_mult', 'net_abstraction_surfacewater_mult',
+                'net_abstraction_groundwater_mult', 'precip_mult'
+            ]
+
+            params_brh = [
+                'gammaHBV_runoff_coeff', 'root_depth_multiplier', 
+                'river_roughness_coeff_mult', 'lake_depth', 'wetland_depth', 
+                'surfacewater_outflow_coefficient', 'PT_coeff_humid', 
+                'snow_freeze_temp', 'snow_melt_temp', 'degree_day_factor_mult', 
+                'temperature_gradient', 'gw_factor_mult', 'rg_max_mult', 
+                'groundwater_outflow_coeff', 'net_abstraction_groundwater_mult', 
+                'precip_mult'
+            ]
+
+            t = ParameterInfo.get_selected_paramter_info(param_names=params_gan)
+            param_info['ganges'] \
+            = ParameterInfo.GlobalCDA.update_parameter_acronym(t)
+
+            t = ParameterInfo.get_selected_paramter_info(param_names=params_brh)
+            param_info['brahmaputra'] \
+            = ParameterInfo.GlobalCDA.update_parameter_acronym(t)
+            
+            return param_info
+
+        @staticmethod
         def GBB_sensitive_parameters():
             param_info = OrderedDict()
 
