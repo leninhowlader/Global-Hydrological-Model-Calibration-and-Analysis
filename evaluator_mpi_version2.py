@@ -151,12 +151,13 @@ def main(argv):
 
             # dump predictions
             if config.dump_model_prediction:
-                if var.spatial_scale != 'cell':
-                    succeed = var.dump_data_into_binary_file(
-                        directory_out=config.output_directory,
-                        additional_filename_identifier=str(world_rank),
-                        additional_attributes=[sample_no]
-                    )
+                # for both basin and cell scale variables the method of dumping 
+                # simulation values is the same
+                succeed = var.dump_data_into_binary_file(
+                    directory_out=config.output_directory,
+                    additional_filename_identifier=str(world_rank),
+                    additional_attributes=[sample_no]
+                )
 
             if config.mode == 'sensitivity':
                 # compute fx
