@@ -1487,43 +1487,55 @@ class SimVariable(Variable):
 
         # step-04: read monthly prediction output
         d_out = np.empty(0)
-        if self.data_source.prediction_type == PredictionType.monthly:
-            for year in range(start_year, end_year + 1):
-                # step-4.1: generate prediction filename
-                ndx = self.data_source.filename.lower().find('[year]')
-                filename_in = os.path.join(
-                    prediction_directory,
-                    self.data_source.filename[:ndx] + str(year) +
-                    self.data_source.filename[ndx + 6:]
-                )
-                # end [step-4.1]
+        for year in range(start_year, end_year + 1):
+            # step-4.1: generate prediction filename
+            ndx = self.data_source.filename.lower().find('[year]')
+            filename_in = os.path.join(
+                prediction_directory,
+                self.data_source.filename[:ndx] + str(year) +
+                self.data_source.filename[ndx + 6:]
+            )
+            # end [step-4.1]
 
-                # step-4.2: read prediction from UNF file
-                d_pred =  WaterGapIO.read_unf(
-                    filename_in,
-                    file_endian=self.data_source.file_endian
-                )
+            # step-4.2: read prediction from UNF file
+            d_pred =  WaterGapIO.read_unf(
+                filename_in,
+                file_endian=self.data_source.file_endian
+            )
 
-                if not type(d_pred) is np.ndarray or len(d_pred) == 0:
-                    return False
-                # end [step-4.2]
+            if not type(d_pred) is np.ndarray or len(d_pred) == 0:
+                return False
+            # end [step-4.2]
 
-                # step-4.3: identify cell-level predictions and store then into
-                # output dataset
-                try: d_out = np.concatenate((d_out, d_pred[ii_cell].T), axis=0)
-                except: d_out = d_pred[ii_cell].T
-                # end [step-4.3]
-
-        if d_out.shape != ((end_year - start_year + 1) * 12, cell_list.size):
-            return False
+            # step-4.3: identify cell-level predictions and store then into
+            # output dataset
+            try: d_out = np.concatenate((d_out, d_pred[ii_cell].T), axis=0)
+            except: d_out = d_pred[ii_cell].T
+            # end [step-4.3]
         # end [step-04]
 
         # step-05: add data indices and store predictions into data cloud
-        yy = np.repeat(np.arange(start_year, end_year + 1), 12).reshape(-1, 1)
-        mm = np.repeat(np.arange(1, 12 + 1)[np.newaxis, :],
-                           (end_year - start_year + 1), axis=0).reshape(-1, 1)
-        self.data_cloud.data_indices = np.concatenate((yy, mm), axis=1)
+        indices = np.empty(0)
+        if self.data_source.prediction_type == PredictionType.monthly:
+            if d_out.shape != ((end_year - start_year + 1) * 12, cell_list.size):
+                return False
+        
+            yy = np.repeat(np.arange(start_year, end_year + 1), 12).reshape(-1, 1)
+            mm = np.repeat(np.arange(1, 12 + 1)[np.newaxis, :],
+                            (end_year - start_year + 1), axis=0).reshape(-1, 1)
+            indices = np.concatenate((yy, mm), axis=1)
 
+        elif self.data_source.prediction_type == PredictionType.daily:
+            if d_out.shape != ((end_year - start_year + 1) * 365, cell_list.size):
+                return False
+            
+            yy = np.repeat(np.arange(start_year, end_year + 1), 365).reshape(-1, 1)
+            dd = np.repeat(np.arange(1, 365 + 1)[np.newaxis, :],
+                            (end_year - start_year + 1), axis=0).reshape(-1, 1)
+            indices = np.concatenate((yy, dd), axis=1)
+        else: return False
+
+        self.data_cloud.data_indices = indices
         self.data_cloud.data = d_out
 
         # set data manipulation flags to their defaults
@@ -1534,6 +1546,7 @@ class SimVariable(Variable):
         return True
 
     def aggregate_prediction_at_spatial_scale(self):
+        if self.__basin_outlets_only: return True
         if not self.group_stats: return True
         if self.__has_aggregated: return True
 
