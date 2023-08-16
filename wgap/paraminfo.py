@@ -504,21 +504,21 @@ class ParameterInfo:
             param_info = OrderedDict()
 
             params_gan = [
-                'gammaHBV_runoff_coeff', 'root_depth_multiplier',
-                'river_roughness_coeff_mult', 'wetland_depth', 
-                'surfacewater_outflow_coefficient', 'PT_coeff_humid',
+                'precip_mult', 'PT_coeff_humid','gammaHBV_runoff_coeff', 
+                'root_depth_multiplier', 'river_roughness_coeff_mult', 
+                'wetland_depth', 'surfacewater_outflow_coefficient',
                 'rg_max_mult', 'net_abstraction_surfacewater_mult',
-                'net_abstraction_groundwater_mult', 'precip_mult'
+                'net_abstraction_groundwater_mult'
             ]
 
             params_brh = [
-                'gammaHBV_runoff_coeff', 'root_depth_multiplier', 
+                'precip_mult', 'PT_coeff_humid', 'snow_freeze_temp', 
+                'snow_melt_temp', 'degree_day_factor_mult', 
+                'temperature_gradient', 'gammaHBV_runoff_coeff', 'root_depth_multiplier', 
                 'river_roughness_coeff_mult', 'lake_depth', 'wetland_depth', 
-                'surfacewater_outflow_coefficient', 'PT_coeff_humid', 
-                'snow_freeze_temp', 'snow_melt_temp', 'degree_day_factor_mult', 
-                'temperature_gradient', 'gw_factor_mult', 'rg_max_mult', 
-                'groundwater_outflow_coeff', 'net_abstraction_groundwater_mult', 
-                'precip_mult'
+                'surfacewater_outflow_coefficient', 
+                'gw_factor_mult', 'rg_max_mult', 
+                'groundwater_outflow_coeff', 'net_abstraction_groundwater_mult'
             ]
 
             t = ParameterInfo.get_selected_paramter_info(param_names=params_gan)
