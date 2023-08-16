@@ -70,19 +70,25 @@ class RuntimeDynamicReport:
         
         self.solutions = []
 
-    def is_okay(self, mode='multi-problem'):
+    def is_okay(self, mode='single-problem'):
         if mode == 'multi-problem' and self.problemid < 0: return False
         if (self.nfe < 0 or self.archive_size <= 0 or
             len(self.solutions) != self.archive_size): return False
         return True
 
     @staticmethod
-    def read_runtime_dynamic_file(filename, mode='multi-problem'):
+    def get_solutions_after(report_list, runs=20000):
+        for report in report_list:
+            if report.nfe == runs: return report.solutions
+        return []
+                
+
+    @staticmethod
+    def read_runtime_dynamic_file(filename, mode='single-problem'):
         
         reports = []
 
-        if True:
-        #try:
+        try:
             f = open(filename, 'r')
             lines = f.readlines()
             f.close()
@@ -192,21 +198,22 @@ class RuntimeDynamicReport:
                         if temp: rpt.solutions.append(temp)
             
             if rpt: reports.append(rpt)
-        #except: pass
+        except: pass
         
         return reports
 
     @staticmethod
     def get_operators_probabilities(
             report_filenames:list,
-            nfe=20000
+            nfe=20000,
+            mode='single-problem'
     ):
         self = RuntimeDynamicReport
 
         sbx, de, pcx, spx, undx, um = [], [], [], [], [], []
 
         for filename in report_filenames:
-            reports = self.read_runtime_dynamic_file(filename)
+            reports = self.read_runtime_dynamic_file(filename, mode=mode)
             for report in reports:
                 if report.nfe == nfe:
                     sbx.append(report.sbx)
@@ -579,7 +586,8 @@ class RuntimeDynamicReport:
             legend_fontsize=12,
             legend_ncol=5,
             legend_loc='lower right',
-            columnspacing=1.0
+            columnspacing=1.0,
+            mode='single-problem'
     ):
         self = RuntimeDynamicReport
 
@@ -668,7 +676,10 @@ class RuntimeDynamicReport:
         ## end [step]
 
         for i in range(ncal):
-            reports = self.read_runtime_dynamic_file(runtime_report_files[i])
+            reports = self.read_runtime_dynamic_file(
+                runtime_report_files[i], mode=mode
+            )
+
             if len(reports) == 0: return False
 
             nobj = experiment_nobjs[i]
