@@ -745,6 +745,10 @@ class SimVariable(Variable):
         'conversion_factor', 'conversion factor', 'unit conversion factor',
         'unit_conversion_factor'
     )
+    __optionnames['reference_period'] = (
+        'reference_period', 'reference period', 'reference period for mean',
+        'reference_period_for_mean'
+    )
     
     def __init__(self):
         Variable.__init__(self)
@@ -757,6 +761,7 @@ class SimVariable(Variable):
         self.basin_cell_list = []           # two-dimensional array
         self.group_stats = False
         self.compute_anomaly = False
+        self.__reference_period_for_mean = ()
         self.__cell_area_as_weight = False
         self.cell_weights = []              # two-dimensional array
 
@@ -904,6 +909,23 @@ class SimVariable(Variable):
                                 if value in ['yes', 'y', '1', 'true', 't']: 
                                     var.compute_anomaly = True
                                 else: var.compute_anomaly = False
+                            
+                            elif key in options['reference_period']:
+                                temp = value.strip('()').split(',')
+                                for i in reversed(range(len(temp))):
+                                    try: temp[i] = int(temp[i])
+                                    except: _ = temp.pop(i)
+                                
+                                if len(temp) == 0:
+                                    temp = value.strip('()').split('-')
+                                    for i in reversed(range(len(temp))):
+                                        try: temp[i] = int(temp[i])
+                                        except: _ = temp.pop(i)
+                                        
+                                if len(temp) == 2: 
+                                    var.__reference_period_for_mean \
+                                    = tuple(temp)
+
                             elif key in options['weights']:
                                 if value.find(':') > 0:
                                     temp = value.split(':')
@@ -1585,9 +1607,18 @@ class SimVariable(Variable):
     def do_anomaly_computation(self):
         if self.compute_anomaly and not self.__has_anomaly_computed:
             self.data_cloud.data = np.array(self.data_cloud.data)
-            self.data_cloud.data -= self.data_cloud.data.mean(axis=0).reshape(
-                                                                        1, -1)
+            
+            if len(self.__reference_period_for_mean) == 2:
+                start_year, end_year = self.__reference_period_for_mean
+                x = self.data_cloud.data_indices[:,0]
+                ii = (x>=start_year)&(x<=end_year)
 
+                reference_means = self.data_cloud.data[ii].mean(
+                                                        axis=0).reshape(1,-1)
+                self.data_cloud.data -= reference_means
+            else:    
+                self.data_cloud.data -= self.data_cloud.data.mean(
+                                                        axis=0).reshape(1, -1)
             self.__has_anomaly_computed = True
 
         return True
@@ -1634,6 +1665,7 @@ class DerivedVariable(Variable):
         self.equation = ''
         self.equ_evaluated = False
         self.compute_anomaly = False
+        self.__reference_period_for_mean = ()
         self.__has_anomaly_computed = False
 
     def is_okay(self):
@@ -1691,8 +1723,18 @@ class DerivedVariable(Variable):
     def do_anomaly_computation(self):
         if self.compute_anomaly and not self.__has_anomaly_computed:
             self.data_cloud.data = np.array(self.data_cloud.data)
-            self.data_cloud.data -= self.data_cloud.data.mean(axis=0).reshape(
-                                                                        1, -1)
+            
+            if len(self.__reference_period_for_mean) == 2:
+                start_year, end_year = self.__reference_period_for_mean
+                x = self.data_cloud.data_indices[:,0]
+                ii = (x>=start_year)&(x<=end_year)
+
+                reference_means = self.data_cloud.data[ii].mean(
+                                                        axis=0).reshape(1,-1)
+                self.data_cloud.data -= reference_means
+            else:
+                self.data_cloud.data -= self.data_cloud.data.mean(
+                                                        axis=0).reshape(1, -1)
 
             self.__has_anomaly_computed = True
     
@@ -1741,4 +1783,24 @@ class DerivedVariable(Variable):
                                 value = value.lower()
                                 if value in ['yes', 'y', '1', 'true', 't']: var.compute_anomaly = True
                                 else: var.compute_anomaly = False
+                            elif key in [
+                                'reference_period', 'reference period', 
+                                'reference period for mean',
+                                'reference_period_for_mean'
+                            ]:
+                                temp = value.strip('()').split(',')
+                                for i in reversed(range(len(temp))):
+                                    try: temp[i] = int(temp[i])
+                                    except: _ = temp.pop(i)
+                                
+                                if len(temp) == 0:
+                                    temp = value.strip('()').split('-')
+                                    for i in reversed(range(len(temp))):
+                                        try: temp[i] = int(temp[i])
+                                        except: _ = temp.pop(i)
+
+                                if len(temp) == 2: 
+                                    var.__reference_period_for_mean \
+                                    = tuple(temp)
+                            
             except: return None
