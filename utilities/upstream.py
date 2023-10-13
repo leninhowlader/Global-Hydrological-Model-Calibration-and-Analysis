@@ -933,7 +933,13 @@ class Upstream:
         return True
 
     @staticmethod
-    def create_shape_with_data(filename_output_shape, basin_id, data, wghm_cnum_list, model_grid_resolution=0.5):
+    def create_shape_with_data(
+        filename_output_shape, 
+        basin_id, 
+        data, 
+        wghm_cnum_list, 
+        model_grid_resolution=0.5
+    ):
 
         # step: check input parameters
         if not filename_output_shape: return False
@@ -947,10 +953,18 @@ class Upstream:
         geopoints = GlobalGrid.cell_vertices(centroids, degree_resolution=model_grid_resolution)
         if not geopoints: return False
 
-        try:
+        if True:
+        # try:
             # step: create shape
             import shapefile as shp
-            shp_basin = shp.Writer(shp.POLYGON)
+            version = int(shp.__version__[0])
+            
+            # create shape object
+            if version == 1: shp_basin = shp.Writer(shp.POLYGON)
+            elif version == 2: 
+                shp_basin = shp.Writer(filename_output_shape, shp.POLYGON)
+            else: return False
+            
             shp_basin.autoBalance = 1
 
             # add fields
@@ -958,14 +972,25 @@ class Upstream:
             shp_basin.field('CNUM', 'N', 8)
             shp_basin.field('Value', 'N', decimal=10)
 
-            # create polygon
-            for j in range(len(wghm_cnum_list)):
-                record_row = [basin_id, wghm_cnum_list[j], data[j]]
-                shp_basin.poly(parts=[geopoints[j]], shapeType=shp.POLYGON)
-                shp_basin.record(*record_row)
+            # create shape for each basin
+            if version == 1:
+                for j in range(len(wghm_cnum_list)):
+                    record_row = [basin_id, wghm_cnum_list[j], data[j]]
+                    shp_basin.poly(parts=[geopoints[j]], shapeType=shp.POLYGON)
+                    shp_basin.record(*record_row)
+                
+            else: # version == 2
+                for j in range(len(wghm_cnum_list)):
+                    record_row = [basin_id, wghm_cnum_list[j], data[j]]
+                    shp_basin.poly([geopoints[j]])
+                    shp_basin.record(*record_row)
 
-            # step: save shape into shape file and add projection file
-            shp_basin.save(filename_output_shape)
+            # step: save shapefile
+            if version == 1: shp_basin.save(filename_output_shape)
+            else: shp_basin.close()
+            # end [step]
+
+            # step: create projection file
             ndx = filename_output_shape.lower().find('.shp')
             if ndx >= 0: filename_output_shape = filename_output_shape[:ndx]
             filename_output_shape += '.prj'
@@ -973,7 +998,8 @@ class Upstream:
             prj_string = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]'
             f.write(prj_string)
             f.close()
-        except:
-            return False
+            # end [step]
+        # except:
+        #     return False
 
         return True
