@@ -1,8 +1,7 @@
 __author__ = 'mhasan'
 
-import sys
-
-from utilities.fileio import FileInputOutput as io
+import sys, pandas as pd
+# from utilities.fileio import FileInputOutput as io
 
 class Parameter:
     def __init__(self, pname='', lbound=None, ubound=None):
@@ -55,16 +54,17 @@ class Parameter:
 
 
     @staticmethod
-    def read_parameter_list(filename, separator=',', header=False, skip_lines=0):
+    def read_parameter_list(filename):
         param_list = []
 
-        headers, data = io.read_flat_file(filename, separator, header, skip_lines)
+        df_param_info = pd.read_csv(filename)
+        param_names = df_param_info['param_name'].values.flatten()
+        lower_bounds = df_param_info['lower_bound'].values.flatten()
+        upper_bounds = df_param_info['upper_bound'].values.flatten()
 
-        if data:
-            nndx, lndx, undx = 0, 1, 2
-            for d in data:
-                p = Parameter(d[nndx], d[lndx], [undx])
-                param_list.append(p)
+        for i in range(len(param_names)):
+            p = Parameter(param_names[i], lower_bounds[i], upper_bounds[i])
+            param_list.append(p)
 
         return param_list
 
