@@ -98,11 +98,57 @@ class Configuration:
         self.samples = []
 
         self.__one_problem = True
+        self.__calibration_type = 'single'  # 'single' or 'one' 
+                                            # 'multiple' or 'many'
+        self.__multiproblem_parameter_list_filename = ''
+        self.__multiproblem_objective_list_filename = ''
+        self.__problem_count = 1
+
+        self.__multiproblem_parameter_index_list = []
+        self.__multiproblem_objective_index_list = []
+
+    @property
+    def poc_problem_count(self): return self.__problem_count
+    @poc_problem_count.setter
+    def poc_problem_count(self, nproblem): self.__problem_count = nproblem
 
     @property
     def single_problem_mode(self): return self.__one_problem
     @single_problem_mode.setter
     def single_problem_mode(self, flag:bool): self.__one_problem = flag
+
+    @property
+    def calibration_type(self): return self.__calibration_type
+    @calibration_type.setter
+    def calibration_type(self, calib_type): self.__calibration_type = calib_type
+
+    @property
+    def multiproblem_parameter_list_filename(self):
+        return self.__multiproblem_parameter_list_filename
+    @multiproblem_parameter_list_filename.setter
+    def multiproblem_parameter_list_filename(self, filename):
+        self.__multiproblem_parameter_list_filename = filename
+
+    @property
+    def multiproblem_objective_list_filename(self):
+        return self.__multiproblem_objective_list_filename
+    @multiproblem_objective_list_filename.setter
+    def multiproblem_objective_list_filename(self, filename):
+        self.__multiproblem_objective_list_filename = filename
+
+    @property
+    def multiproblem_parameter_index_list(self):
+        return self.__multiproblem_parameter_index_list
+    @multiproblem_parameter_index_list.setter
+    def multiproblem_parameter_index_list(self, param_list):
+        self.__multiproblem_parameter_index_list = param_list
+    
+    @property
+    def multiproblem_objective_index_list(self):
+        return self.__multiproblem_objective_index_list
+    @multiproblem_objective_index_list.setter
+    def multiproblem_objective_index_list(self, objective_list):
+        self.__multiproblem_objective_index_list = objective_list
 
     @property
     def experiment_name(self):
@@ -290,18 +336,28 @@ class Configuration:
 
     def obs_var_count(self): return len(self.obs_variables)
     def sim_var_count(self): return len(self.sim_variables)
-    def get_parameter_count(self): return len(self.parameters)
+    def get_parameter_count(self): 
+        nparameters = 0
+        
+        if self.poc_problem_count > 1: 
+            for i in range(self.poc_problem_count):
+                nparameters += len(self.multiproblem_parameter_index_list[i])
+        else: nparameters = len(self.parameters)
+            
+        return nparameters
+            
 
     def get_objective_count(self):
         count = 0
-
-        sim_varnames, derived_vars = [], []
-        for v in self.sim_variables: sim_varnames.append(v.varname)
-        for v in self.derived_variables: derived_vars.append(v.varname)
-
-        for v in self.obs_variables:
-            if v.counter_variable in sim_varnames: count += 1
-            if v.counter_variable in derived_vars: count += 1
+        if self.poc_problem_count > 1:
+            for i in range(self.poc_problem_count):
+                count += len(self.multiproblem_objective_index_list[i])
+        else:
+            varnames =  [v.varname for v in self.sim_variables]
+            varnames += [v.varname for v in self.derived_variables]
+            
+            for v in self.obs_variables:
+                if v.counter_variable in varnames: count += 1
 
         return count
 
@@ -456,6 +512,23 @@ class Configuration:
                         elif key in optionnames['runtime_dynamics_frequency']:
                             try: config.runtime_dynamics_frequency = int(value)
                             except: config.runtime_dynamics_frequency = -1
+                        
+                        elif key in optionnames['calibration_type']:
+                            config.calibration_type = value.lower()
+                            if config.calibration_type in ['multiple', 'many']:
+                                config.single_problem_mode = False
+                            else: config.single_problem_mode = True
+                        
+                        elif key in optionnames[
+                            'multiproblem_calibration_parameter_list']:
+                            config.multiproblem_parameter_list_filename = value
+                        
+                        elif key in optionnames[
+                            'multiproblem_calibration_objective_list']:
+                            config.multiproblem_objective_list_filename = value
+                        
+                        elif key in optionnames['parameter_info_filename']:
+                            config.parameter_info_filename = value
 
                         elif key in ['compute_prediction_efficiency'
                                      'compute_model_efficiency']:
@@ -547,6 +620,10 @@ class Configuration:
                         600 error in sensitivity method selection
                         700 absence of parameters
                         70x error in parameter no. x
+                        810 no multiproblem calibration parmeters file
+                        820 no multiproblem calibration objectives file
+                        830 length of objective list and length of paramter list
+                            does not match.
         '''
 
         # step: check whether or not the station file is available when 'target cell from station file' flag is set ON
@@ -611,17 +688,16 @@ class Configuration:
                 else: return 502
             if not self.samples: return 502
 
-            # create parameter objects from parameter info file (if given)
-            if self.__parameter_info_input_filename:
-                self.parameters = Parameter.read_parameter_list(
-                                        self.__parameter_info_input_filename,
-                                        header=True
-                )
-
             if self.__mode == 'sensitivity':
                 if not (self.sensitivity_as_change_in_prediction or
                         len(self.obs_variables) > 0): return 600
 
+        # create parameter objects from parameter info file (if given)
+        if self.parameter_info_filename:
+            self.parameters = Parameter.read_parameter_list(
+                self.parameter_info_filename
+            )
+            
         # step: check completeness of parameters
         if not self.parameters: return 700
         else:
@@ -629,8 +705,80 @@ class Configuration:
             for param in self.parameters:
                 pnum += 1
                 if not param.is_okey(): return (700 + pnum)
+            
+        # [step-x] check the parameter index for multi-problem optimization
+        if self.calibration_type in ['multiple', 'many']:
+            f = self.multiproblem_parameter_list_filename
+            if not os.path.exists(f): return 810
+            param_indicies = self.get_parameter_indices_for_manyPoc(f)
+            if len(param_indicies) > 0:
+                self.multiproblem_parameter_index_list = param_indicies
+        # end [step]
+
+        # [step-x] check the objective [or observaiton] indeices for multi-
+        # problem calibration
+        if self.calibration_type in ['multiple', 'many']:
+            f = self.multiproblem_objective_list_filename
+            if not os.path.exists(f): return 820
+            obj_indices = self.get_objective_indices_for_manyPoc(f)
+            if len(obj_indices) > 0:
+                self.multiproblem_objective_index_list = obj_indices
+        # end [step-x]
+
+        # [step-x] check number of problems in parameter index list and 
+        # objective index list
+        if (len(self.multiproblem_objective_index_list) 
+            != len(self.multiproblem_parameter_index_list)):
+            return 830
+        else:
+            self.poc_problem_count = len(self.multiproblem_objective_index_list)
+            self.__one_problem = False
+        #
 
         return 0
+    
+    def get_parameter_indices_for_manyPoc(self, parameter_index_filename):
+        
+        if len(self.parameters) == 0: return []
+        
+        param_index = dict()
+        for i in range(len(self.parameters)): 
+            param_index[self.parameters[i].parameter_name] = i
+
+        param_list = []
+
+        f = open(parameter_index_filename, 'r')
+        for line in f.readlines():
+            temp = line.strip().split(',')
+            indices = []
+            for i in range(len(temp)):
+                n = temp[i].strip()
+                if n != '': indices.append(param_index[n])
+            if len(indices) > 0: param_list.append(indices)
+        f.close()
+
+        return param_list 
+                    
+    def get_objective_indices_for_manyPoc(self, objective_index_filename):
+        if len(self.obs_variables) == 0: return []
+        
+        obj_index = dict()
+        for i in range(len(self.obs_variables)):
+            obj_index[self.obs_variables[i].varname] = i 
+
+        objective_list = []
+        f = open(objective_index_filename, 'r')
+        for line in f.readlines():
+            temp = line.strip().split(',')
+            indices = []
+            for i in range(len(temp)):
+                vname = temp[i].strip()
+                if vname != '': indices.append(obj_index[vname])
+            if len(indices) > 0: objective_list.append(indices)
+        f.close()
+
+        return objective_list
+
 
     def generate_target_cells_from_station_file(self):
         '''
@@ -968,9 +1116,29 @@ Name of the File: %s
         'disjoint_basin_extent', 'disjoint basin extent'
     )
 
-    __optionnames['many_calibration'] = ()
-    __optionnames['parameter_indexfile'] = ()
-    __optionnames['objective_indexfile'] = ()
+    # options of many-problem calibration
+    __optionnames['calibration_type'] = (
+        'calibration_type', 'calibration type', 'calibration-type'
+    )
+
+    __optionnames['multiproblem_calibration_parameter_list'] = (
+        'multiproblem_calibration_parameter_list',
+        'multiproblem calibration parameter list'
+    )
+
+    __optionnames['multiproblem_calibration_objective_list'] = (
+        'multiproblem_calibration_objective_list',
+        'multiproblem calibration objective list',
+        'multiproblem_calibration_observation_list',
+        'multiproblem calibration observation list'
+    )
+
+    __optionnames['parameter_info_filename'] = (
+        'parameter_info_input_filename', 'parameter info input filename',
+        'parameter_info_filename', 'parameter info filename'
+    )
+
+    # __optionnames['objective_indexfile'] = ()
     __optionnames['report_outfile'] = ()
     __optionnames['sleep_time'] = ()
 
