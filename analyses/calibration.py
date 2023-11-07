@@ -521,11 +521,19 @@ class BorgMOEA:
         if config_poc.single_problem_mode:
             problem = BorgMOEA.__borg_problem_array[0]
 
-            results = problem.solveMPI(
+            # results = problem.solveMPI(
+            #     islands=1,
+            #     maxEvaluations=max_evaluations,
+            #     runtime=config_poc.runtime_dynamics_output_filename,
+            #     runtimeFrequency=config_poc.runtime_dynamics_frequency
+            # )
+            results = Borg.solveMPI(
+                problem=problem,
                 islands=1,
                 maxEvaluations=max_evaluations,
                 runtime=config_poc.runtime_dynamics_output_filename,
-                runtimeFrequency=config_poc.runtime_dynamics_frequency
+                runtimeFrequency=config_poc.runtime_dynamics_frequency,
+                modeManyProblems=False
             )
             succeed = True
 

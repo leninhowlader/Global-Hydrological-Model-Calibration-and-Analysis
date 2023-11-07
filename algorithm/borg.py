@@ -288,8 +288,21 @@ class Direction:
 
 class Borg:
     """ Solves an optimization problem using the Borg MOEA. """
+    problems = []
+    results = []
+    function = None
+    directions = None
 
-    def __init__(self, numberOfVariables, numberOfObjectives, numberOfConstraints, function, epsilons=None, bounds=None, directions=None):
+    def __init__(
+        self, 
+        numberOfVariables, 
+        numberOfObjectives, 
+        numberOfConstraints, 
+        function=None, 
+        epsilons=None, 
+        bounds=None, 
+        directions=None
+    ):
         """ Creates a new instance of the Borg MOEA.
 
         numberOfVariables   - The number of decision variables in the optimization problem
@@ -319,25 +332,86 @@ class Borg:
         self.numberOfObjectives = numberOfObjectives
         self.numberOfConstraints = numberOfConstraints
         self.directions = directions
-        self.function = _functionWrapper(function, numberOfVariables, numberOfObjectives, numberOfConstraints, directions)
+        self.bounds = bounds
+        self.epsilons = epsilons
+        self.epsilonsAssigned = False
 
+        if function:
+            self.function = _functionWrapper(function, numberOfVariables, numberOfObjectives, numberOfConstraints, directions)
+
+            if BorgConfiguration.stdcall:
+                self.CMPFUNC = WINFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
+            else:
+                self.CMPFUNC = CFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
+
+            self.callback = self.CMPFUNC(self.function)
+            self.reference = c_void_p(BorgConfiguration.libborg.BORG_Problem_create(c_int(numberOfVariables), c_int(numberOfObjectives), c_int(numberOfConstraints), self.callback))
+
+            if bounds: self.setBounds(*bounds)
+            if epsilons: self.setEpsilons(*epsilons)
+
+        else: self.reference = None
+    
+    @staticmethod
+    def set_directions(
+        directions,
+        modeManyProblems=True
+    ):
+        if not modeManyProblems: return
+        Borg.directions = directions
+
+    @staticmethod
+    def set_function(
+        function, 
+        modeManyProblems=True
+    ):
+        if not modeManyProblems: return
+        else:
+            numberOfVariables = 0
+            numberOfObjectives = 0
+            numberOfConstraints = 0
+
+            for problem in Borg.problems:
+                numberOfVariables += problem.numberOfVariables
+                numberOfObjectives += problem.numberOfObjectives
+                numberOfConstraints += problem.numberOfConstraints
+            
+            Borg.function = _functionWrapper(
+                function, numberOfVariables, numberOfObjectives, 
+                numberOfConstraints, Borg.directions
+            )
+
+    @staticmethod
+    def actualizeMultiProblems(modeManyProblems=True):
+        if not modeManyProblems: return
+        if not Borg.function: return
+
+        # Ensure the underlying library is available
+        BorgConfiguration.check()
+        
         if BorgConfiguration.stdcall:
-            self.CMPFUNC = WINFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
+            CMPFUNC = WINFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
         else:
-            self.CMPFUNC = CFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
+            CMPFUNC = CFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
 
-        self.callback = self.CMPFUNC(self.function)
-        self.reference = c_void_p(BorgConfiguration.libborg.BORG_Problem_create(c_int(numberOfVariables), c_int(numberOfObjectives), c_int(numberOfConstraints), self.callback))
+        for problem in Borg.problems:
+            problem.callback = CMPFUNC(Borg.function)
+            problem.reference = c_void_p(
+                BorgConfiguration.libborg.BORG_Problem_create(
+                    c_int(problem.numberOfVariables), 
+                    c_int(problem.numberOfObjectives), 
+                    c_int(problem.numberOfConstraints), 
+                    problem.callback
+                )
+            )
+            
+            bounds, epsilons = problem.bounds, problem.epsilons
+            if problem.bounds: problem.setBounds(*bounds)
+            if problem.epsilons: problem.setEpsilons(*epsilons)
 
-        if bounds:
-            self.setBounds(*bounds)
-        else:
-            self.setBounds(*[[0, 1]]*numberOfVariables)
-
-        if epsilons:
-            self.setEpsilons(*epsilons)
-        else:
-            self.epsilonsAssigned = False
+            BorgConfiguration.libborg.BORG_Algorithm_add_problem(
+                problem.reference
+            )
 
     def __del__(self):
         """ Deletes the underlying C objects. """
@@ -392,15 +466,17 @@ class Borg:
         """ Sets the lower and upper decision variable bounds at the given index. """
         BorgConfiguration.libborg.BORG_Problem_set_bounds(self.reference, index, c_double(lowerBound), c_double(upperBound))
 
+    @staticmethod
     def solveMPI(
-        self, 
+        problem=None, 
         islands=1, 
         maxTime=None, 
         maxEvaluations=None, 
         initialization=None, 
         runtime=None,
         runtimeFrequency=0,
-        allEvaluations=None
+        allEvaluations=None,
+        modeManyProblems=False
     ):
         """ Runs the master-slave or multi-master Borg MOEA using MPI.
 
@@ -418,9 +494,17 @@ class Borg:
         Pareto optimal solutions.  The rest will return None.
         """
 
-        if not self.epsilonsAssigned:
-            raise RuntimeError("Epsilons must be assigned")
-
+        if problem is not None:
+            if not problem.epsilonsAssigned:
+                raise RuntimeError("Epsilons must be assigned")
+        else:
+            if len(Borg.problems) == 0: 
+                raise RuntimeError("List of optimization problems is empty!")
+            
+            for i in range(len(Borg.problems)):
+                if not Borg.problems[i].epsilonsAssigned:
+                    raise RuntimeError("Epsilons must be assigned")
+        
         if not BorgConfiguration.startedMPI:
             raise RuntimeError("MPI is not started; call BorgConfiguration.startMPI() first")
 
@@ -455,9 +539,30 @@ class Borg:
         if allEvaluations:
             BorgConfiguration.libborg.BORG_Algorithm_output_evaluations(c_char_p(allEvaluations));
 
-        result = BorgConfiguration.libborg.BORG_Algorithm_ms_run(self.reference)
+        if modeManyProblems:
+            n = Borg.get_number_of_problems()
+            BorgConfiguration.libborg.BORG_Algorithm_external_ms_run()
+            
+            results = []
+            for i in range(n):
+                result = \
+                BorgConfiguration.libborg.BORG_Algorithm_get_archive_of_problem(
+                    i
+                )
+                results.append(
+                    Result(result, problem=Borg.problems[i]) if result else None
+                )
 
-        return Result(result, self) if result else None
+            Borg.results = results
+
+            return Borg.results
+        
+        else: 
+            result = BorgConfiguration.libborg.BORG_Algorithm_ms_run(
+                problem.reference
+            )
+
+        return Result(result, problem=problem) if result else None
 
     def solve(self, settings={}):
         """ Runs the Borg MOEA to solve the defined optimization problem, returning the
@@ -637,6 +742,12 @@ class Borg:
 
         return Result(result, self, statistics)
 
+    @staticmethod
+    def add_problem(problem): Borg.problems.append(problem)
+    
+    @staticmethod
+    def get_number_of_problems(): return len(Borg.problems)
+
 class Solution:
     """ A solution to the optimization problem. """
 
@@ -677,10 +788,15 @@ class Solution:
         """ Returns the constraint value at the given index. """
         return BorgConfiguration.libborg.BORG_Solution_get_constraint(self.reference, index)
 
-    def display(self, out=sys.stdout, separator=" "):
+    def display(self, out=sys.stdout, separator=" ", solution_id=-1):
         """ Prints the decision variables, objectives, and constraints to standard output. """
-        print(separator.join(map(str, self.getVariables() + self.getObjectives() 
-                                 + self.getConstraints())), file=out)
+        output_list = []
+        if solution_id >= 0: output_list.append(solution_id)
+
+        output_list += \
+        self.getVariables() + self.getObjectives() + self.getConstraints()
+        
+        print(separator.join(map(str, output_list)), file=out)
 
     def violatesConstraints(self):
         """ Returns True if this solution violates one or more constraints; False otherwise. """
@@ -705,8 +821,10 @@ class Result:
 
     def display(self, out=sys.stdout, separator=" "):
         """ Print the Pareto optimal solutions to standard output. """
+        solution_id = 0
         for solution in self:
-            solution.display(out, separator)
+            solution.display(out, separator, solution_id=solution_id)
+            solution_id += 1
 
     def size(self):
         """ Returns the size of the Pareto optimal set. """
