@@ -438,8 +438,8 @@ class BorgMOEA:
         nobjs = poc_config.get_objective_count()
         nconts = poc_config.get_constraints_count()
 
-        is_one_problem = poc_config.single_problem_mode
-        if is_one_problem:
+        # is_one_problem = poc_config.single_problem_mode
+        if poc_config.calibration_type=='single':
             problem = Borg(nvars, nobjs, nconts, function=eval_func)
 
             # set bounds of decision variables
@@ -518,7 +518,7 @@ class BorgMOEA:
         max_evaluations = config_poc.maximum_iteration
         
         results = None
-        if config_poc.single_problem_mode:
+        if config_poc.calibration_type == 'single':
             problem = BorgMOEA.__borg_problem_array[0]
 
             # results = problem.solveMPI(
@@ -527,6 +527,7 @@ class BorgMOEA:
             #     runtime=config_poc.runtime_dynamics_output_filename,
             #     runtimeFrequency=config_poc.runtime_dynamics_frequency
             # )
+            
             results = Borg.solveMPI(
                 problem=problem,
                 islands=1,
