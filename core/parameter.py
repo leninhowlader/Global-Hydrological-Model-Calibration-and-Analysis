@@ -4,6 +4,55 @@ import sys, pandas as pd
 # from utilities.fileio import FileInputOutput as io
 
 class Parameter:
+    """
+    Class to represent the Parameter objects.
+
+    Attributes:
+    parameter_name: str
+        the name of the parameter (as used in the json parameter file)
+    lower_bound: float
+        the lower limit of the parameter
+    upper_bound: float
+        the upper limit of the parameter
+    parameter_value: float (or list of floats)
+        current value of the parameter. if the attribute contains a float 
+        value, the single value is applied to all cells mentioned in the 
+        cell_list variable or to all cells of the globe when cell_list is
+        empty. If however parameter_value contains list of float, each value
+        of the list corresponds to the value of respective cells in the 
+        cell_list, either a single cell or a group of cells.
+    logarithmic_scale: bool
+        determines whether the value of the parameter is in 10-based log scale.
+        if the attribute is set true, a transformation of the parameter value
+        has to be performed before assigne the value to a cell
+    cell_list: list of integers
+        the cell numbers of the WaterGAP model cell. The numbers are according
+        to the GCRC numbers. If the cell_list container is empty, the parameter
+        value is applied to all global cells. If the cell_list contains, lists
+        of cell numbers of many basins and if parameter_value contains list of 
+        values, for each basin the parameter value will be mapped from the 
+        parameter_value list. The cell_list may also contain only cell numbers,
+        instead of list of cell number, to represent the cells and if the 
+        parameter_value has the same length as of the length of cell_list,
+        cell specific value has to be assigned.
+    precision_level: integer
+        represents the level of precision i.e., how many significant digits
+        should be consided after the decimal point.
+
+    single_value_flag: bool (will be deprecated soon)
+        indicate if the parameter value to be applied for all cells globally
+    cell_specific_values: list of floats (will be deprecated soon)
+        contains the cell specific values of the parameter. the length of 
+        this container should be the same as the length of cell_list
+    
+    Methods:
+    is_okay()
+        Checks consistencies of the Parameter object. If a parameter has a 
+        name and a proper domain, the object will pass the consistency check.
+    
+    Remarks: the documentation style followed from 
+    https://realpython.com/documenting-python-code/
+    """
     def __init__(self, pname='', lbound=None, ubound=None):
         self.parameter_name = pname
         self.lower_bound = lbound
