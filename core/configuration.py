@@ -97,7 +97,7 @@ class Configuration:
         self.parameters = []
         self.samples = []
 
-        self.__one_problem = True
+        # self.__one_problem = True
         self.__calibration_type = 'single'  # 'single' or 'one' 
                                             # 'multiple' or 'many'
         self.__multiproblem_parameter_list_filename = ''
@@ -112,10 +112,10 @@ class Configuration:
     @poc_problem_count.setter
     def poc_problem_count(self, nproblem): self.__problem_count = nproblem
 
-    @property
-    def single_problem_mode(self): return self.__one_problem
-    @single_problem_mode.setter
-    def single_problem_mode(self, flag:bool): self.__one_problem = flag
+    # @property
+    # def single_problem_mode(self): return self.__one_problem
+    # @single_problem_mode.setter
+    # def single_problem_mode(self, flag:bool): self.__one_problem = flag
 
     @property
     def calibration_type(self): return self.__calibration_type
@@ -515,9 +515,9 @@ class Configuration:
                         
                         elif key in optionnames['calibration_type']:
                             config.calibration_type = value.lower()
-                            if config.calibration_type in ['multiple', 'many']:
-                                config.single_problem_mode = False
-                            else: config.single_problem_mode = True
+                            # if config.calibration_type in ['multiple', 'many']:
+                            #     config.single_problem_mode = False
+                            # else: config.single_problem_mode = True
                         
                         elif key in optionnames[
                             'multiproblem_calibration_parameter_list']:
@@ -732,7 +732,7 @@ class Configuration:
             return 830
         else:
             self.poc_problem_count = len(self.multiproblem_objective_index_list)
-            self.__one_problem = False
+            # self.__one_problem = False
         #
 
         return 0
