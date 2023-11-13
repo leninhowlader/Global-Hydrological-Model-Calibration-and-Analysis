@@ -704,52 +704,140 @@ class ObsVariable(Variable):
         return succeed
 
 class SimVariable(Variable):
-    __optionnames = {}
-    __optionnames['varname'] = (
-        'var_name', 'varname', 'var name', 'variable_name', 'variable name'
-    )
-    __optionnames['filename'] = (
-        'filename', 'data_file', 'data file', 'data config_filename'
-    )
-    __optionnames['temporal_resolution'] = (
-        'temporal_resolution', 'value_type', 'value type', 'data_type', 
-        'data type', 'prediction_type', 'prediction_type'
-    )
-    __optionnames['spatial_aggregation'] = (
-        'spatial_aggregation', 'spatial aggregation', 'zonal_average', 
-        'zonal average', 'zone flag',  'zone_flag', 'group stats', 
-        'group_stats', 'aggregation'
-    )
-    __optionnames['cellnums'] = (
-        'target_grid_cells', 'target_cells', 'target cells', 'target grid cells'
-    )
-    __optionnames['compute_anomaly'] = (
-        'anomaly_computation', 'compute anomalies', 'compute anomaly' , 
-        'anomaly', 'anomalies', 'calculate anomalies', 'calculate anomaly',
-        'compute_anomaly'
-    )
-    __optionnames['weights'] = (
-        'weights', 'cell weights', 'cell_weights'
-    )
-    __optionnames['area_as_weight'] = (
-        'area_as_weight', 'cell_area_as_weight', 'use cell areas for weights'
-    )
-    __optionnames['basin_outlets_only'] = (
-        'basin_outlets_only', 'basin outlets only', 'basin_outlet_only', 
-        'basin outlet only'
-    )
-    __optionnames['spatial_scale'] = (
-        'spatial_scale', 'scale'
-    )
-    __optionnames['conversion_factor'] = (
-        'conversion_factor', 'conversion factor', 'unit conversion factor',
-        'unit_conversion_factor'
-    )
-    __optionnames['reference_period'] = (
-        'reference_period', 'reference period', 'reference period for mean',
-        'reference_period_for_mean'
-    )
+    """
+    Class of Simulation Variable objects that describes the WaterGAP output
+    variables
+
+    Attributes/Properties:
+    (attributes inherited from the superclass)
+    varname: str
+        name of the simulation variable
+    data_source: DataSource
+        data source object that describe the source file name and format (see
+        description of DataSource class [yet to be added])
+    data_cloud: DataCloud
+        a container to hold data of the variable object. (see description of 
+        DataCloud class [yet to be added])
+    data_obtained: bool
+        a flag describing whether or not data of the variable has been read in
+    (attributes of the current class)
+    outlet_cellnumbers: list of integers (new)
+        list of basin outlet cell number. cell number refers to the WaterGAP
+        GCRC cell numbers.
+    compute_basin_extent: bool (new)
+        a flag indicating whether or not computation of basin outline should be
+        performed. if the flag is set to true, basin extend will be computed and
+        basin cellnumbers will be stored in the basin_cell_list variable
+    basin_cell_list: list of integer, list of those list (perferred), or mixed
+        cell numbers of all cell within each basin. each list element represents
+        one basin. However, in only integer is given as element (but not an 
+        array or list), the element represent one cell (usually a basin outlet
+        cell)
+    spatial_scale, __spatial_scale: str
+        describe the spatial scale to be considered for the cells present in 
+        basin_cell_list. the domain of the attribute is {'cell', 'basin', 
+        'mixed'}
+    group_stats: bool
+        the flag indicates whether or not data aggregation necessary. in 
+        general, data aggregation is always done (as a default) for basins.
+        if the spatial scale is not basin, this attribute will be set to false
+    cell_area_as_weight, __cell_area_as_weight: bool
+        the flag describe whether or not the cell area has to be used for 
+        weighting the cell values during basin level aggregation. if the weights
+        in the cell_weights are not provided and the cell_area_as_weight flag
+        is set true, the area of each cell has to be computed and the cell
+        areas of the corresponds cells in basin_cell_list should be stored in
+        cell_weights variable
+    compute_anomaly: bool
+        a flag determines whether the anomalies would be computed or not
+    __reference_period_for_mean: tuple of integer
+        a tuple of start and end year of reference period for computing means
+        while anomaly computation is done 
+    conversion_factor, __conversion_factor: float
+        conversion factor. conversion factor will be applied before the data has
+        been aggregated and anomalies have been computed (when applicable).
     
+    (attribute to be removed in the future)
+    basin_outlets_only, __basin_outlets_only: bool
+        a flag that describe whether the cellnumbers in the cell list represent
+        basin outlets or basin cells
+    boo_consider_super_basins, __boo_consider_super_basins: bool
+        when the 'basin outlet only' (boo) flag is turned on, this flag 
+        indicates that entire super basin i.e., all upstream area (from the 
+        most downstream cell ?!!) should be considered
+    
+    (internal attributes)
+    __optionnames: dict
+        names and their alternatives in the configuration file to describe a 
+        simulation variable objects 
+    __has_aggregated: bool
+        the flag describes whether or not the aggregation step been completed
+    __has_anomaly_computed: bool
+        the flag describes if the anomaly has already been computed or not
+    __has_conversion_applied: bool
+        the flag indicates whether the conversion factor has already been 
+        applied or not
+    
+    Methods:
+    is_okay()
+        Checks consistency and integrity of the objects and its components.
+
+    
+    """
+
+    __optionnames = {
+        'varname': (
+            'var_name', 'varname', 'var name', 'variable_name', 
+            'variable name'
+        ),
+        'filename': (
+            'filename', 'data_file', 'data file', 
+            'data config_filename'
+        ),
+        'temporal_resolution': (
+            'temporal_resolution', 'value_type', 'value type', 'data_type', 
+            'data type', 'prediction_type', 'prediction_type'
+        ),
+        'spatial_aggregation': (
+            'spatial_aggregation', 'spatial aggregation', 'zonal_average', 
+            'zonal average', 'zone flag',  'zone_flag', 'group stats', 
+            'group_stats', 'aggregation'
+        ),
+        'cellnums': (
+            'target_grid_cells', 'target_cells', 'target cells', 
+            'target grid cells'
+        ),
+        'compute_anomaly': (
+            'anomaly_computation', 'compute anomalies', 'compute anomaly' , 
+            'anomaly', 'anomalies', 'calculate anomalies', 'calculate anomaly',
+            'compute_anomaly'
+        ),
+        'weights': ('weights', 'cell weights', 'cell_weights'),
+        'area_as_weight': (
+            'area_as_weight', 'cell_area_as_weight', 'use cell areas for weights'
+        ),
+        'basin_outlets_only': (
+            'basin_outlets_only', 'basin outlets only', 'basin_outlet_only', 
+            'basin outlet only'
+        ),
+        'spatial_scale': ('spatial_scale', 'scale'),
+        'conversion_factor': (
+            'conversion_factor', 'conversion factor', 'unit conversion factor',
+            'unit_conversion_factor'
+        ),
+        'reference_period': (
+            'reference_period', 'reference period', 'reference period for mean',
+            'reference_period_for_mean'
+        ),
+        'outlet_cellnumbers':(
+            'outlet_cellnumbers', 'outlet cellnumbers', 'basin outlets', 
+            'basin_outlets'
+        ),
+        'compute_basin_extent': (
+            'compute_basin_extent', 'compute basin extent', 'find basin outline'
+        )
+    }
+
     def __init__(self):
         Variable.__init__(self)
         self.data_source.file_type = FileType.wghm_binary
@@ -770,6 +858,9 @@ class SimVariable(Variable):
 
         self.__conversion_factor = 1
         self.__has_conversion_applied = True
+        
+        self.outlet_cellnumbers = []            
+        self.compute_basin_extent = False
 
     @property
     def conversion_factor(self): return self.__conversion_factor
@@ -977,6 +1068,37 @@ class SimVariable(Variable):
                                     var.conversion_factor = float(value)
                                     var.__has_conversion_applied = False
                                 except: pass
+                            elif key in options['outlet_cellnumbers']:
+                                lines_str = ''
+                                if value.find(':') > 0:
+                                    temp = value.split(':')
+                                    for i in range(len(temp)): 
+                                        temp[i] = temp[i].strip()
+
+                                    if (len(temp) == 2 and 
+                                        temp[0].lower() == 'filename'):
+                                        filename = temp[1]
+
+                                        fs = open(filename, 'r')
+                                        for l in fs.readlines(): lines_str += l
+                                        fs.close()
+
+                                else: lines_str = value
+
+                                temp_array = \
+                                SimVariable.read_groups(value, type='int')
+                                
+                                t = []
+                                for x in temp_array: t = t+x
+
+                                var.outlet_cellnumbers = t
+                            elif key in options['compute_basin_extent']:
+                                value = value.lower()
+                                if value in ['yes', 'y', '1', 'true', 't']: 
+                                    var.compute_basin_extent = True
+                                # else: 
+                                #     var.compute_basin_extent = False # default
+
             except: return None
 
     @staticmethod
