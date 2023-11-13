@@ -337,18 +337,38 @@ class Borg:
         self.epsilonsAssigned = False
 
         if function:
-            self.function = _functionWrapper(function, numberOfVariables, numberOfObjectives, numberOfConstraints, directions)
+            self.function = _functionWrapper(
+                function, numberOfVariables, numberOfObjectives, 
+                numberOfConstraints, directions
+            )
 
             if BorgConfiguration.stdcall:
-                self.CMPFUNC = WINFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
+                self.CMPFUNC = WINFUNCTYPE(
+                    c_void_p, POINTER(c_double), POINTER(c_double), 
+                    POINTER(c_double)
+                )
             else:
-                self.CMPFUNC = CFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
+                self.CMPFUNC = CFUNCTYPE(
+                    c_void_p, POINTER(c_double), POINTER(c_double), 
+                    POINTER(c_double)
+                )
 
             self.callback = self.CMPFUNC(self.function)
-            self.reference = c_void_p(BorgConfiguration.libborg.BORG_Problem_create(c_int(numberOfVariables), c_int(numberOfObjectives), c_int(numberOfConstraints), self.callback))
+            self.reference = c_void_p(
+                BorgConfiguration.libborg.BORG_Problem_create(
+                    c_int(numberOfVariables), 
+                    c_int(numberOfObjectives), 
+                    c_int(numberOfConstraints), 
+                    self.callback
+                )
+            )
 
             if bounds: self.setBounds(*bounds)
             if epsilons: self.setEpsilons(*epsilons)
+
+            BorgConfiguration.libborg.BORG_Algorithm_add_problem(
+                self.reference
+            )
 
         else: self.reference = None
     
@@ -390,9 +410,15 @@ class Borg:
         BorgConfiguration.check()
         
         if BorgConfiguration.stdcall:
-            CMPFUNC = WINFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
+            CMPFUNC = WINFUNCTYPE(
+                c_void_p, POINTER(c_double), POINTER(c_double), 
+                POINTER(c_double)
+            )
         else:
-            CMPFUNC = CFUNCTYPE(c_void_p, POINTER(c_double), POINTER(c_double), POINTER(c_double))
+            CMPFUNC = CFUNCTYPE(
+                c_void_p, POINTER(c_double), POINTER(c_double), 
+                POINTER(c_double)
+            )
 
         for problem in Borg.problems:
             problem.callback = CMPFUNC(Borg.function)
@@ -417,6 +443,7 @@ class Borg:
         """ Deletes the underlying C objects. """
         try:
             BorgConfiguration.libborg.BORG_Problem_destroy(self.reference)
+            BorgConfiguration.libborg.BORG_Algorithm_empty_all_archives()
         except AttributeError:
             pass
 
@@ -538,31 +565,37 @@ class Borg:
         
         if allEvaluations:
             BorgConfiguration.libborg.BORG_Algorithm_output_evaluations(c_char_p(allEvaluations));
+        
+        BorgConfiguration.libborg.BORG_Algorithm_external_ms_run()
+        
+        rank = BorgConfiguration.getWorldRank()
+        if rank == 0:
+            if modeManyProblems:
+                n = Borg.get_number_of_problems()
+                
+                results = []
+                for i in range(n):
+                    result = \
+                    BorgConfiguration.libborg.BORG_Algorithm_get_archive_of_problem(
+                        i
+                    )
+                    results.append(
+                        Result(result, problem=Borg.problems[i]) if result else None
+                    )
 
-        if modeManyProblems:
-            n = Borg.get_number_of_problems()
-            BorgConfiguration.libborg.BORG_Algorithm_external_ms_run()
+                Borg.results = results
+
+                return Borg.results
             
-            results = []
-            for i in range(n):
+            else: 
+                # n = 1
                 result = \
                 BorgConfiguration.libborg.BORG_Algorithm_get_archive_of_problem(
-                    i
-                )
-                results.append(
-                    Result(result, problem=Borg.problems[i]) if result else None
+                    0
                 )
 
-            Borg.results = results
-
-            return Borg.results
-        
-        else: 
-            result = BorgConfiguration.libborg.BORG_Algorithm_ms_run(
-                problem.reference
-            )
-
-        return Result(result, problem=problem) if result else None
+                return Result(result, problem=problem) if result else None
+        else: return None
 
     def solve(self, settings={}):
         """ Runs the Borg MOEA to solve the defined optimization problem, returning the
