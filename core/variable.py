@@ -777,7 +777,9 @@ class SimVariable(Variable):
     __has_conversion_applied: bool
         the flag indicates whether the conversion factor has already been 
         applied or not
-    
+    _has_basin_extent_computed: bool (new)
+        the flag describe whether or not has the basin extent been computed.
+
     Methods:
     is_okay()
         Checks consistency and integrity of the objects and its components.
@@ -861,6 +863,7 @@ class SimVariable(Variable):
         
         self.outlet_cellnumbers = []            
         self.compute_basin_extent = False
+        self._has_basin_extent_computed = False
 
     @property
     def conversion_factor(self): return self.__conversion_factor

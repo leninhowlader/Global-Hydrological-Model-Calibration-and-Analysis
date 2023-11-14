@@ -14,6 +14,155 @@ from wgap.paraminfo import ParameterInfo
 from core.stats import stats
 
 class Configuration:
+    """
+    The class describes the configuration object which provide all fundamental
+    structures for storing data, objects related to the experiment
+    at hand, and defines the interconnection among those object. At the same
+    time, the class also describe the necessary functionality to describe and
+    configure optimization as well as other analyses like sensitivity and 
+    uncertainty analysis.
+    
+    Properties/attributes:
+    experiment_type, __experiment_type: str
+        Describes the type of experiment. Experiment types can be 'sensitivity',
+        'glue', 'se' (acronym for 'solution evaluation'), or 'calibration'. The 
+        default value for this attribute is 'sensitivity'
+    experiment_name, __experiment_name: str
+        Gives the name of the experiment. A name is important when multiple 
+        experiments are carried out in parallell. Many file names the are 
+        generated automatically may contain experiment_name to distinguish
+        among the experiments for which they are created.
+    parallel_evaluation, __do_parallel_evaluation: bool
+        The flag indicates whether the experiment does parallel evaluation in a
+        a parallel computing framework or the evaluation is done sequentially 
+        on a single processor. The falg is by default set 'true'
+    parameter_info_filename, __parameter_info_input_filename: str
+        Filename that contains information regarding the parameter objects (see
+        the description of the Parameter class for details about parameter 
+        objects). If this file is provided, the parameter objects will be 
+        created from the description file. However, parameter info data file
+        must contain specific information or columns.
+    compute_upstream_from_station_file, __compute_upstream_from_station_file: 
+        bool
+        The flag indicates should the upstream basin extent be computed from the
+        provide station file in the WaterGAP class/module or not.
+    disjoint_basin_extent, __disjoint_basin_extent: bool
+        The flag indicates whether or not the extent of the basin be disjoint (
+        i.e. only inter-basin area to be considered) instead of the entire 
+        upstream area. the flag is only valid if compute_upstream_from_station_file
+        is set true.
+    output_directory, __output_directory: str
+        name of the directory to save output of the experiment or any temporary
+        files created during the experiment
+    
+    (attributes only related to 'calibration' experiment)
+    calibration_type, __calibration_type: str
+        Describe the type of calibration experiment. Probable value for the 
+        variable can be 'single' or 'one' to represent single-problem 
+        calibration or 'multiple' or 'many' to represent a multi-problem 
+        calibration experiment.
+    maximum_iteration, __max_iterations: int
+        no. of model evaluations during calibration. the default value is 20,000
+    calibration_result_output_filename, __calibration_result_output_filename: 
+        str
+        name of the file where the final output (usually the member of pareto 
+        front and their objectives) will be saved
+    parameter_value_output_filename, __parameter_value_output_filename: str
+        (optional) the name of the file where the parameter values of each 
+        proposed solution (or proposed sample) will be saved
+    objective_values_output_filename, __objective_values_output_filename: str
+        (optional) the name of the file where the objective values of each 
+        proposed solution will be stored
+    runtime_dynamics_output_filename, __runtime_dynamics_output_filename: str
+        name of the file where runtime dynamic from the optimization algoritm to 
+        be stored. this attribute is only related to the BORG Algorithm
+    runtime_dynamics_frequency, __runtime_dynamics_frequency: int
+        the frequency at which the runtime dynamic information will be stored in 
+        the runtime dynamic output file. That is, after how many model 
+        evaluations, the algorithmic internal states to be saved.
+    
+    (attributes only connected to multi-calibration analysis)
+    poc_problem_count, __problem_count: int
+        Indicates how many calibration problem to be solved. the default value 
+        is 1 indicating a single-problem calibration
+    multiproblem_parameter_list_filename, __multiproblem_parameter_list_filename
+        : str
+        name of the file where the names of the parameters for all calibration 
+        problems are described or listed
+    multiproblem_objective_list_filename, __multiproblem_objective_list_filename
+        : str
+        name of the file where hte names of the objective or the observation 
+        variables for all calibration problems are listed
+    multiproblem_parameter_index_list, __multiproblem_parameter_index_list: list
+        the array stores the parameter indices of all calibration problems.
+    multiproblem_objective_index_list, __multiproblem_objective_index_list: list
+        the data structure where all objective indices (or the indices of the 
+        observation variables) are stored
+        
+    (attributes related to 'sensitivity' or 'glue' or 'se' analysis)
+    input_sample_filename, __input_sample_filename: str
+        name of the sample file. this is usually a comma separated CSV file (
+        probably without header)
+    sensitivity_as_change_in_simulation, __sensivity_as_change_in_simulation: 
+        bool
+        The flag determines whether or not the sensivity measure is to be 
+        measured as the change in the current simulation from the reference
+        simulation. The values (time-series) of the reference simulation run is
+        determined internally during sensitivity computation
+    function_to_measure_the_change, __function_to_measure_change: function
+        The function that is to be used to compute the change between the 
+        reference simulation run and the current simulation during sensitivity
+        analysis. the default function is the root mean squared difference
+    dump_simulation_timeseries, __dump_simulation_timeseries: bool
+        The flag determines whether or not the simulation time-series (usually 
+        time-series of each grid cell) is stored in binary 2-d array. the flag
+        must be set ture during 'glue' and 'se' type experiment and also can be
+        used during 'sensitivity' experiment.
+    
+    (attributes that is rarely used)
+    compute_simulation_performance, __compute_simulation_performance: bool
+        The flag determines if the performance indicators to be computed or not.
+        if the flag is set 'true', all predefined performance metrices will be 
+        computed and stored. for computing the performance the observation data
+        must be available. see also simulation_efficiency_metrices() function in 
+        WaterGAP module.
+    simulation_efficiency_output_filename, 
+        __simulation_efficiency_output_filename: str
+        name of the file where computed simulation efficiency indices will be 
+        stored.
+    compute_simulation_summary_statistics, 
+        __compute_simulation_summary_statistics: bool
+        the flag determines whether or not the summary statistics to be coputed
+        or not. for computing summary statistics, observation data is not 
+        required
+    simulation_summary_monthly_output_filename, 
+        __simulation_summary_monthly_output_filename: str
+        Name of the file where the month summary of the simulation output will 
+        be stored
+    simulation_summary_annual_output_filename,
+        __simulation_summary_annual_output_filename: str
+        Name of the file where the annual summary of the simulation output will 
+        be stored
+    simulation_summary_output_filename, 
+        __simulation_summary_output_filename: str
+        Name of the file where simulation summary to be stored
+    compute_seasonal_statistics, __compute_seasonal_statistics: bool
+        A flag that describes whether to compute the seasonal summary statistics
+        or not from the simulated output. observation data is not required to
+        compute the seasonal summary statistics
+    seasonal_statistics_output_filename, 
+        __seasonal_statistics_output_filename: str
+        Name of the file where seasonal summary statistics will be saved.
+    
+    (attribute to be deprecated soon)
+    save_parameter_values, __save_parameter_values: bool
+        The flag states whether or not the parameter values of the sample be 
+        saved in a file
+    
+
+    
+
+    """
     '''
     [B] mode [calibration or sensitivity]
     [B] parameter_info_filename/parameter_info_input_filename
@@ -48,64 +197,62 @@ class Configuration:
     '''
     __optionnames = {}
     
-    def __init__(self, mode='sensitivity'):
-        self.__mode = mode
+    def __init__(self, experiment_type='sensitivity'):
+        self.__experiment_type = experiment_type
         self.__experiment_name = ''
-        self.__parameter_info_input_filename = ''
-        self.__input_sample_filename = ''
-
         self.__do_parallel_evaluation = True
-        self.__max_iterations = 20000
-
+        self.__parameter_info_input_filename = ''
         self.__compute_upstream_from_station_file = True
         self.__disjoint_basin_extent = True
-
         self.__output_directory = 'output'
+        
+        # [ ] attributes connected to 'calibration' experiment only
+        self.__calibration_type = 'single'  # 'single' or 'one' 
+                                            # 'multiple' or 'many'
+        self.__max_iterations = 20000
         self.__calibration_result_output_filename = ''
-
         self.__save_parameter_values = False
         self.__parameter_value_output_filename = ''
         self.__objective_values_output_filename = ''
         self.__runtime_dynamics_output_filename = ''
         self.__runtime_dynamics_frequency = -1
+        # [.]
 
-
-        self.__dump_model_prediction = True
-
-        self.__compute_prediction_efficiency = False
-        self.__prediction_efficiency_output_filename = 'efficiency.dat'
-
-        self.__compute_prediction_statistics = False
-        self.__prediction_summary_monthly_output_filename = ''
-        self.__prediction_summary_annual_output_filename = ''
-        self.__prediction_summary_output_filename = ''
-
-        self.__compute_seasonal_statistics = False
-        self.__seasonal_statistics_output_filename = 'seasonal_statistics.csv'
-
-        # NB: Prediction statistics and seasonal statistics will be merged
-        # together in the future
-
-        # sensitivity measure as the change in prediction from reference
-        self.__as_change_in_prediction = True
-        # function to measure the change
-        self.__function = None
-
-        self.obs_variables = []
-        self.sim_variables = []
-        self.derived_variables = []
-        self.parameters = []
-        self.samples = []
-
-        # self.__one_problem = True
-        self.__calibration_type = 'single'  # 'single' or 'one' 
-                                            # 'multiple' or 'many'
+        # [ ] attributes and structures related to multi-problem calibration
         self.__multiproblem_parameter_list_filename = ''
         self.__multiproblem_objective_list_filename = ''
         self.__problem_count = 1
 
         self.__multiproblem_parameter_index_list = []
         self.__multiproblem_objective_index_list = []
+        # [.]
+
+
+        # [ ] attributes connected to 'sensitivity' or 'glue' or 'se' experiment
+        self.__input_sample_filename = ''
+        self.__sensivity_as_change_in_simulation = True
+        self.__function_to_measure_change = None
+        self.__dump_simulation_timeseries = True
+        # [.]
+
+        # [ ] attribute that are rarely used (and can be deprecated in future)
+        self.__compute_simulation_performance = False
+        self.__simulation_efficiency_output_filename = 'efficiency.dat'
+        self.__compute_simulation_summary_statistics = False
+        self.__simulation_summary_monthly_output_filename = ''
+        self.__simulation_summary_annual_output_filename = ''
+        self.__simulation_summary_output_filename = ''
+        self.__compute_seasonal_statistics = False
+        self.__seasonal_statistics_output_filename = 'seasonal_statistics.csv'
+        # [.]
+
+        
+        self.obs_variables = []
+        self.sim_variables = []
+        self.derived_variables = []
+        self.parameters = []
+        self.samples = []
+
 
     @property
     def poc_problem_count(self): return self.__problem_count
@@ -158,21 +305,23 @@ class Configuration:
         self.__experiment_name = name
 
     @property
-    def sensitivity_as_change_in_prediction(self):
-        return self.__as_change_in_prediction
-    @sensitivity_as_change_in_prediction.setter
-    def sensitivity_as_change_in_prediction(self, flag:bool):
-        self.__as_change_in_prediction = bool(flag)
+    def sensitivity_as_change_in_simulation(self):
+        return self.__sensivity_as_change_in_simulation
+    @sensitivity_as_change_in_simulation.setter
+    def sensitivity_as_change_in_simulation(self, flag:bool):
+        self.__sensivity_as_change_in_simulation = bool(flag)
 
     @property
-    def function(self): return self.__function
-    @function.setter
-    def function(self, fun): self.__function = fun
+    def function_to_measure_the_change(self): 
+        return self.__function_to_measure_change
+    @function_to_measure_the_change.setter
+    def function_to_measure_the_change(self, fun): 
+        self.__function_to_measure_change = fun
 
     @property
-    def mode(self): return self.__mode
-    @mode.setter
-    def mode(self, config_mode): self.__mode = config_mode
+    def experiment_type(self): return self.__experiment_type
+    @experiment_type.setter
+    def experiment_type(self, exper_type): self.__experiment_type = exper_type
 
     @property
     def parallel_evaluation(self):
@@ -211,11 +360,11 @@ class Configuration:
 
 
     @property
-    def dump_model_prediction(self):
-        return self.__dump_model_prediction
-    @dump_model_prediction.setter
-    def dump_model_prediction(self, flag):
-        self.__dump_model_prediction = flag
+    def dump_simulation_timeseries(self):
+        return self.__dump_simulation_timeseries
+    @dump_simulation_timeseries.setter
+    def dump_simulation_timeseries(self, flag):
+        self.__dump_simulation_timeseries = flag
 
     @property
     def maximum_iteration(self): return self.__max_iterations
@@ -273,19 +422,19 @@ class Configuration:
         self.__runtime_dynamics_frequency = frequency
 
     @property
-    def compute_prediction_efficiency(self):
-        return self.__compute_prediction_efficiency
-    @compute_prediction_efficiency.setter
-    def compute_prediction_efficiency(self, flag):
-        self.__compute_prediction_efficiency = flag
+    def compute_simulation_performance(self):
+        return self.__compute_simulation_performance
+    @compute_simulation_performance.setter
+    def compute_simulation_performance(self, flag):
+        self.__compute_simulation_performance = flag
 
     @property
-    def prediction_efficiency_output_filename(self):
+    def simulation_efficiency_output_filename(self):
         return os.path.join(self.__output_directory,
-                            self.__prediction_efficiency_output_filename)
-    @prediction_efficiency_output_filename.setter
-    def prediction_efficiency_output_filename(self, filename):
-        self.__prediction_efficiency_output_filename = filename
+                            self.__simulation_efficiency_output_filename)
+    @simulation_efficiency_output_filename.setter
+    def simulation_efficiency_output_filename(self, filename):
+        self.__simulation_efficiency_output_filename = filename
 
     @property
     def compute_seasonal_statistics(self):
@@ -303,35 +452,35 @@ class Configuration:
         self.__seasonal_statistics_output_filename = filename
 
     @property
-    def compute_prediction_statistics(self):
-        return self.__compute_prediction_statistics
-    @compute_prediction_statistics.setter
-    def compute_prediction_statistics(self, flag):
-        self.__compute_prediction_statistics = flag
+    def compute_simulation_summary_statistics(self):
+        return self.__compute_simulation_summary_statistics
+    @compute_simulation_summary_statistics.setter
+    def compute_simulation_summary_statistics(self, flag):
+        self.__compute_simulation_summary_statistics = flag
 
     @property
-    def prediction_summary_output_filename(self):
+    def simulation_summary_output_filename(self):
         return os.path.join(self.__output_directory,
-                            self.__prediction_summary_output_filename)
-    @prediction_summary_output_filename.setter
-    def prediction_summary_output_filename(self, filename):
-        self.__prediction_summary_output_filename = filename
+                            self.__simulation_summary_output_filename)
+    @simulation_summary_output_filename.setter
+    def simulation_summary_output_filename(self, filename):
+        self.__simulation_summary_output_filename = filename
 
     @property
-    def prediction_summary_annual_output_filename(self):
+    def simulation_summary_annual_output_filename(self):
         return os.path.join(self.__output_directory,
-                            self.__prediction_summary_annual_output_filename)
-    @prediction_summary_annual_output_filename.setter
-    def prediction_summary_annual_output_filename(self, filename):
-        self.__prediction_summary_annual_output_filename = filename
+                            self.__simulation_summary_annual_output_filename)
+    @simulation_summary_annual_output_filename.setter
+    def simulation_summary_annual_output_filename(self, filename):
+        self.__simulation_summary_annual_output_filename = filename
 
     @property
-    def prediction_summary_monthly_output_filename(self):
+    def simulation_summary_monthly_output_filename(self):
         return os.path.join(self.__output_directory,
-                            self.__prediction_summary_monthly_output_filename)
-    @prediction_summary_monthly_output_filename.setter
-    def prediction_summary_monthly_output_filename(self, filename):
-        self.__prediction_summary_monthly_output_filename = filename
+                            self.__simulation_summary_monthly_output_filename)
+    @simulation_summary_monthly_output_filename.setter
+    def simulation_summary_monthly_output_filename(self, filename):
+        self.__simulation_summary_monthly_output_filename = filename
 
 
     def obs_var_count(self): return len(self.obs_variables)
@@ -446,7 +595,7 @@ class Configuration:
                         if not (key and value): continue
 
                         if key in optionnames['experiment_type']: 
-                            config.mode = value.lower()
+                            config.experiment_type = value.lower()
 
                         elif key in optionnames['experiment_name']:
                             config.experiment_name = value
@@ -676,7 +825,7 @@ class Configuration:
         # step: check if the samples can be gathered in case of sensitivity analysis mode. load the samples.
         # if parameter file is specified instead of defining individual parameters, create the parameter
         # object with provided information in the parameter info file.
-        if self.__mode in ['sensitivity', 'glue', 'se']:  # se = solution evaluation
+        if self.__experiment_type in ['sensitivity', 'glue', 'se']:  # se = solution evaluation
             # check the sample file and load samples
             if not self.__input_sample_filename: return 501
             elif not self.samples:
@@ -688,8 +837,8 @@ class Configuration:
                 else: return 502
             if not self.samples: return 502
 
-            if self.__mode == 'sensitivity':
-                if not (self.sensitivity_as_change_in_prediction or
+            if self.__experiment_type == 'sensitivity':
+                if not (self.sensitivity_as_change_in_simulation or
                         len(self.obs_variables) > 0): return 600
 
         # create parameter objects from parameter info file (if given)
@@ -901,7 +1050,7 @@ Name of the File: %s
         message = '\n[SECTION] BASIC SETTINGS:\n'
         f.write(message)
 
-        message = '\tMode:%s\n' % config.mode
+        message = '\tMode:%s\n' % config.experiment_type
         f.write(message)
 
         message = '\tOuput directory: %s\n' % config.output_directory

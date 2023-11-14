@@ -129,7 +129,7 @@ class SensitivityAnalysis:
             succeed = True
             dumping_directory = config.output_directory
 
-            if config.dump_model_prediction:
+            if config.dump_simulation_timeseries:
                 attribs = [iter_no]
                 for var in config.sim_variables:
                     succeed = var.dump_time_series_from_model_prediction(
@@ -142,8 +142,8 @@ class SensitivityAnalysis:
 
                     if not succeed: break
 
-            if (config.compute_prediction_efficiency or
-                config.compute_prediction_statistics or
+            if (config.compute_simulation_performance or
+                config.compute_simulation_summary_statistics or
                 config.compute_seasonal_statistics):
 
                 sim_vars = deepcopy(config.sim_variables)
@@ -160,13 +160,13 @@ class SensitivityAnalysis:
                                                      obsvars=obs_vars)
 
                 separator = ','
-                if config.compute_prediction_statistics:
+                if config.compute_simulation_summary_statistics:
                     funs = ['mean', 'std', 'min', 'max', 'q1', 'median', 'q3']
                     pred_stat, month_stat, year_stat \
-                    = WaterGAP.prediction_statistics(sim_vars, funs=funs)
+                    = WaterGAP.simulation_summary_statistics(sim_vars, funs=funs)
 
                     # writing basic prediction statistics
-                    filename = config.prediction_summary_output_filename
+                    filename = config.simulation_summary_output_filename
                     if filename:
                         lines = []
                         for key in pred_stat.keys():
@@ -178,7 +178,7 @@ class SensitivityAnalysis:
                             io.print_on_file(lines, filename, '_STAT_OS.LOCK',
                                           sleep_time=0.3)
 
-                    filename = config.prediction_summary_monthly_output_filename
+                    filename = config.simulation_summary_monthly_output_filename
                     if filename:
                         lines = []
                         for key in month_stat.keys():
@@ -193,7 +193,7 @@ class SensitivityAnalysis:
                         if lines:
                             io.print_on_file(lines, filename, '_STAT_MS.LOCK',
                                              sleep_time=0.5)
-                    filename = config.prediction_summary_annual_output_filename
+                    filename = config.simulation_summary_annual_output_filename
                     if filename:
                         lines = []
                         for key in year_stat.keys():
@@ -244,15 +244,15 @@ class SensitivityAnalysis:
                                              '_STAT_SUMMARY.LOCK',
                                              sleep_time=0.2)
 
-                if config.compute_prediction_efficiency:
-                    filename = config.prediction_efficiency_output_filename
+                if config.compute_simulation_performance:
+                    filename = config.simulation_efficiency_output_filename
                     if not filename: succeed = False
                     else:
                         for var in sim_vars: var.compute_anomalies()
                         for var in der_vars: var.compute_anomalies()
 
                         try:
-                            results = WaterGAP.prediction_efficiency(
+                            results = WaterGAP.simulation_efficiency_metrices(
                                             sim_vars=sim_vars+der_vars,
                                             obs_vars=obs_vars,
                                             iter_no=iter_no)

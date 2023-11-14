@@ -73,7 +73,10 @@ class Parameter:
     def set_parameter_name(self, param_name): self.parameter_name = param_name
     def set_lower_bound(self, bound): self.lower_bound = bound
     def set_upper_bount(self, bound): self.upper_bound = bound
-    def set_parameter_value(self, value): self.parameter_value = round(value, self.precision_level)
+    def set_parameter_value(self, value): 
+        if self.precision_level > 0:
+            self.parameter_value = round(value, self.precision_level)
+
     def get_parameter_name(self): return self.parameter_name
     def get_lower_bound(self): return self.lower_bound
     def get_upper_bound(self): return self.upper_bound
@@ -101,6 +104,22 @@ class Parameter:
         if self.cell_list: return True
         else: return False
 
+    def add_unit_parameter_value(self, value):
+        """
+        This function add (append) parameter value for a unit (e.g., a basin, 
+        CDA unit, or a single cell) to the list of parameter values (i.e., 
+        parameter_value). If the parameter_value is not a list, a new list will
+        be assigned to parameter_value variable, and then new value will be 
+        appended. This fuction is used only when parameter values for multiple
+        units to be stored 
+
+        Parameter:
+        value: float
+            parameter value for a unit 
+        """
+        try:
+            self.parameter_value.append(value)
+        except: self.parameter_value = [value]
 
     @staticmethod
     def read_parameter_list(filename):

@@ -91,7 +91,7 @@ def main(argv):
     # step: read configuration file
     config = Configuration.read_configuration_file(filename_config)
     if config:
-        config.mode = 'calibration'
+        config.experiment_type = 'calibration'
         if not config.is_okay():
             print('\nConfiguration file could not be read properly.')
             exit(-200)

@@ -513,7 +513,7 @@ class WaterGAP:
         return succeed
 
     @staticmethod
-    def prediction_efficiency(sim_vars, obs_vars, iter_no=-1):
+    def simulation_efficiency_metrices(sim_vars, obs_vars, iter_no=-1):
         results = []
         for obs_var in obs_vars:
             for sim_var in sim_vars:
@@ -526,7 +526,7 @@ class WaterGAP:
         return results
 
     @staticmethod
-    def prediction_statistics(sim_vars, funs=['mean', 'std', 'min', 'max', 'q1', 'median', 'q3']):
+    def simulation_summary_statistics(sim_vars, funs=['mean', 'std', 'min', 'max', 'q1', 'median', 'q3']):
         basic_summary, month_summary, year_summary = OrderedDict(), OrderedDict(), OrderedDict()
 
         for var in sim_vars:

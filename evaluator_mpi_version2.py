@@ -84,8 +84,8 @@ def main(argv):
     reference_predictions = {}
     M = len(config.parameters)  # no. of parameters
 
-    if config.mode == 'sensitivity' and (
-        config.sensitivity_as_change_in_prediction or
+    if config.experiment_type == 'sensitivity' and (
+        config.sensitivity_as_change_in_simulation or
         len(config.obs_variables) == 0):
 
         if start_index%(M+1) != 0:
@@ -150,7 +150,7 @@ def main(argv):
             succeed = var.do_anomaly_computation()
 
             # dump predictions
-            if config.dump_model_prediction:
+            if config.dump_simulation_timeseries:
                 # for both basin and cell scale variables the method of dumping 
                 # simulation values is the same
                 succeed = var.dump_data_into_binary_file(
@@ -159,10 +159,10 @@ def main(argv):
                     additional_attributes=[sample_no]
                 )
 
-            if config.mode == 'sensitivity':
+            if config.experiment_type == 'sensitivity':
                 # compute fx
-                if config.sensitivity_as_change_in_prediction:
-                    fun = config.function
+                if config.sensitivity_as_change_in_simulation:
+                    fun = config.function_to_measure_the_change
                     if not fun: fun = stats.root_mean_square_error
 
                     data_curr = var.data_cloud.data
