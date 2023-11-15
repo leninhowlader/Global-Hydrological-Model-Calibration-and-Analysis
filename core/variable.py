@@ -721,13 +721,6 @@ class SimVariable(Variable):
     data_obtained: bool
         a flag describing whether or not data of the variable has been read in
     (attributes of the current class)
-    outlet_cellnumbers: list of integers (new)
-        list of basin outlet cell number. cell number refers to the WaterGAP
-        GCRC cell numbers.
-    compute_basin_extent: bool (new)
-        a flag indicating whether or not computation of basin outline should be
-        performed. if the flag is set to true, basin extend will be computed and
-        basin cellnumbers will be stored in the basin_cell_list variable
     basin_cell_list: list of integer, list of those list (perferred), or mixed
         cell numbers of all cell within each basin. each list element represents
         one basin. However, in only integer is given as element (but not an 
@@ -777,9 +770,13 @@ class SimVariable(Variable):
     __has_conversion_applied: bool
         the flag indicates whether the conversion factor has already been 
         applied or not
-    _has_basin_extent_computed: bool (new)
-        the flag describe whether or not has the basin extent been computed.
-
+    __allow_insertion_of_cellnum_list: bool
+        A flag that determines whether insertion of basin extent (or extent of 
+        an unit) as list of cell numbers is possible at a later stage or not. If
+        cell list is provided in the configuration file either as list of 
+        numbers or through an external file, modification of basin cell list at
+        later stage is prihibitted by setting the flag 'false'
+    
     Methods:
     is_okay()
         Checks consistency and integrity of the objects and its components.
@@ -831,20 +828,14 @@ class SimVariable(Variable):
             'reference_period', 'reference period', 'reference period for mean',
             'reference_period_for_mean'
         ),
-        'outlet_cellnumbers':(
-            'outlet_cellnumbers', 'outlet cellnumbers', 'basin outlets', 
-            'basin_outlets'
-        ),
-        'compute_basin_extent': (
-            'compute_basin_extent', 'compute basin extent', 'find basin outline'
-        )
+        
     }
 
     def __init__(self):
         Variable.__init__(self)
         self.data_source.file_type = FileType.wghm_binary
         self.__basin_outlets_only = False
-        self.__boo_consider_super_basins = False     # only if basin_outlets_only flag is true
+        # self.__boo_consider_super_basins = False     # only if basin_outlets_only flag is true
 
         # spatial scale: cell, basin, mixed (or empty)
         self.__spatial_scale = ''
@@ -860,11 +851,9 @@ class SimVariable(Variable):
 
         self.__conversion_factor = 1
         self.__has_conversion_applied = True
-        
-        self.outlet_cellnumbers = []            
-        self.compute_basin_extent = False
-        self._has_basin_extent_computed = False
 
+        self.__allow_insertion_of_cellnum_list = True
+        
     @property
     def conversion_factor(self): return self.__conversion_factor
     @conversion_factor.setter
@@ -880,10 +869,10 @@ class SimVariable(Variable):
     @basin_outlets_only.setter
     def basin_outlets_only(self, flag:bool): self.__basin_outlets_only = flag
 
-    @property
-    def boo_consider_super_basins(self): return self.__boo_consider_super_basins
-    @boo_consider_super_basins.setter
-    def boo_consider_super_basins(self, flag:bool): self.__boo_consider_super_basins = flag
+    # @property
+    # def boo_consider_super_basins(self): return self.__boo_consider_super_basins
+    # @boo_consider_super_basins.setter
+    # def boo_consider_super_basins(self, flag:bool): self.__boo_consider_super_basins = flag
 
     @property
     def spatial_scale(self): return self.__spatial_scale
@@ -891,6 +880,23 @@ class SimVariable(Variable):
     def spatial_scale(self, value):
         if value in ['cell', 'basin', 'mixed']: self.__spatial_scale = value
         else: self.__spatial_scale = ''
+
+    def add_unit_extent_cellnums(self, list_of_cellnums):
+        """
+        The function adds (appends) cell numbers of the extent of an unit (e.g.,
+        of a basin, CDA unit, or even a single cell) to the list of basin cell
+        numbers. allowed only if the falg __allow_insertion_of_cellnum_list is 
+        set true.
+        
+        Parameters:
+        list_of_cellnums: list (preferrably) or integer
+            a list of cell numbers that define an unit. cell numbers must be
+            according to the WaterGAP GCRC numbers. A single integer number 
+            might be passed to indicate the unit to be a single-cell unit.
+        """
+        
+        if self.__allow_insertion_of_cellnum_list:
+            self.basin_cell_list.append(list_of_cellnums)
 
     def is_okay(self):
         if not Variable.is_okay(self): return False
@@ -997,6 +1003,10 @@ class SimVariable(Variable):
                                 else: 
                                     var.basin_cell_list \
                                     = SimVariable.read_groups(value, type='int')
+                                
+                                if len(var.basin_cell_list) > 0:
+                                    var.__allow_insertion_of_cellnum_list = \
+                                    False
 
                             elif key in options['compute_anomaly']:
                                 value = value.lower()
@@ -1058,12 +1068,12 @@ class SimVariable(Variable):
                                 if value in ['yes', 'y', '1', 'true', 't']: 
                                     var.basin_outlets_only = True
                                 else: var.basin_outlets_only = False
-                            elif key in ['consider_super_basins', 'consider super basins']:
-                                # NB: this option will only be used when basin_outlets_only flag is set true
-                                value = value.lower()
-                                if value in ['yes', 'y', '1', 'true', 't']: 
-                                    var.boo_consider_super_basins = True
-                                else: var.boo_consider_super_basins = False
+                            # elif key in ['consider_super_basins', 'consider super basins']:
+                            #     # NB: this option will only be used when basin_outlets_only flag is set true
+                            #     value = value.lower()
+                            #     if value in ['yes', 'y', '1', 'true', 't']: 
+                            #         var.boo_consider_super_basins = True
+                            #     else: var.boo_consider_super_basins = False
                             elif key in options['spatial_scale']:
                                 var.spatial_scale = value.lower()
                             elif key in options['conversion_factor']:
@@ -1071,36 +1081,6 @@ class SimVariable(Variable):
                                     var.conversion_factor = float(value)
                                     var.__has_conversion_applied = False
                                 except: pass
-                            elif key in options['outlet_cellnumbers']:
-                                lines_str = ''
-                                if value.find(':') > 0:
-                                    temp = value.split(':')
-                                    for i in range(len(temp)): 
-                                        temp[i] = temp[i].strip()
-
-                                    if (len(temp) == 2 and 
-                                        temp[0].lower() == 'filename'):
-                                        filename = temp[1]
-
-                                        fs = open(filename, 'r')
-                                        for l in fs.readlines(): lines_str += l
-                                        fs.close()
-
-                                else: lines_str = value
-
-                                temp_array = \
-                                SimVariable.read_groups(value, type='int')
-                                
-                                t = []
-                                for x in temp_array: t = t+x
-
-                                var.outlet_cellnumbers = t
-                            elif key in options['compute_basin_extent']:
-                                value = value.lower()
-                                if value in ['yes', 'y', '1', 'true', 't']: 
-                                    var.compute_basin_extent = True
-                                # else: 
-                                #     var.compute_basin_extent = False # default
 
             except: return None
 

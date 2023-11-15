@@ -93,9 +93,11 @@ class Configuration:
         : str
         name of the file where hte names of the objective or the observation 
         variables for all calibration problems are listed
-    multiproblem_parameter_index_list, __multiproblem_parameter_index_list: list
+    multiproblem_parameter_index_list, __multiproblem_parameter_index_list: 
+        tuple
         the array stores the parameter indices of all calibration problems.
-    multiproblem_objective_index_list, __multiproblem_objective_index_list: list
+    multiproblem_objective_index_list, __multiproblem_objective_index_list: 
+        tuple
         the data structure where all objective indices (or the indices of the 
         observation variables) are stored
         
@@ -159,44 +161,111 @@ class Configuration:
         The flag states whether or not the parameter values of the sample be 
         saved in a file
     
-
+    (internal data structures)
+    obs_variables: list 
+        the list holds the observation variables. (see more in ObsVarialbe 
+        class)
+    sim_variables: list
+        a placeholder for the simulation variables. (see detailed in SimVariable
+        class)
+    derived_variables: list
+        the list hold the derieved variables (see more in the description of 
+        DerivedVariable calss)
+    parameters: list
+        the list contains the parameters (see details in Parameter class)
+    samples: list
+        The list contains parameter samples.
+    __optionnames: dict
+        hold the keyword for the options and their alternative named used in the
+        configuration file
     
+    Methods:
 
     """
-    '''
-    [B] mode [calibration or sensitivity]
-    [B] parameter_info_filename/parameter_info_input_filename
+    __optionnames = {
+        'experiment_type': (
+        'experiment_type', 'experiment type', 'mode'
+        ),
+        'experiment_name': (
+            'experiment_name', 'experiment name', 'experiment_id', 
+            'experiment_id','calibration_id', 'calibration_name', 
+            'calibration id', 'calibration name'
+        ),
+        'maximum_iteration': (
+            'maximum_iteration', 'maximum iteration', 'max iter', 'max_iter'
+        ),
+        'parameter_description_filename': (
+            'parameter_info', 'parameter_info_input_filename', 
+            'parameter_info_filename'
+        ),
+        'parallel_computation': (
+            'parallel_evaluation', 'do_parallel_evaluation', 
+            'parallel_evaluations', 'parallel_evaluation', 
+            'parallel evaluations', 'parallel evaluation', 'parallel', 
+            'parallelization'
+        ),
+        'output_directory': ('output_directory'),
+        'save_simulation_output': (
+            'save_simulation_output', 'save simulation output', 
+            'dump_model_prediction', 'save_model_prediction'
+        ),
+        'objective_outfile': (
+            'objective_filename', 'objective_output_filename', 
+            'save_function_values', 'save function values', 
+            'save_function_value', 'save function value', 'funvalue_dumpfile', 
+            'funvalue dumpfile'
+        ),
+        'parameter_outfile': (
+            'save_param_values' , 'save param values' , 'save_param_value' , 
+            'save param value', 'parameter_dumpfile', 'parameter dumpfile',
+            'parameter_value_output_filename'
+        ),
+        'result_outfile': (
+            'result_outfile', 'calibration_output_filename', 'output_filename',
+            'result_filelname', 'result_dumpfile', 'output_filename'
+        ),
+        'runtime_dynamics_outfile': (
+            'runtime_dynamics_filename', 'runtime dynamics filename'
+        ),
+        'runtime_dynamics_frequency': (
+            'runtime_dynamics_write_frequency', 'runtime_report_frequency', 
+            'runtime report frequency', 'runtime dynamics write frequency'
+        ),
+        'replace_nan': (),
+        'compute_upstream': (
+            'compute_upstream_from_station_file', 'upstream_from_station_file',
+            'target_cells_from_station_file', 'target_cell_from_station_file',
+            'target cells from station file', 'target cell from station file'
+        ),
+        'disjoint_basins': (
+            'disjoint_basin_extent', 'disjoint basin extent'
+        ),
+        'calibration_type': (
+            'calibration_type', 'calibration type', 'calibration-type'
+        ),
+        'multiproblem_calibration_parameter_list': (
+            'multiproblem_calibration_parameter_list',
+            'multiproblem calibration parameter list'
+        ),
+        'multiproblem_calibration_objective_list': (
+            'multiproblem_calibration_objective_list',
+            'multiproblem calibration objective list',
+            'multiproblem_calibration_observation_list',
+            'multiproblem calibration observation list'
+        ),
+        'parameter_info_filename': (
+            'parameter_info_input_filename', 'parameter info input filename',
+            'parameter_info_filename', 'parameter info filename'
+        ),
+        'report_outfile': (),
+        'sleep_time': (),
+        'sample_filename': (
+            'input_sample_filename', 'sample_filename'
+        ),
+        'change_from_refsimulation': (),
+        'function_to_compute_change': ()
+    }
 
-    [S] input_sample_filename/sample_filename
-
-    [B] parallel_evaluation/do_parallel_evaluation
-    [C] maximum_iteration
-
-    [B] compute_upstream_from_station_file/upstream_from_station_file
-    [B] disjoint_basin_extent
-
-    [B] output_directory
-    [C] calibration_output_filename/output_filename
-
-    [C] save_parameter_values
-    [C] parameter_value_output_filename
-
-
-    [B] dump_model_prediction/save_model_prediction
-
-    [B] compute_prediction_efficiency/compute_model_efficiency
-    [B] model_efficiency_output_filename/prediction_efficiency_output_filename
-
-    [B] compute_prediction_statistics/prediction_statistics
-    [B] prediction_summary_statistics_filename/summary_statistics_output_filename
-    [B] annual_statistics_output_filename/annual_statistics_filename
-    [B] monthly_statistics_output_filename/monthly_statistics_filename
-
-    [B] compute_seasonal_statistics/seasonal_statistics
-    [B] seasonal_statistics_output_filename
-    '''
-    __optionnames = {}
-    
     def __init__(self, experiment_type='sensitivity'):
         self.__experiment_type = experiment_type
         self.__experiment_name = ''
@@ -223,8 +292,8 @@ class Configuration:
         self.__multiproblem_objective_list_filename = ''
         self.__problem_count = 1
 
-        self.__multiproblem_parameter_index_list = []
-        self.__multiproblem_objective_index_list = []
+        self.__multiproblem_parameter_index_list = ()
+        self.__multiproblem_objective_index_list = ()
         # [.]
 
 
@@ -246,13 +315,13 @@ class Configuration:
         self.__seasonal_statistics_output_filename = 'seasonal_statistics.csv'
         # [.]
 
-        
+        # [ ] internal data structures
         self.obs_variables = []
         self.sim_variables = []
         self.derived_variables = []
         self.parameters = []
         self.samples = []
-
+        # [.]
 
     @property
     def poc_problem_count(self): return self.__problem_count
@@ -756,38 +825,100 @@ class Configuration:
         will be read hear if skip observation flag is not set True. In case of
         sensitivity analysis, samples will be loaded.
 
-        :return: (int)  Error Code
-                        0	no error
-                        100 failed to create target cell list from stations in station file
-                        200 absence of sim-variable
-                        20x error in sim variable no. x
-                        300 failed to acquire observation dataset
-                        30x obs-variable no. x
-                        40x error in derived variable no. x
-                        501 Sample file not found
-                        502 Samples could not be read from sample file
-                        600 error in sensitivity method selection
-                        700 absence of parameters
-                        70x error in parameter no. x
-                        810 no multiproblem calibration parmeters file
-                        820 no multiproblem calibration objectives file
-                        830 length of objective list and length of paramter list
-                            does not match.
+        Parameters:
+        skip_observation: bool (optional, default False)
+            The flag indicates to neglect observation data varification while 
+            consistency is checked if the flag is set true.
+        
+        Returns:
+        int
+            a number indicating the error code. Error code could be one of the 
+            followings
+                0	no error
+                100 failed to create target cell list from stations in station file
+                200 absence of sim-variable
+                20x error in sim variable no. x
+                300 failed to acquire observation dataset
+                30x obs-variable no. x
+                40x error in derived variable no. x
+                501 Sample file not found
+                502 Samples could not be read from sample file
+                600 error in sensitivity method selection
+                700 absence of parameters
+                70x error in parameter no. x
+                810 no multiproblem calibration parmeters file
+                820 no multiproblem calibration objectives file
+                830 length of objective list and length of paramter list
+                    does not match.
         '''
+        # step:
+        # create parameter objects from parameter info file (if given)
+        if self.parameter_info_filename:
+            self.parameters = Parameter.read_parameter_list(
+                self.parameter_info_filename
+            )
+        # end [step]
 
-        # step: check whether or not the station file is available when 'target cell from station file' flag is set ON
+        # step-x:
+        # check the parameter index for multi-problem optimization
+        if self.calibration_type in ['multiple', 'many']:
+            f = self.multiproblem_parameter_list_filename
+            if not os.path.exists(f): return 810
+            param_indicies = self.get_parameter_indices_for_manyPoc(f)
+            if len(param_indicies) > 0:
+                self.multiproblem_parameter_index_list = param_indicies
+        # end [step]
+
+        # step-x:
+        # check the objective [or observaiton] indeices for multi-problem 
+        # calibration
+        if self.calibration_type in ['multiple', 'many']:
+            f = self.multiproblem_objective_list_filename
+            if not os.path.exists(f): return 820
+            obj_indices = self.get_objective_indices_for_manyPoc(f)
+            if len(obj_indices) > 0:
+                self.multiproblem_objective_index_list = obj_indices
+        # end [step-x]
+
+        # step-x:
+        # check number of problems in parameter index list and objective 
+        # index list. the length of these two list should be equal.
+        if (len(self.multiproblem_objective_index_list) 
+            != len(self.multiproblem_parameter_index_list)):
+            return 830
+        else:
+            self.poc_problem_count = len(self.multiproblem_objective_index_list)
+            # self.__one_problem = False
+        # end [step]
+        
+        # step: 
+        # check whether or not the station file is available when 
+        # compute_upstream_from_station_file flag is set true
         if not (WaterGAP.station_filename and
                 os.path.exists(os.path.join(WaterGAP.home_directory,
                                             WaterGAP.station_filename))):
             self.compute_upstream_from_station_file = False
             self.disjoint_basin_extent = False
+        # end [step]
 
         # step: read the target cells from station file, if applicable
         if self.compute_upstream_from_station_file:
             succeed = self.generate_target_cells_from_station_file()
             if not succeed: return 100
 
-        # step: check completeness of simulation variables. there must at least be one simulation variable
+        # step: 
+        # check completeness of parameters
+        if not self.parameters: return 700
+        else:
+            pnum = 0
+            for param in self.parameters:
+                pnum += 1
+                if not param.is_okey(): return (700 + pnum)
+        # end [step]
+
+        # step: 
+        # check completeness of simulation variables. there must at least be one
+        # simulation variable
         if not self.sim_variables: return 200
         else:
             varnum = 0
@@ -795,8 +926,11 @@ class Configuration:
                 varnum += 1
                 var.data_source.file_endian = WaterGAP.output_endian_type
                 if not var.is_okay(): return (200 + varnum)
+        # end [step]
 
-        # step: check completeness of observation variables (if any). Try to load the observation data
+        # step: 
+        # check completeness of observation variables (if any). Try to load the 
+        # observation data
         if not skip_observation:
             if len(self.obs_variables) > 0:
                 # if not ObsVariable.data_collection(self.obs_variables): return 300
@@ -811,21 +945,26 @@ class Configuration:
                 # for var in self.obs_variables:
                 #     var.data_cloud.data = np.array(var.data_cloud.data)
                 #     var.data_cloud.data_indices \
-                #     = np.array(var.data_cloud.data_indices) 
+                #     = np.array(var.data_cloud.data_indices)
+        # end [step]
 
-        # step: check completeness of derived variables (if any)
+        # step: 
+        # check completeness of derived variables (if any)
         if len(self.derived_variables) > 0:
             varnum = 0
             for var in self.derived_variables:
                 varnum += 1
                 if not var.is_okay(): return (400 + varnum)
-                if not var.evaluate_equation(simvars=self.sim_variables, obsvars=self.obs_variables):
+                if not var.evaluate_equation(
+                    simvars=self.sim_variables, obsvars=self.obs_variables):
                     return (400 + varnum)
+        # end [step]
 
-        # step: check if the samples can be gathered in case of sensitivity analysis mode. load the samples.
-        # if parameter file is specified instead of defining individual parameters, create the parameter
-        # object with provided information in the parameter info file.
-        if self.__experiment_type in ['sensitivity', 'glue', 'se']:  # se = solution evaluation
+        # step: 
+        # check if the samples can be gathered in the case of sensitivity 
+        # analysis experiment. load the samples. note that 'se' stands for 
+        # 'solution evaluation'
+        if self.__experiment_type in ['sensitivity', 'glue', 'se']: 
             # check the sample file and load samples
             if not self.__input_sample_filename: return 501
             elif not self.samples:
@@ -840,49 +979,7 @@ class Configuration:
             if self.__experiment_type == 'sensitivity':
                 if not (self.sensitivity_as_change_in_simulation or
                         len(self.obs_variables) > 0): return 600
-
-        # create parameter objects from parameter info file (if given)
-        if self.parameter_info_filename:
-            self.parameters = Parameter.read_parameter_list(
-                self.parameter_info_filename
-            )
-            
-        # step: check completeness of parameters
-        if not self.parameters: return 700
-        else:
-            pnum = 0
-            for param in self.parameters:
-                pnum += 1
-                if not param.is_okey(): return (700 + pnum)
-            
-        # [step-x] check the parameter index for multi-problem optimization
-        if self.calibration_type in ['multiple', 'many']:
-            f = self.multiproblem_parameter_list_filename
-            if not os.path.exists(f): return 810
-            param_indicies = self.get_parameter_indices_for_manyPoc(f)
-            if len(param_indicies) > 0:
-                self.multiproblem_parameter_index_list = param_indicies
         # end [step]
-
-        # [step-x] check the objective [or observaiton] indeices for multi-
-        # problem calibration
-        if self.calibration_type in ['multiple', 'many']:
-            f = self.multiproblem_objective_list_filename
-            if not os.path.exists(f): return 820
-            obj_indices = self.get_objective_indices_for_manyPoc(f)
-            if len(obj_indices) > 0:
-                self.multiproblem_objective_index_list = obj_indices
-        # end [step-x]
-
-        # [step-x] check number of problems in parameter index list and 
-        # objective index list
-        if (len(self.multiproblem_objective_index_list) 
-            != len(self.multiproblem_parameter_index_list)):
-            return 830
-        else:
-            self.poc_problem_count = len(self.multiproblem_objective_index_list)
-            # self.__one_problem = False
-        #
 
         return 0
     
@@ -901,12 +998,12 @@ class Configuration:
             temp = line.strip().split(',')
             indices = []
             for i in range(len(temp)):
-                n = temp[i].strip()
-                if n != '': indices.append(param_index[n])
-            if len(indices) > 0: param_list.append(indices)
+                x = temp[i].strip()
+                if x != '': indices.append(param_index[x])
+            if len(indices) > 0: param_list.append(tuple(indices))
         f.close()
 
-        return param_list 
+        return tuple(param_list) 
                     
     def get_objective_indices_for_manyPoc(self, objective_index_filename):
         if len(self.obs_variables) == 0: return []
@@ -923,11 +1020,12 @@ class Configuration:
             for i in range(len(temp)):
                 vname = temp[i].strip()
                 if vname != '': indices.append(obj_index[vname])
-            if len(indices) > 0: objective_list.append(indices)
+            if len(indices) > 0:
+                # indices.sort()
+                objective_list.append(tuple(indices))
         f.close()
 
-        return objective_list
-
+        return tuple(objective_list)
 
     def generate_target_cells_from_station_file(self):
         '''
@@ -936,33 +1034,52 @@ class Configuration:
         old method), the cell list will not be overwritten. This will ensure explicit assignment of target cell if it
         is needed.
 
-        :return: (bool) True on success, False otherwise
+        Returns:
+        bool
+            True on success, False otherwise
         '''
         succeed = True
 
-        # setp: get basin outlet cells
-        filename = os.path.join(WaterGAP.home_directory, WaterGAP.station_filename)
+        # setp: 
+        # get basin outlet cells
+        filename = os.path.join(
+            WaterGAP.home_directory, WaterGAP.station_filename
+        )
         outlets = Station.get_stations(filename, rowcol_only=True)
         if len(outlets) == 0: return False
+        # end [step]
 
-        # step: compute entire upstream basin extents
-        succeed = Upstream.read_flow_data(unf_input=True, model_version=WaterGAP.model_version)
+        # step: 
+        # compute entire upstream basin extents
+        succeed = Upstream.read_flow_data(
+            unf_input=True, model_version=WaterGAP.model_version
+        )
         if not succeed: return False
         basins = Upstream.compute_basin_extent(outlets)
         if len(basins) != len(outlets): return False
+        # end [step]
 
+        # step: 
+        # compute disjoint basins (if applicable) and discharge outlet cells
+        # for all basins
         discharge_outlets, discharge_outlets_without_supbasin = [], []
-        # step: compute disjoint basins (if applicable) and discharge outlet cells for all basins
         if self.disjoint_basin_extent:
             supbasins = Upstream.find_super_basin(outlets)
 
-            discharge_outlets = Upstream.find_basin_discharge_cell(basins, supbasins)
-            discharge_outlets_without_supbasin = Upstream.find_basin_discharge_cell(basins, {})
+            discharge_outlets = Upstream.find_basin_discharge_cell(
+                basins, supbasins
+            )
+            
+            discharge_outlets_without_supbasin = \
+            Upstream.find_basin_discharge_cell(basins, {})
+            
             basins = Upstream.compute_disjoint_basin_extent(basins, supbasins)
         else:
             for cell in outlets: discharge_outlets.append([cell])
+        # end [step]
 
-        # step: find wghm cell num and area for all basin cells
+        # step: 
+        # find wghm cell num and area for all basin cells
         basin_cellnum, basin_cellareas = [], []
         for key, value in basins.items():
 
@@ -973,37 +1090,72 @@ class Configuration:
 
             basin_cellnum.append(cnums)
             basin_cellareas.append(careas)
+        # end [step]
 
-        # step: find wghm cell num of discharge outlets
+        # step: 
+        # find wghm cell num of discharge outlets
         cellnum_discharge, cellnum_discharge_without_supbasin = [], []
         for basin_outlets in discharge_outlets:
             cnums = []
-            for cell in basin_outlets: cnums.append(gg.get_wghm_cell_number(cell[0], cell[1]))
+            for cell in basin_outlets: 
+                cnums.append(gg.get_wghm_cell_number(cell[0], cell[1]))
             cellnum_discharge.append(cnums)
 
         for basin_outlets in discharge_outlets_without_supbasin:
             cnums = []
-            for cell in basin_outlets: cnums.append(gg.get_wghm_cell_number(cell[0], cell[1]))
+            for cell in basin_outlets: 
+                cnums.append(gg.get_wghm_cell_number(cell[0], cell[1]))
             cellnum_discharge_without_supbasin.append(cnums)
+        # end [step]
 
-        # step: assign target cells in simulation variables
-        for var in self.sim_variables:
-            if not var.basin_cell_list:
-                if var.basin_outlets_only:
-                    if not var.boo_consider_super_basins:
-                        var.basin_cell_list = cellnum_discharge_without_supbasin
-                    else: var.basin_cell_list = cellnum_discharge
-                else: var.basin_cell_list = basin_cellnum
+        # step: 
+        # assign target cells in simulation variables
+        if self.calibration_type in ['multiple', 'many']:
+            simvarmap = {}
+            for var in self.sim_variables:
+                simvarmap[var.varname] = var
 
-            if not var.cell_weights and var.cell_area_as_weight: var.cell_weights = basin_cellareas
+            for prob_no in range(self.poc_problem_count):
+                varindices = self.multiproblem_objective_index_list[prob_no]
+                for num in varindices:
+                    obsvar = self.obs_variables[num]
+                    var = simvarmap[obsvar.counter_variable]
 
-        # step: assign target cells in parameters
-        unique_target_cells = []
-        for basin in basin_cellnum: unique_target_cells += basin
-        unique_target_cells = list(set(unique_target_cells))
+                    cl = basin_cellnum[prob_no]
+                    if var.basin_outlets_only: cl = cellnum_discharge[prob_no]
+                    var.add_unit_extent_cellnums(cl)
+        else:
+            for var in self.sim_variables:
+                if not var.basin_cell_list:
+                    if var.basin_outlets_only:
+                        # if not var.boo_consider_super_basins:
+                        #     var.basin_cell_list = cellnum_discharge_without_supbasin
+                        # else: var.basin_cell_list = cellnum_discharge
+                        var.basin_cell_list = cellnum_discharge
+                    else: var.basin_cell_list = basin_cellnum
 
-        for param in self.parameters:
-            if not param.cell_list: param.cell_list = unique_target_cells
+                if not var.cell_weights and var.cell_area_as_weight: 
+                    var.cell_weights = basin_cellareas
+        # end [step]
+
+        # step: 
+        # assign target cells in parameters
+        if self.calibration_type in ['multiple', 'many']:
+            for prob_no in range(self.poc_problem_count):
+                paramindices = self.multiproblem_parameter_index_list[prob_no]
+                cl = basin_cellnum[prob_no]
+
+                for num in paramindices:
+                    param = self.parameters[num]
+                    param.add_unit_extent_cellnums(cl)
+        else:
+            unique_target_cells = []
+            for basin in basin_cellnum: unique_target_cells += basin
+            unique_target_cells = list(set(unique_target_cells))
+
+            for param in self.parameters:
+                if not param.cell_list: param.cell_list = unique_target_cells
+        # end [step]
 
         return succeed
 
@@ -1197,103 +1349,4 @@ Name of the File: %s
 
         return True
     
-    __optionnames['experiment_type'] = (
-        'experiment_type', 'experiment type', 'mode'
-    )
-
-    __optionnames['experiment_name'] = (
-        'experiment_name', 'experiment name', 'experiment_id', 'experiment_id',
-        'calibration_id', 'calibration_name', 'calibration id', 
-        'calibration name'
-    )
-
-    __optionnames['maximum_iteration'] = (
-        'maximum_iteration', 'maximum iteration', 'max iter', 'max_iter'
-    )
-
-    __optionnames['parameter_description_filename'] = (
-        'parameter_info', 'parameter_info_input_filename', 'parameter_info_filename'
-    )
-
-    __optionnames['parallel_computation'] = (
-        'parallel_evaluation', 'do_parallel_evaluation', 'parallel_evaluations',
-        'parallel_evaluation', 'parallel evaluations', 'parallel evaluation', 
-        'parallel', 'parallelization'
-    )
-
-    __optionnames['output_directory'] = ('output_directory')
     
-    __optionnames['save_simulation_output'] = (
-        'save_simulation_output', 'save simulation output', 
-        'dump_model_prediction', 'save_model_prediction'
-    )
-    __optionnames['objective_outfile'] = (
-        'objective_filename', 'objective_output_filename', 
-        'save_function_values', 'save function values', 'save_function_value', 
-        'save function value', 'funvalue_dumpfile', 'funvalue dumpfile'
-    )
-    
-    __optionnames['parameter_outfile'] = (
-        'save_param_values' , 'save param values' , 'save_param_value' , 
-        'save param value', 'parameter_dumpfile', 'parameter dumpfile',
-        'parameter_value_output_filename'
-    )
-    
-    __optionnames['result_outfile'] = (
-        'result_outfile', 'calibration_output_filename', 'output_filename',
-        'result_filelname', 'result_dumpfile', 'output_filename'
-    )
-
-    __optionnames['runtime_dynamics_outfile'] = (
-        'runtime_dynamics_filename', 'runtime dynamics filename'
-    )
-
-    __optionnames['runtime_dynamics_frequency'] = (
-        'runtime_dynamics_write_frequency', 'runtime_report_frequency', 
-        'runtime report frequency', 'runtime dynamics write frequency'
-    )
-
-    __optionnames['replace_nan'] = ()
-    
-    __optionnames['compute_upstream'] = (
-        'compute_upstream_from_station_file', 'upstream_from_station_file',
-        'target_cells_from_station_file', 'target_cell_from_station_file',
-        'target cells from station file', 'target cell from station file'
-    )
-    
-    __optionnames['disjoint_basins'] = (
-        'disjoint_basin_extent', 'disjoint basin extent'
-    )
-
-    # options of many-problem calibration
-    __optionnames['calibration_type'] = (
-        'calibration_type', 'calibration type', 'calibration-type'
-    )
-
-    __optionnames['multiproblem_calibration_parameter_list'] = (
-        'multiproblem_calibration_parameter_list',
-        'multiproblem calibration parameter list'
-    )
-
-    __optionnames['multiproblem_calibration_objective_list'] = (
-        'multiproblem_calibration_objective_list',
-        'multiproblem calibration objective list',
-        'multiproblem_calibration_observation_list',
-        'multiproblem calibration observation list'
-    )
-
-    __optionnames['parameter_info_filename'] = (
-        'parameter_info_input_filename', 'parameter info input filename',
-        'parameter_info_filename', 'parameter info filename'
-    )
-
-    # __optionnames['objective_indexfile'] = ()
-    __optionnames['report_outfile'] = ()
-    __optionnames['sleep_time'] = ()
-
-    ## Calibration options for sensitivity analysis
-    __optionnames['sample_filename'] = (
-        'input_sample_filename', 'sample_filename'
-    )
-    __optionnames['change_from_refsimulation'] = ()
-    __optionnames['function_to_compute_change'] = ()

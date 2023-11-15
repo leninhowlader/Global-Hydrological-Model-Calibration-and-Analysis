@@ -121,6 +121,25 @@ class Parameter:
             self.parameter_value.append(value)
         except: self.parameter_value = [value]
 
+    def add_unit_extent_cellnums(self, list_of_cellnums):
+        """
+        This function add (append) cell number list defining the extent of an
+        unit (e.g., a basin, CDA unit, or even a single cell)
+
+        Paramter:
+        list_of_cellnum: list
+            a list of cell numbers. The cell numbers should be according to the
+            WaterGAP GCRC number system.
+        """
+        self.cell_list.append(list_of_cellnums)
+    
+    def clear_cellnumber_list(self):
+        """
+        The function clears the list of cell numbers that describes the extent 
+        of all the units.
+        """
+        self.cell_list.clear()
+
     @staticmethod
     def read_parameter_list(filename):
         param_list = []
