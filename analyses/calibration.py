@@ -369,10 +369,40 @@ class Calibration:
 
     @staticmethod
     def update_parameters(vars):
+        """
+        The function update current values of the parameters in the parameter 
+        objects stored in parameter list of the configuration object. cell level
+        parameter value is only possible for single problem calibration. In case
+        of multi-problem calibration, the parameter value is applied for the 
+        entire unit considered in the particular problem.
+        """
         config = Calibration.__config
         
-        for i in range(len(vars)):
-            config.parameters[i].parameter_value = vars[i]
+        if config.calibration_type in ['single', 'one']:
+            var_index = 0
+            for i in range(len(config.parameters)):
+                if config.parameters[i].cell_level_representation == True:
+                    n = config.parameters[i].get_unit_count()
+                    
+                    config.parameters[i].parameter_value = \
+                    vars[var_index, var_index + n]
+
+                    var_index += n
+                else:
+                    config.parameters[i].parameter_value = vars[var_index]
+                    var_index += 1
+        
+        else:
+            var_index = 0
+
+            param_indices = config.multiproblem_parameter_index_list
+            for indices in param_indices:
+                for num in indices:
+                    config.parameters[num].add_unit_parameter_value(
+                        vars[var_index]
+                    )
+                    var_index += 1
+        #
     
     @staticmethod
     def write_parameter_values(evaluation_num):
