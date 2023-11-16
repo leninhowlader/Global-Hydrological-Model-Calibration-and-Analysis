@@ -61,14 +61,100 @@ class DirInfo:
         else: return None
 
 class WaterGAP:
+    """
+    This class acts an an interface between the WaterGAP GHM and the calibration 
+    program and provide neccessary functionalities to manipulate model input
+    such as parameter file, configuration file, and run the model. It also 
+    provides functionalities to read model output and compute objectives by 
+    comparing the simulated values and observed values (or compute summary 
+    statistics of model output variables)
+
+
+    Attributes:
+    home_directory: str
+        WaterGAP home directory. All files that the model requires must have
+        a relative fileaddress with reference to the home directory
+    executable: str
+        the filename of the WaterGAP model executable. Usually a shell file 
+        is used to execute the actual model. If this is the case, this attibute
+        must have the name of the shell script rather the actual model program
+        name
+    directory_filename: str
+        name of the directory file where other directory info is sotred. This 
+        attbibute is required by model version wghm2.2d or lower.
+    model_config_filename: str
+        WaterGAP configuration filename. applicable only for model version
+        wghm 2.2e
+    json_parameter_file: str
+        Name of the parameter file. The file format is fixed and follows json 
+        styles.
+    station_filename: str
+        Name of file where WaterGAP basin outlets are defined. In model version
+        2.2e, this information is provided in the WaterGAP configuration file (
+        model_config_filename)
+    log_directory: str
+        name of the directory where the log file has to be stored. if provided 
+        the on-screen model output will be saved
+    temporary_output_directory: str
+        the directory where the output directory is to be created. 
+    __system_arguments: str (deprecated)
+        any additional system arguments to be added during model execution
+
+    model_version: str
+        WaterGAP model version name. possible values are 'wghm2.2d', 'wghm2.2e',
+        or 'wghm2.2b' in rare occations
+    ngc: int
+        number of grid cells. in model version 2.2d and above the ngc is 67420
+        while for earlier version the grid cell count is 66896
+    start_year: int
+        the start year from which model output will be read in. Actual model 
+        start year that is defined in the model configuration file or in the
+        time.dat file (in the case of earlier model version) can be different
+    end_year: int
+        the end year until which model output will be read in. Actual model end
+        year could be different in the model configuration file or in the 
+        time file (time.dat)
+    output_endian_type: FileEndian (int 1 or 2)
+        Type of endian used in the model output binary files. This information 
+        is required to read model output files
+    remove_waterGap_files_after_evaluation: bool
+        the flag indicate whether or not the output files, configuration file, 
+        and the parameter file that have been created for running the model 
+        should be deleted after the model evaluation is completed 
+    repetitions_on_failure: int
+        number of times model execution will be initiated if model run fails due
+        to any uncontrolable reasons (such as failour due to lack of resources 
+        etc.)
+    sleep_time: int
+        the time lapse between two successive attempts to run the model upon 
+        execution failure occurs
     
+    (internal data structures)
+    __optionnames: dict
+        list of options for reading the model configuration options in the
+        configuration file and their alternative names
+    json_paramset: dict (json)
+        json object that contains the WaterGAP spatial parameters.
+    dir_info: DirectoryInfo
+        the directory information object contains names of important directories
+        necessary for the WaterGAP model. applicable only for model version 2.2d 
+        or earlier model versions. from model version 2.2e, these information is
+        provided in the model configuration file
+    model_config: WaterGapConfig
+        the object contains neccessary configuration information for WaterGAP 
+        model (see documentation of WaterGapConfig class)
+    
+    Methods:
+    is_okay()
+        checks consistency and data adequacy for the class
+    """
+
     home_directory = ''
     json_parameter_file = ''
     directory_filename = ''
     executable = ''
-    start_year = 1901
-    end_year = 2100
-    output_endian_type = FileEndian.big_endian
+    model_config_filename = ''
+    station_filename = ''
     log_directory = ''
     temporary_output_directory = ''
 
@@ -76,93 +162,82 @@ class WaterGAP:
 
     model_version = ''
     ngc = -1
-
-    json_paramset = None
-    dir_info = None
-
-    station_filename = ''
-
+    start_year = 1901
+    end_year = 2100
+    output_endian_type = FileEndian.big_endian
     remove_waterGap_files_after_evaluation = True
-
-    model_config_filename = ''
-    model_config = None
-
     repetitions_on_failure = 0
     sleep_time = 0
 
-    __optionnames = {}
-    
-    __optionnames['home_directory'] = (
-        'home_directory', 'home directory', 'model_home_directory',
-        'model home directory'
-    )
-    
-    __optionnames['model_executable'] = (
-        'model_executable', 'model executable', 'executable', 'model',
-        'executable_name', 'executable name'
-    )
+    json_paramset = None
+    dir_info = None
+    model_config = None
 
-    __optionnames['model_configfile'] = (
-        'wgap_config_filename', 'wgap config filename', 'model_config_filename'
-    )
-
-    __optionnames['additional_arguments'] = (
-        'arguments', 'system_arguments', 'additional_arguments'
-    )
-
-    __optionnames['parameter_filename'] = (
-        'parameter_file', 'parameter file', 'parameter_filename', 
-        'parameter filename'
-    )
-    __optionnames['start_year'] = ('start_year', 'start year')
-    __optionnames['end_year'] = ('end_year', 'end year')
     
-    __optionnames['directory_filename'] = (
-        'data_directory_file', 'data directory file', 'directory_filename',
-        'directory filename'
-    )
-    
-    __optionnames['log_directory'] = ('log', 'log_directory', 'log directory')
-
-    __optionnames['output_endian_type'] = (
-        'output_endian_type', 'output endian type', 'endian_type', 'endian type'
-    )
-    __optionnames['cell_count'] = (
-        'grid_cell_count', 'grid cell count', 'ng', 'cell_count', 'cell count'
-    )
-
-    __optionnames['model_version'] = ('model_version', 'model version')
-
-    __optionnames['temporary_output_directory'] = (
-        'temporary_output_directory', 'temporary output directory'
-    )
-
-    __optionnames['dummy_model_execution'] = ()
-    __optionnames['remove_model_output'] = (
-        'delete_files', 'delete files', 'remove_modelfiles_after_evaluation',
-        'remove modelfiles after evaluation'
-    )
-    
-    __optionnames['station_filename'] = (
-        'station_file', 'station_filename', 'station file', 'station filename'
-    )
-    
-    __optionnames['rowindex_file'] = ()
-    __optionnames['colindex_file'] = ()
-    __optionnames['flowdirection_file'] = ()
-    __optionnames['area_file'] = ()
-    __optionnames['gcrc_file'] = ()
-    
-    __optionnames['sleep_time'] = (
-        'sleep_time_after_unsuccessful_run', 'sleep time after unsuccessful run',
-        'sleep_time_between_repetitions', 'sleep time between repetitions', 
-        'sleep_time', 'sleep time'
-    )
-
-    __optionnames['repetitions_on_failure'] = (
-        'max_repetitions_upon_failing_model_run', 'max_repetitions'
-    )
-    
+    __optionnames = {
+        'home_directory': (
+            'home_directory', 'home directory', 'model_home_directory',
+            'model home directory'
+        ),
+        'model_executable': (
+            'model_executable', 'model executable', 'executable', 'model',
+            'executable_name', 'executable name'
+        ),
+        'model_configfile': (
+            'wgap_config_filename', 'wgap config filename', 
+            'model_config_filename'
+        ),
+        'additional_arguments': (
+            'arguments', 'system_arguments', 'additional_arguments'
+        ),
+        'parameter_filename': (
+            'parameter_file', 'parameter file', 'parameter_filename', 
+            'parameter filename'
+        ),
+        'start_year': ('start_year', 'start year'),
+        'end_year': ('end_year', 'end year'),
+        'directory_filename': (
+            'data_directory_file', 'data directory file', 'directory_filename',
+            'directory filename'
+        ),
+        'log_directory': ('log', 'log_directory', 'log directory'),
+        'output_endian_type': (
+            'output_endian_type', 'output endian type', 'endian_type', 
+            'endian type'
+        ),
+        'cell_count': (
+            'grid_cell_count', 'grid cell count', 'ng', 'cell_count', 
+            'cell count'
+        ),
+        'model_version': ('model_version', 'model version'),
+        'temporary_output_directory': (
+            'temporary_output_directory', 'temporary output directory'
+        ),
+        'dummy_model_execution': (),
+        'remove_model_output': (
+            'delete_files', 'delete files', 
+            'remove_modelfiles_after_evaluation',
+            'remove modelfiles after evaluation'
+        ),
+        'station_filename': (
+            'station_file', 'station_filename', 'station file', 
+            'station filename'
+        ),
+        'rowindex_file': (),
+        'colindex_file': (),
+        'flowdirection_file': (),
+        'area_file': (),
+        'gcrc_file': (),
+        'sleep_time': (
+            'sleep_time_after_unsuccessful_run', 
+            'sleep time after unsuccessful run',
+            'sleep_time_between_repetitions', 'sleep time between repetitions', 
+            'sleep_time', 'sleep time'
+        ),
+        'repetitions_on_failure': (
+            'max_repetitions_upon_failing_model_run', 'max_repetitions'
+        )
+    }
 
     @staticmethod
     def get_json_parameter_filename():
@@ -271,22 +346,65 @@ class WaterGAP:
 
                 for param in parameter_list:
                     try:
-                        key = param.parameter_name
-                        value = param_set[key]
-                        param_value = param.get_parameter_value()
-                        if type(value) is list:
-                            if param.has_multiple_cells() and param.get_single_value_flag():
-                                clist = param.get_cell_list()
-                                if clist:
-                                    temp = []
-                                    for c in clist:
-                                        if type(c) is list: temp+= c
-                                        else: temp.append(c)
-                                    clist = temp
-                                for c in clist: value[c-1] = param_value
+                        param_name = param.parameter_name
+                        value_curr = param_set[param_name]
+                        
+                        value_new = param.get_parameter_value()
+                        if type(value_curr) is list:
+                            # new code
+                            cell_list = param.get_cell_list()
+                            
+                            if type(value_new) is list:
+                                n = len(cell_list)
+
+                                if len(value_new) != n:
+                                    succeed = False
+                                    break
+                                
+                                for i in range(n):
+                                    cell = cell_list[i]
+                                    value = value_new[i]
+
+                                    if type(cell) is list:
+                                        for c in cell:
+                                            value_curr[c-1] = value
+                                    else: value_curr[cell - 1] = value
                             else:
-                                for i in range(len(value)): value[i] = param_value
-                        else: param_set[key] = param_value
+                                temp = []
+                                for cells in cell_list:
+                                    if type(cells) is list: temp += cells
+                                    else: temp.append(cells)
+                                
+                                if temp:
+                                    for c in temp: 
+                                        value_curr[c - 1] = value_new
+                                else:
+                                    for i in range(value_curr):
+                                        value_curr[i] = value_new
+                            # end of new code segment
+
+                            # # old code
+                            # if (param.has_multiple_cells() 
+                            #     and param.get_single_value_flag()):
+                            #     clist = param.get_cell_list()
+                            #     if clist:
+                            #         temp = []
+                            #         for c in clist:
+                            #             if type(c) is list: temp+= c
+                            #             else: temp.append(c)
+                            #         clist = temp
+                            #     for c in clist: 
+                            #         value_curr[c-1] = value_new
+                            # else:
+                            #     for i in range(len(value_curr)): 
+                            #         value_curr[i] = value_new
+
+                        else:
+                            if type(value_new) is list:
+                                succeed = False
+                                break 
+                            
+                            param_set[param_name] = value_new
                     except:
                         succeed = False
                         break
@@ -310,7 +428,9 @@ class WaterGAP:
             f = None
             try:
                 f = open(filename, 'r')
-                WaterGAP.json_paramset = json.load(f, object_pairs_hook=OrderedDict)
+                WaterGAP.json_paramset = json.load(
+                    f, object_pairs_hook=OrderedDict
+                )
             except: succeed = False
             finally:
                 try: f.close()
