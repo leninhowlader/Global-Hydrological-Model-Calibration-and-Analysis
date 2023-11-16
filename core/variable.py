@@ -469,6 +469,25 @@ class ObsVariable(Variable):
                                     if len(temp) > 0:
                                         var.is_multiset = True
                                         var.data_source.data_column_num = temp
+                                
+                                elif value.find(':') >= 0:
+                                    temp = value.split(':')
+                                    for i in reversed(range(len(temp))):
+                                        try: temp[i] = int(temp[i])
+                                        except: _ = temp.pop(i)
+                                    
+                                    colnums = []
+                                    if len(temp) == 2:
+                                        colnums = list(
+                                            range(temp[0], temp[1]+1)
+                                        )
+                                    if len(colnums) > 1:
+                                        var.is_multiset = True
+                                        var.data_source.data_column_name = \
+                                        colnums
+                                    elif len(colnums) == 1:
+                                        var.data_source.data_column_name = \
+                                        colnums[0]
                                 else:
                                     num = -1
                                     try: num = int(value.strip())
@@ -494,9 +513,12 @@ class ObsVariable(Variable):
                                 var.data_source.filename = value
                             elif key in optionnames['file_type']:
                                 value = value.lower()
-                                if value in ['csv', 'text', 'flat', 'flatfile', 'flat file']: 
+                                if value in [
+                                    'csv', 'text', 'flat', 'flatfile', 
+                                    'flat file']: 
                                     var.data_source.file_type = FileType.flat
-                                else: var.data_source.file_type = FileType.binary
+                                else: 
+                                    var.data_source.file_type = FileType.binary
                             elif key in ['separator', 'seperator']:
                                 if value: var.data_source.separator = value
                                 else: var.data_source.separator = ' '
@@ -510,17 +532,35 @@ class ObsVariable(Variable):
                                 try: count = int(value)
                                 except: pass
                                 var.data_source.skip_lines = count
-                            elif key in ['chunk_size', 'chunk size', 'block_size', 'block size']:
+                            elif key in [
+                                    'chunk_size', 'chunk size', 'block_size', 
+                                    'block size'
+                                ]:
                                 size = 0
                                 try: size = int(value)
                                 except: pass
                                 var.data_source.block_size = size
-                            elif key in ['chunk_format', 'chunk format', 'block_format', 'block format']:
+                            elif key in [
+                                    'chunk_format', 'chunk format', 
+                                    'block_format', 'block format'
+                                ]:
                                 var.data_source.block_format = value
-                            elif key in ['counter_simvar', 'counter_var', 'counter simvar', 'counter var', 'counter obsvar', 'counter variable', 'counter_variable']:
+                            elif key in [
+                                    'counter_simvar', 'counter_var', 
+                                    'counter simvar', 'counter var', 
+                                    'counter obsvar', 'counter variable', 
+                                    'counter_variable'
+                                ]:
                                 var.counter_variable = value
-                            elif key in ['function', 'evaluation function', 'objective function', 'evaluation_function', 'objective_function']:
-                                var.function = ObjectiveFunction.find_function(value)
+                            elif key in [
+                                    'function', 'evaluation function', 
+                                    'objective function', 'evaluation_function', 
+                                    'objective_function'
+                                ]:
+                                
+                                var.function = \
+                                ObjectiveFunction.find_function(value)
+                                
                             elif key in [
                                 'borg_epsilon', 'borg epsilon', 'epsilon'
                             ]: 
