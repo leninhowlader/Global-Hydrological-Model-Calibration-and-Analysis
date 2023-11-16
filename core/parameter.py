@@ -35,16 +35,20 @@ class Parameter:
         instead of list of cell number, to represent the cells and if the 
         parameter_value has the same length as of the length of cell_list,
         cell specific value has to be assigned.
+    cell_level_representation: bool
+        the flag, if true, indicates that cell level value should be enforced in 
+        especially calibration experiments. in case of cell level calibration,
+        the number of actual parameters would depend on the number of grid cells
+        listed in the cell_list array. this option should only be used in single
+        problem calibration.
     precision_level: integer
         represents the level of precision i.e., how many significant digits
         should be consided after the decimal point.
 
     single_value_flag: bool (will be deprecated soon)
         indicate if the parameter value to be applied for all cells globally
-    cell_specific_values: list of floats (will be deprecated soon)
-        contains the cell specific values of the parameter. the length of 
-        this container should be the same as the length of cell_list
-    
+       
+        
     Methods:
     is_okay()
         Checks consistencies of the Parameter object. If a parameter has a 
@@ -62,8 +66,8 @@ class Parameter:
 
         self.cell_list = []
         self.single_value_flag = True
-        self.cell_specific_values = []
         self.precision_level = -1
+        self.cell_level_representation = False
 
     def is_okey(self):
         if not self.parameter_name: return False
@@ -81,23 +85,72 @@ class Parameter:
     def get_lower_bound(self): return self.lower_bound
     def get_upper_bound(self): return self.upper_bound
 
+    def get_unit_count(self, problem_no=-1):
+        """
+        finds the number of units that the parameter object represents. the 
+        function is particularly useful for cell-level calibration when the cell 
+        level representation flag is set true 
+
+        Parameter:
+        problem_no: int (optional)
+            if provided number of represented units for the concerned problem is
+            returned by the function. this parameter is used in case of multi-
+            problem configurations
+
+        Returns:
+        int
+            No. of unit represented by the parameter object
+        """
+        
+        if self.cell_level_representation:
+            if problem_no == -1:
+                count = 0
+                for l in self.cell_list:
+                    if type(l) is list: count += len(l)
+                    else: count += 1
+                return count
+            else:
+                l = self.cell_list[problem_no]
+                if type(l) is list:
+                    return len(l)
+                else: return 1
+        else: return 1
+
+
     def get_parameter_value(self):
         if not self.logarithmic_scale:
             if self.precision_level > 0:
-                return round(self.parameter_value, self.precision_level)
+                if type(self.parameter_value) is list:
+                    temp = []
+                    for v in self.parameter_value:
+                        temp.append(round(v, self.precision_level))
+                    return temp
+                else:
+                    return round(self.parameter_value, self.precision_level)
             else: return self.parameter_value
         else:
             if self.precision_level > 0:
-                return round(10**self.parameter_value, self.precision_level)
-            else: return 10**self.parameter_value
+                if type(self.parameter_value) is list:
+                    temp = []
+                    for v in self.parameter_value: 
+                        temp.append(round(10**v, self.precision_level))
+                    return temp
+                else:
+                    return round(10**self.parameter_value, self.precision_level)
+            else: 
+                if type(self.parameter_value) is list:
+                    temp = []
+                    for v in self.parameter_value:
+                        temp.append(10**v)
+                    return temp
+                else:
+                    return 10**self.parameter_value
 
     def set_cell_list(self, cell_list): self.cell_list = cell_list
     def set_single_value_flag(self, flag): self.single_value_flag = flag
-    def set_cell_specific_values(self, values): self.cell_specific_values = values
     def set_precision_level(self, level): self.precision_level = level
     def get_cell_list(self): return self.cell_list
     def get_single_value_flag(self): return self.single_value_flag
-    def get_cell_specific_values(self): return self.cell_specific_values
     def get_precision_level(self): return self.precision_level
 
     def has_multiple_cells(self):
