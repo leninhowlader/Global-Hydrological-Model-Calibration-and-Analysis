@@ -948,6 +948,45 @@ class Configuration:
                 #     = np.array(var.data_cloud.data_indices)
         # end [step]
 
+        # step:
+        # compute objective weighting factors from upstream area if the station
+        # cell number (WaterGAP GCRC cell number) or the cell number of the most
+        # downstream cell is provided in the observation variables. Usually this
+        # weighting of objectives using the entire upstream area is applied for
+        # streamflow objectives if multiple streamflow stations are present 
+        # within the same CDA unit.
+        #   
+        # Caution: if objective weighting has to be used, it is necessary that 
+        # if in a single unit, only one station is present, the station cell 
+        # number must be provided. the weighting factor for that particular 
+        # objective would become 1.0
+        # 
+        if len(self.obs_variables) > 0:
+            for var in self.obs_variables:
+                var = ObsVariable()
+                if len(var.weights_upstream_area_of) > 0 :
+                    weights_allunits = np.array([])
+                    
+                    for stations_cellnum in var.weights_upstream_area_of:
+                        upstream_areas = np.array(
+                            [Upstream.compute_entire_upstream_area(x)
+                            for x in stations_cellnum]
+                        )
+
+                        # the maximum upstream area represent the entire basin 
+                        # from the most downstream station, and this area will
+                        # be used as reference for area normalization.
+                        weights = upstream_areas/upstream_areas.max()
+
+                        weights /= weights.sum()   # rescale
+                        
+                        weights_allunits = np.np.concatenate(
+                            (weights_allunits, weights), axis=0
+                        )
+                    
+                    var.weight_factors = weights_allunits.flatten().tolist()
+        # end [step]
+
         # step: 
         # check completeness of derived variables (if any)
         if len(self.derived_variables) > 0:

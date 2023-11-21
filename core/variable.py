@@ -2,6 +2,7 @@ __author__ = 'mhasan'
 
 import sys, os, numpy as np, pandas as pd
 from datetime import datetime
+from queue import Queue, deque
 
 from utilities.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
 from utilities.fileio import FileInputOutput as io
@@ -375,25 +376,129 @@ class Variable:
         if not self.varname or not self.data_source.is_okay(): return False
         elif self.data_obtained and not self.data_cloud.is_okay(): return False
         else: return True
+    
+    @staticmethod
+    def read_groups(groups_str, type='float'):
+        groups = groups_str.strip().split(']')
+        for i in reversed(range(len(groups))):
+            groups[i] = groups[i].strip('[, ').split(',')
+            for j in reversed(range(len(groups[i]))):
+                try: groups[i][j] = float(groups[i][j].strip('\n '))
+                except: groups[i].pop(j)
+            if len(groups[i]) == 0: groups.pop(i)
+
+        if type == 'int':
+            for i in range(len(groups)):
+                for j in range(len(groups[i])): groups[i][j] = int(groups[i][j])
+
+        return groups # 2-D array
 
 class ObsVariable(Variable):
-    __optionnames = {}
-    __optionnames['varname'] = [
-        'var_name', 'varname', 'var name', 'variable_name', 'variable name'
-    ]
-    __optionnames['data_column_name'] = ['data_column_name', 'data column name']
-    __optionnames['data_column_number'] = [
-        'data_column_number', 'data column number'
-    ]
+    """
+    The class define the observation variable objects and define their 
+    functionalities and associations.
 
-    __optionnames['index_column_names'] = [
-        'index_column_names', 'index column names'
-    ]
-    __optionnames['index_column_numbers'] = [
-        'index_column_numbers', 'index column numbers'
-    ]
-    __optionnames['filename'] = ['data_file', 'data file', 'filename']
-    __optionnames['file_type'] = ['data_file_type', 'data file type']
+    Properties/Attributes:
+    (attributes inherited from the superclass)
+    varname: str
+        name of the simulation variable
+    data_source: DataSource
+        data source object that describe the source file name and format (see
+        description of DataSource class [yet to be added])
+    data_cloud: DataCloud
+        a container to hold data of the variable object. (see description of 
+        DataCloud class [yet to be added])
+    data_obtained: bool
+        a flag describing whether or not data of the variable has been read in
+    
+    (attributes of the observation variable class)
+    counter_variable: str
+        The name of the simulation variable for which the current observational 
+        object stores observations. The pair consisting of the observation 
+        variable object and its corresponding counter simulation variable is 
+        compared to compute the objective or model performance
+    function: function
+        the function to be used for comparing observation and simulation values
+        for computing objectes or simulation performance
+    epsilon: float
+        a parameter for the paroto-optimal calibration algorithm (BorgMOEA) that
+        define the fineness of objectives that matter. that is, any improvement 
+        beyond this limit is not significant enough to consider true improvement
+    is_multiset: bool
+        the flag determine the presence of multi-column (i.e. multi-set) 
+        observation data for the variable. Each column of data might represent
+        observations for the variable of a basin, or a cell, or of a CDA unit; 
+        or simply another realization of observation amid observation 
+        uncertainties
+    multiset_data_column_names: list(of str)
+        the list contains the column names of the multiple data set or 
+        time-series in the data file
+    multiset_data_column_nums: list (of int)
+        the list contains column number of the multiple observation time-series
+    has_uncertainty_bound: bool
+        the flag indicates that the variable has uncertainty bound when it is
+        true
+    lower_bound_column_name: str
+        Name of the column of the data which cantains the lower bound of the 
+        observation
+    upper_bound_column_name: str
+        the name of the column that represent the upper observation bound
+    objectives: queue
+        the queue is introduced to enabling the program to handle multi-problem
+        calibration. objectives will the computed and stored in the queue and 
+        depending on the single or multi -problem calibration, the queued 
+        objective will be pulled accordingly
+    weight_factors: list
+        the list contains the scaled weighting factors (i.e., the some of 
+        factors for a unit must be 1.0). Again, these are the factors but not
+        weights themselves, so multiplication of weighting factors with objects 
+        for a unit and sum up all fractional objective should give the weighted 
+        mean.
+    weights_upstream_area_of: list of list of integer
+        the list contains list of station cell numbers within each unit.
+
+        list of cell number (i.e., WaterGAP GCRC cell number) of the station
+        cell or the most downstream cell from which the upstream area would
+        be computed and the upstream area will be used as the weights of the
+        objectives. Using the upstream area as weights requires that the weights
+        should be scaled by the maximum of weights in an unit instead of the sum
+        of weights, especially for streamflow variable. This is why a rescaling 
+        is done to make sure the sum of weighting factors become 1.0.
+
+        in case of multi-problem calibration, the length of the attribute must
+        be equal to the number of problems. the element list must contain the 
+        all the station cell numbers within the represented unit.
+
+    (internal attributes)
+    __optionnames: dict
+        the name of the options available in the configuration files to define 
+        an observation variable and the alternate names of those options
+    
+        
+    Methods:
+    apply_objective_weighting_factors()
+        applies weighting factors to the objectives
+    """
+    __optionnames = {
+        'varname': (
+            'var_name', 'varname', 'var name', 'variable_name', 'variable name'
+        ),
+        'data_column_name': ('data_column_name', 'data column name'),
+        'data_column_number': (
+            'data_column_number', 'data column number'
+        ),
+        'index_column_names': (
+            'index_column_names', 'index column names'
+        ),
+        'index_column_numbers': (
+            'index_column_numbers', 'index column numbers'
+        ),
+        'filename': ('data_file', 'data file', 'filename'),
+        'file_type': ('data_file_type', 'data file type'),
+        'weights_as_upstream_area': (
+            'weights_as_upstream_area', 'weights as upstream area'
+        )
+    }
 
     def __init__(self):
         Variable.__init__(self)
@@ -408,6 +513,28 @@ class ObsVariable(Variable):
         self.has_uncertainty_bound = False
         self.lower_bound_column_name = ''
         self.upper_bound_column_name = ''
+
+        # attributes introduced for enabling multi-problem calibration
+        self.objectives = Queue()
+        self.weight_factors = [] # caution: they are wt. factors but not weights
+        self.weights_upstream_area_of = []
+    
+    def apply_objective_weighting_factors(self):
+        """
+        The function applies weighting factors to the objectives if weight 
+        factors are provided/stored beforehand. If the length of the two arrays,
+        the objectives and weights, are not the same, the multiplication of
+        weighting factors will not be done and the weighting factors will be 
+        cleared.
+        """
+        if (self.weight_factors and 
+            len(self.objectives.queue) == self.weight_factors):
+            x = np.array(self.objectives.queue).flatten()
+            wt = np.array(self.weight_factors).flatten()
+            
+            # self.objectives.queue.clear()
+            self.objectives.queue = deque(x * wt)
+        else: self.weight_factors.clear()
 
     def get_function_name(self):
         return ObjectiveFunction.get_function_name(self.function)
@@ -566,6 +693,36 @@ class ObsVariable(Variable):
                             ]: 
                                 try: var.epsilon = float(value)
                                 except: pass
+                            elif key in optionnames['weights_as_upstream_area']:
+                                if value.find(':') > 0:
+                                    temp = value.split(':')
+                                    for i in range(len(temp)): 
+                                        temp[i] = temp[i].strip()
+
+                                    if (len(temp) == 2 and 
+                                        temp[0].lower() == 'filename'):
+                                        filename, temp_str = temp[1], ''
+
+                                        fs = None
+                                        try:
+                                            fs = open(filename, 'r')
+                                            for l in fs.readlines(): 
+                                                temp_str += l
+                                        except: temp_str = None
+                                        finally:
+                                            try: fs.close()
+                                            except: pass
+                                        
+                                        if temp_str:
+                                            var.weights_upstream_area_of \
+                                            = ObsVariable.read_groups(
+                                                temp_str, type='int'
+                                            )
+                                            temp_str = None
+                                else: 
+                                    var.weights_upstream_area_of \
+                                    = ObsVariable.read_groups(value, type='int')
+                                
             except: return None
 
     @staticmethod
@@ -1123,22 +1280,6 @@ class SimVariable(Variable):
                                 except: pass
 
             except: return None
-
-    @staticmethod
-    def read_groups(groups_str, type='float'):
-        groups = groups_str.strip().split(']')
-        for i in reversed(range(len(groups))):
-            groups[i] = groups[i].strip('[, ').split(',')
-            for j in reversed(range(len(groups[i]))):
-                try: groups[i][j] = float(groups[i][j].strip('\n '))
-                except: groups[i].pop(j)
-            if len(groups[i]) == 0: groups.pop(i)
-
-        if type == 'int':
-            for i in range(len(groups)):
-                for j in range(len(groups[i])): groups[i][j] = int(groups[i][j])
-
-        return groups # 2-D array
 
     @staticmethod
     def data_collection_asof_20181115(sim_vars, start_year, end_year):

@@ -267,10 +267,20 @@ class Calibration:
     
     @staticmethod
     def compute_objectives():
+        """
+        The function compute objectives by comparing the observation variables
+        to corresponding simulation variable counterparts.
+
+        Returns:
+        (list or list of list)
+            the array of objectives. for the multi-problem optimization case, 
+            the array will contain array of objective for each problem
+        """
         objs = []
         config = Calibration.__config
 
         for obsvar in config.obs_variables:
+            obsvar.objectives.queue.clear()
             var = None
             target = obsvar.counter_variable
             
@@ -285,8 +295,8 @@ class Calibration:
                         var = dervar
                         break
             
-            if not var: 
-                objs.append(np.nan)
+            if not var:
+                obsvar.objectives.put(np.nan) 
                 continue
             
             fun = obsvar.function
@@ -317,7 +327,8 @@ class Calibration:
                         lb=lb,
                         ub=ub
                     )
-                objs.append(f)
+
+                obsvar.objectives.put(f)
 
             elif obs.ndim == 2 and (sim.ndim == 1 or sim.shape[1] == 1):
                 # this case might arrise when observation is perturbed with in 
@@ -339,7 +350,8 @@ class Calibration:
                         lb=lb,
                         ub=ub
                     )
-                    objs.append(f)
+
+                    obsvar.objectives.put(f)
 
             elif obs.ndim == 2 and sim.ndim == 2 and obs.shape[1] == sim.shape[1]:
                 # When obs contains multiple time-series for different units, 
@@ -348,16 +360,50 @@ class Calibration:
                 # basins
                 for i in range(obs.shape[1]):
                     o = obs[:, i].flatten()
-                    for j in range(sim.shape[1]):
-                        s = sim[:, j].flatten()
-                        f = stats.objective_function(
-                            fun=fun, sim=s, obs=o, lb=lb, ub=ub
-                        )
-                        objs.append(f)
-            
-            else: objs.append(np.nan)
+                    s = sim[:, i].flatten()
+                    
+                    f = stats.objective_function(
+                        fun=fun, sim=s, obs=o, lb=lb, ub=ub
+                    )
 
-        return objs
+                    obsvar.objectives.put(f)
+            
+            else: obsvar.objectives.put(np.nan)
+
+            # apply objective weighting factor, if applicable
+            obsvar.apply_objective_weighting_factors()
+
+        objectives = []
+        if config.calibration_type in ['single', 'one']:
+            for obsvar in config.obs_variables:
+                # objectives += list(obsvar.objectives.queue)
+                # obsvar.objectives.queue.clear()
+                
+                objectives += [
+                    obsvar.objectives.get() 
+                    for _ in range(obsvar.objectives.qsize())
+                ]
+        else:
+            for obj_indices in config.multiproblem_objective_index_list:
+                groups = OrderedDict()
+                for num in obj_indices:
+                    obsvar = config.obs_variables[num]
+                    obj = obsvar.objectives.get()
+                    
+                    try: groups[num]['values'].append(obj)
+                    except: 
+                        fun = np.mean
+                        if len(obsvar.weight_factors) > 0: fun = np.sum
+                        groups[num] = {'values': [obj], 'fun': fun}
+                
+                objs = []
+                for _, v in groups.items():
+                    fun = v['fun'] 
+                    objs.append(fun(v['values']))
+                
+                objectives.append(objs)
+
+        return objectives
 
     @staticmethod
     def compute_constraints():
