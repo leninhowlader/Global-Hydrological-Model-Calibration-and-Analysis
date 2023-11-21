@@ -631,6 +631,29 @@ class Upstream:
         return direction_line, arrows
 
     @staticmethod
+    def compute_entire_upstream_area(cell_number:int):
+        """
+        This function computes the area of the entire upstram from a grid cell.
+
+        Parameters:
+        cell_number: (int)
+            the cell number according to WaterGAP GCRC number system.
+
+        Returns:
+        (float)
+            the area of the entire upstream region from the given cell
+        """
+        lat, lon = GlobalGrid.get_wghm_centroid(cell_number)
+        outlet = GlobalGrid.find_row_column(latitude=lat, longitude=lon)
+        upstreams = Upstream.compute_basin_extent([outlet])
+
+        area = 0
+        for row, _ in upstreams[outlet]: 
+            area += GlobalGrid.find_wghm_cellarea(row)
+
+        return area
+    
+    @staticmethod
     def create_basin_shape(
             filename,
             basin_outlets,
