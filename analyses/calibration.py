@@ -272,9 +272,11 @@ class Calibration:
         to corresponding simulation variable counterparts.
 
         Returns:
-        (list or list of list)
+        (list of floats)
             the array of objectives. for the multi-problem optimization case, 
-            the array will contain array of objective for each problem
+            a long one-dimentional array containing all objectives for all the 
+            problems will be created. the long list of objectives will be 
+            fragmented by the algorithm according to the problem definition.
         """
         objs = []
         config = Calibration.__config
@@ -396,13 +398,10 @@ class Calibration:
                         if len(obsvar.weight_factors) > 0: fun = np.sum
                         groups[num] = {'values': [obj], 'fun': fun}
                 
-                objs = []
                 for _, v in groups.items():
                     fun = v['fun'] 
-                    objs.append(fun(v['values']))
+                    objectives.append(fun(v['values']))
                 
-                objectives.append(objs)
-
         return objectives
 
     @staticmethod
