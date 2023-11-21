@@ -298,8 +298,13 @@ class GlobalGrid:
         '''
         This function maps WGHM cell centroid using WGHM cell number.
 
-        :param cell_number: (int) WGHM cell number
-        :return: (tuple of float) Geo-coordinate of corresponding WGHM cell.
+        Parameters:
+        cell_number: (int) 
+            cell number according to WaterGAP GCRC number system
+        
+        Returns: 
+        (float, float) 
+            Geo-coordinate (latitude and longitude) of corresponding WGHM cell.
         '''
         if len(GlobalGrid.__wghm_grid_lookup_table) == 0: 
             GlobalGrid.read_wghm_grid_lookup_table()
