@@ -238,7 +238,8 @@ class Configuration:
             'target cells from station file', 'target cell from station file'
         ),
         'disjoint_basins': (
-            'disjoint_basin_extent', 'disjoint basin extent'
+            'disjoint_basin_extent', 'disjoint basin extent', 
+            'non_overlapping_basin'
         ),
         'calibration_type': (
             'calibration_type', 'calibration type', 'calibration-type'
@@ -554,30 +555,96 @@ class Configuration:
 
     def obs_var_count(self): return len(self.obs_variables)
     def sim_var_count(self): return len(self.sim_variables)
-    def get_parameter_count(self): 
-        nparameters = 0
+    def get_parameter_count(self, problem_no:int=-1): 
+        """
+        The function count the no. of parameters to be considered in a 
+        calibration problem. In case of multi-problem calibration case, the
+        function returns the parameter count for the specified problem.
         
-        if self.poc_problem_count > 1: 
-            for i in range(self.poc_problem_count):
-                nparameters += len(self.multiproblem_parameter_index_list[i])
-        else: nparameters = len(self.parameters)
+        Parameters:
+        problem_no: int (optional, default value -1)
+            problem number for which parameter count to be done. problem number
+            must be positive integer (or zero) and less than total number of 
+            problems. if problem no is given, it is assumed that the calibration
+            type is multi-problem calibration
+
+        Returns:
+        int
+            Parameter count for the specified problem
+        """
+        nparameters = 0
+        if self.poc_problem_count == 1:
+            for param in self.parameters:
+                if param.cell_level_representation:
+                    for el in param.cell_list:
+                        if type(el) is list: nparameters += len(el)
+                        else: nparameters += 1
+                else: nparameters += 1
+        
+        else:
+            if (self.poc_problem_count > 1 and 
+                problem_no < self.poc_problem_count):
+                
+                nparameters += len(
+                    self.multiproblem_parameter_index_list[problem_no]
+                )
+                # Note that cell level representation is not implemented for
+                # multi-problem calibration case
             
         return nparameters
             
 
-    def get_objective_count(self):
-        count = 0
-        if self.poc_problem_count > 1:
-            for i in range(self.poc_problem_count):
-                count += len(self.multiproblem_objective_index_list[i])
-        else:
-            varnames =  [v.varname for v in self.sim_variables]
-            varnames += [v.varname for v in self.derived_variables]
-            
-            for v in self.obs_variables:
-                if v.counter_variable in varnames: count += 1
+    def get_objective_count(self, problem_no:int=-1):
+        """
+        The function returns count objectives for specified problem.
 
-        return count
+        Parameter:
+        problem_no: int (optional, default -1)
+            problem number for which objective count has to performed, in the 
+            case of multi-problem calibration. the parameter must have value
+            between 0 and no. of problems (exclusive of the upper range).
+        """
+        nobjectives = 0
+        
+        if self.poc_problem_count == 1:
+            for var in self.obs_variables:
+                if type(var.data_cloud.data) is np.ndarray:
+                    if var.data_cloud.data.ndim == 2:
+                        nobjectives += var.data_cloud.data.shape[1]
+                        # Note that when observation data has many columns, it 
+                        # is expected that the counter simulation variable would
+                        # also have the same number of columns. And thus,
+                        # objectives will be computed comparing column-by-column
+                        # observation data and simulation output resulting an
+                        # objective count similar to the number of columns in
+                        # the observation (or counter simulation) variable.
+                    else: nobjectives += 1
+                else: nobjectives += 1
+        else:
+            if (self.poc_problem_count > 1 and
+                problem_no < self.poc_problem_count):
+
+                varlist = self.multiproblem_objective_index_list[problem_no]
+                nobjectives = np.array(varlist).unique.shape[0]
+
+                # Note that cell-level calibration has not implemented in the
+                # case of multi-problem calibration. this is why varlist length
+                # would be sufficient for finding the number of objectives for
+                # a cda unit. however, there could be same variable multiple
+                # times for representing the same variable values in different 
+                # location and for each location objectives will be computed
+                # separately. however, objective for the same variable in 
+                # different location will be averaged. this is why unique 
+                # variable numbers should reflect the no. of objective for a
+                # specific problem. 
+                # 
+                # Caution: it is expected that the number of columns in the
+                # observation variables would be more than one but the columns
+                # mostly would represent data for different problems, or in few
+                # cases data from different locations in the same basin (e.g., 
+                # the streamflow data in several stations) 
+
+        return nobjectives
 
     def get_constraints_count(self): return 0
 
@@ -1068,10 +1135,11 @@ class Configuration:
 
     def generate_target_cells_from_station_file(self):
         '''
-        This method generate basin cell list from given station file and then assign them to variables and parameter.
-        However, if target cell list (either of a variable or of a parameter) is provided by another mean (i.e., usign
-        old method), the cell list will not be overwritten. This will ensure explicit assignment of target cell if it
-        is needed.
+        This method generate basin cell list from given station file and then 
+        assign them to variables and parameter. However, if target cell list 
+        (either of a variable or of a parameter) is provided by another mean 
+        (i.e., usign old method), the cell list will not be overwritten. This 
+        will ensure explicit assignment of target cell if it is needed.
 
         Returns:
         bool
