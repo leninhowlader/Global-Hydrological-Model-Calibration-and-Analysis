@@ -306,6 +306,9 @@ class WaterGAP:
                 )
                 if mconfig: WaterGAP.model_config = mconfig
                 else: return False
+                
+                WaterGAP.station_filename = \
+                WaterGAP.model_config.station_filename
         else:
             if not WaterGAP.dir_info:
                 dinfo = DirInfo.read_directory_file(
