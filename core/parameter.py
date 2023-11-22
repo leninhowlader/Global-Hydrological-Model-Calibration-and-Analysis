@@ -85,17 +85,19 @@ class Parameter:
     def get_lower_bound(self): return self.lower_bound
     def get_upper_bound(self): return self.upper_bound
 
-    def get_unit_count(self, problem_no=-1):
+    def get_unit_count(self, basin_no=-1):
         """
         finds the number of units that the parameter object represents. the 
         function is particularly useful for cell-level calibration when the cell 
         level representation flag is set true 
 
         Parameter:
-        problem_no: int (optional)
-            if provided number of represented units for the concerned problem is
-            returned by the function. this parameter is used in case of multi-
-            problem configurations
+        basin_no: int (optional)
+            if provided, number of represented units for the concerned basin is
+            returned by the function. this parameter can potentially be used in
+            the case of multi-problem configurations
+            Caution: the basin_no might be different from problem-no as the same
+            parameter might not have influential effect in all the basins!
 
         Returns:
         int
@@ -103,14 +105,14 @@ class Parameter:
         """
         
         if self.cell_level_representation:
-            if problem_no == -1:
+            if basin_no == -1:
                 count = 0
                 for l in self.cell_list:
                     if type(l) is list: count += len(l)
                     else: count += 1
                 return count
             else:
-                l = self.cell_list[problem_no]
+                l = self.cell_list[basin_no]
                 if type(l) is list:
                     return len(l)
                 else: return 1
