@@ -402,7 +402,7 @@ class Borg:
             )
 
     @staticmethod
-    def actualizeMultiProblems(modeManyProblems=True):
+    def instantiate_borg_problems(modeManyProblems=True):
         if not modeManyProblems: return
         if not Borg.function: return
 
