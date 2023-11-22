@@ -10,31 +10,12 @@ from algorithm.borg import *
 from utilities.fileio import FileInputOutput
 
 class Calibration:
-    __nvars = 0
-    __nobjs = 0
-    __nconts = 0
-
     __world_rank = -1
     __world_size = 0
     __config = None
 
     __consistency_check = False
     __id_local = 0
-
-    @staticmethod
-    def get_nvars(): return Calibration.__nvars
-    @staticmethod
-    def set_nvars(nvars:int): Calibration.__nvars = nvars
-
-    @staticmethod
-    def get_nobjs(): return Calibration.__nobjs
-    @staticmethod
-    def set_nobjs(nobjs:int): Calibration.__nobjs = nobjs
-
-    @staticmethod
-    def get_nconts(): return Calibration.__nconts
-    @staticmethod
-    def set_nconts(nconts:int): Calibration.__nconts = nconts
 
     @staticmethod
     def get_world_rank(): return Calibration.__world_rank
@@ -51,25 +32,19 @@ class Calibration:
     @staticmethod
     def set_calibration_configurations(config:Configuration):
         Calibration.__config = config
-
-        Calibration.__nvars = config.get_parameter_count()
-        Calibration.__nobjs = config.get_objective_count()
-        Calibration.__nconts = config.get_constraints_count()
-        
     
     @staticmethod
     def is_okay():
         if not Calibration.__consistency_check:
-            nvars = Calibration.__nvars
-            nobjs, nconts = Calibration.__nobjs, Calibration.__nconts
+            config = Calibration.__config
+            if not config: return False
 
             world_rank = Calibration.__world_rank
             world_size = Calibration.__world_size
 
-            config = Calibration.__config
-            if not (nvars > 0 and nobjs > 0 and world_rank > 0 and 
-                    world_size > 0): Calibration.__consistency_check = False
-            else: Calibration.__consistency_check = config.is_okay()
+            if not (world_rank >= 0 and world_size > 0): 
+                return False
+            else: Calibration.__consistency_check = True
         
         return Calibration.__consistency_check            
 
@@ -487,7 +462,7 @@ class BorgMOEA:
     
     __poc_config = None
     __borg_problem_array = []
-    __nproblems = 1         # Number of optimization problems
+    __nproblems = 0         # Number of optimization problems
 
     __world_size = 0
     __world_rank = -1
@@ -506,15 +481,37 @@ class BorgMOEA:
         BorgMOEA.__poc_config = poc_config
 
     @staticmethod
-    def BORG_Optimization_Problem_Create(poc_config, eval_func):
+    def BORG_Optimization_Problem_Create(
+        poc_config:Configuration, eval_func:function
+    ):
+        """
+        The function creates borg problem instance (both Python-instances and
+        C-instances).
+
+        Parameters:
+        poc_config: Configuration
+            The POC configuration object that define all necessary information
+            concerning the calibration experiment.
+        eval_func: function
+            the reference of the evaluation function. the evaluation function
+            must have the predefined signature. the function must have one
+            parameter that passes values of the decision variables from the
+            calibration algorithm and return objectives and optionally 
+            constraints
+        
+        Returns:
+        bool
+            success report. on success the function return True, otherwise False
+        """
+        
         succeed = True
         
-        nvars = poc_config.get_parameter_count()
-        nobjs = poc_config.get_objective_count()
-        nconts = poc_config.get_constraints_count()
+        if poc_config.calibration_type in ['single', 'one']:
+            nvars = poc_config.get_parameter_count()
+            nobjs = poc_config.get_objective_count()
+            nconts = poc_config.get_constraints_count()
 
-        # is_one_problem = poc_config.single_problem_mode
-        if poc_config.calibration_type=='single':
+
             problem = Borg(nvars, nobjs, nconts, function=eval_func)
 
             # set bounds of decision variables
@@ -532,44 +529,135 @@ class BorgMOEA:
             BorgMOEA.__borg_problem_array.append(problem)
             BorgMOEA.__nproblems = 1
 
+        elif poc_config.calibration_type in ['multiple', 'many']:
+            nproblems = poc_config.poc_problem_count
+            nconts = 0
+            BorgMOEA.__borg_problem_array.clear()
+
+            # [step]
+            # Create borg-problem python instances
+            # 
+            # Borg problem instances are created in this step and stored in a
+            # list in the Borg class. Please note that in this stage only python
+            # instances are created which is different from single-problem
+            # calibration. In single-problem calibration actual C-instances of
+            # the borg-problem is created in the same step when Python-instance
+            # is created. In case of multi-problem case, the C-instances are 
+            # created in a separate step after assigning a common evaluation
+            # funtion. 
+
+            for problem_no in range(nproblems):
+                nvars = poc_config.get_parameter_count(problem_no)
+                nobjs = poc_config.get_objective_count(problem_no)
+                
+                lower_bound, upper_bound = poc_config.get_parameter_bounds(
+                    problem_no
+                )
+                
+                bounds = [
+                    [lower_bound[i], upper_bound[i]] for i in range(nvars)
+                ]
+
+                problem = Borg(
+                    nvars, nobjs, nconts, function=None, bounds=bounds, 
+                    epsilons=epsilons
+                )
+
+                Borg.add_problem(problem)
+                BorgMOEA.__borg_problem_array.append(problem)
+            
+            BorgMOEA.__nproblems = nproblems
+            # end [step]
+
+            # [step]
+            # Set evaluate function:
+            # Evaluation function is not provided while creating a problem 
+            # instance. This is because, for multi-problem calibration the
+            # algorithm the total number of parameters for all problems and 
+            # total number of objectives for all problem, rather than parameter
+            # and objective count for individual problems as done in single 
+            # problem calibration. this is why the evaluation function is 
+            # provided in a separate step
+            
+            Borg.set_function(eval_func)
+            # end [step]
+
+            # [step]
+            # Instantiate all problems:
+            # This separate step of instantiation is requred after the 
+            # evaluation function is set up. In this step, problem instances in
+            # the memory for to be used by the Borg C-library.
+            
+            Borg.instantiate_borg_problems()  
+            # end [step]
+
+        else: succeed = False
+
         BorgMOEA.__poc_config = poc_config
 
         return succeed
     
     @staticmethod
-    def BORG_Problem_Description(config_poc, out = sys.stdout):
+    def BORG_Problem_Description(out=sys.stdout):
+        poc_config = BorgMOEA.__poc_config
+        if not poc_config or BorgMOEA.__nproblems == 0:
+            print('Problem description could not be retrieved!')
+            return
+        
         print('Problem definition:', file=out)
+        if BorgMOEA.__nproblems == 1:
+            line = '\tModel parameter(s):'.ljust(56) + 'Min'.ljust(10) + 'Max'.ljust(10)
+            print(line, file=out)
+            
+            for param in poc_config.parameters:
+                line = ('\t\t' + param.parameter_name.ljust(40) 
+                        + str(param.get_lower_bound()).rjust(10) 
+                        + str(param.get_upper_bound()).rjust(10))
+                print(line, file=out)
 
-        line = '\tModel parameter(s):'.ljust(56) + 'Min'.ljust(10) + 'Max'.ljust(10)
-        print(line, file=out)
-        
-        for param in config_poc.parameters:
-            line = ('\t\t' + param.parameter_name.ljust(40) 
-                    + str(param.get_lower_bound()).rjust(10) 
-                    + str(param.get_upper_bound()).rjust(10))
+            print('\n\tVariables:', file=out)
+            line = '\tObservation Variables'.rjust(35) + 'Prediction variable'.rjust(35)
             print(line, file=out)
 
-        print('\n\tVariables:', file=out)
-        line = '\tObservation Variables'.rjust(35) + 'Prediction variable'.rjust(35)
-        print(line, file=out)
-
-        line = '--------------------'.rjust(35) + '--------------------'.rjust(35)
-        print(line, file=out)
-
-        for i in range(len(config_poc.obs_variables)):
-            var = config_poc.obs_variables[i]
-            line = ('\t\t(%02d) '%(i+1) + var.varname.ljust(30) 
-                    + var.counter_variable.ljust(30))
+            line = '--------------------'.rjust(35) + '--------------------'.rjust(35)
             print(line, file=out)
-        
-        n = config_poc.get_parameter_count()
-        print('\n\tTotal number of decision variables: %d'%n, file=out)
 
-        n = config_poc.get_objective_count()
-        print('\tTotal number of objectives: %d'%n, file=out)
-        
-        n = config_poc.get_constraints_count()
-        print('\tTotal number of constraints: %d'%n, file=out)
+            for i in range(len(poc_config.obs_variables)):
+                var = poc_config.obs_variables[i]
+                line = ('\t\t(%02d) '%(i+1) + var.varname.ljust(30) 
+                        + var.counter_variable.ljust(30))
+                print(line, file=out)
+            
+            n = poc_config.get_parameter_count()
+            print('\n\tTotal number of decision variables: %d'%n, file=out)
+
+            n = poc_config.get_objective_count()
+            print('\tTotal number of objectives: %d'%n, file=out)
+            
+            n = poc_config.get_constraints_count()
+            print('\tTotal number of constraints: %d'%n, file=out)
+        elif BorgMOEA.__nproblems > 1:
+            messages = '\t(summary info)\n'
+            messages += '\tthis is a multi-problem calibration.\n'
+            messages += '\ttotal number of problems: %d\n'%BorgMOEA.__nproblems
+            
+            nparams = np.array(
+                [len(x) for x in poc_config.multiproblem_parameter_index_list]
+            )
+            messages += '\tmaximum parameter count: %d\n'%nparams.max()
+            messages += '\tminimum parameter count: %d\n'%nparams.min()
+            messages += '\taverage parameter count: %0.1f\n'%nparams.mean()
+            
+            nobjs = np.array(
+                [np.unique(x).shape[0] 
+                 for x in poc_config.multiproblem_objective_index_list]
+            )
+            messages += '\tmaximum objective count: %d\n'%nobjs.max()
+            messages += '\tminimum objective count: %d\n'%nobjs.min()
+            messages += '\taverage objective count: %0.1f\n'%nobjs.mean()
+            
+            print(messages)
+
             
     @staticmethod
     def BORG_Initialize(random_seed):
@@ -588,39 +676,71 @@ class BorgMOEA:
         return BorgMOEA.__world_size, BorgMOEA.__world_rank
 
     @staticmethod
-    def BORG_SolveProblem(config_poc):
+    def BORG_SolveProblem():
         succeed = False
-        max_evaluations = config_poc.maximum_iteration
         
+        poc_config = BorgMOEA.__poc_config
+        if not poc_config or poc_config.poc_problem_count == 0: 
+            return succeed
+        
+        max_evaluations = poc_config.maximum_iteration
+        filename_runtime = poc_config.runtime_dynamics_output_filename
+        frequency_runtime = poc_config.runtime_dynamics_frequency
+        filename_results = poc_config.calibration_result_output_filename
+
         results = None
-        if config_poc.calibration_type == 'single':
+        if poc_config.calibration_type in ['single', 'one']:
             problem = BorgMOEA.__borg_problem_array[0]
 
-            # results = problem.solveMPI(
-            #     islands=1,
-            #     maxEvaluations=max_evaluations,
-            #     runtime=config_poc.runtime_dynamics_output_filename,
-            #     runtimeFrequency=config_poc.runtime_dynamics_frequency
-            # )
-            
             results = Borg.solveMPI(
                 problem=problem,
                 islands=1,
                 maxEvaluations=max_evaluations,
-                runtime=config_poc.runtime_dynamics_output_filename,
-                runtimeFrequency=config_poc.runtime_dynamics_frequency,
+                runtime=filename_runtime,
+                runtimeFrequency=frequency_runtime,
                 modeManyProblems=False
             )
+            
+            # print output 
+            if results and BorgMOEA.__world_rank == 0:
+                try:
+                    f = open(filename_results, 'w')
+                    results.display(out=f, separator=' ')
+                    f.close()
+                except: pass
+                
+            succeed = True
+        
+        elif poc_config.poc_problem_count > 1:
+            results = Borg.solveMPI(
+                problem=None,
+                islands=1,
+                maxEvaluations=max_evaluations,
+                runtime=filename_runtime,
+                runtimeFrequency=frequency_runtime,
+                modeManyProblems=True
+            )
+            
+            # print output 
+            if results and BorgMOEA.__world_rank == 0:
+                for problem_id in range(poc_config.poc_problem_count):
+                    try:
+                        filename_problem_results = '%s%02d%s'%(
+                            filename_results[:,-1], '_', problem_id, 
+                            filename_results[-4:]
+                        )
+                        f = open(
+                            filename_problem_results, 'w'
+                        )
+                        results[problem_id].display(out=f, separator=' ')
+                        f.close()
+                    except: pass
+            
             succeed = True
 
-        # print output 
-        if results:
-            try:
-                f = open(config_poc.calibration_result_output_filename, 'w')
-                results.display(out=f, separator=' ')
-                f.close()
-            except: pass
-        
+        # clear results array
+        Borg.results.clear()
+
         # delete lock file
         if BorgMOEA.__world_rank == 0: FileInputOutput.delete_lock_file()
 

@@ -1,6 +1,7 @@
 __author__ = 'mhasan'
 
 import sys, os, numpy as np
+from collections import OrderedDict
 from datetime import datetime
 
 from core.variable import ObsVariable, SimVariable, DerivedVariable
@@ -582,7 +583,7 @@ class Configuration:
                 else: nparameters += 1
         
         else:
-            if (self.poc_problem_count > 1 and 
+            if (self.poc_problem_count > 1 and problem_no >= 0 and
                 problem_no < self.poc_problem_count):
                 
                 nparameters += len(
@@ -596,13 +597,19 @@ class Configuration:
 
     def get_objective_count(self, problem_no:int=-1):
         """
-        The function returns count objectives for specified problem.
+        The function returns count objectives for specified problem. if problem
+        number is not provided, it is assumed that the calibration experiment 
+        consists of only a single problem
 
         Parameter:
         problem_no: int (optional, default -1)
             problem number for which objective count has to performed, in the 
             case of multi-problem calibration. the parameter must have value
             between 0 and no. of problems (exclusive of the upper range).
+        
+        Returns:
+        int
+            number of objectives for the specified problem
         """
         nobjectives = 0
         
@@ -621,11 +628,11 @@ class Configuration:
                     else: nobjectives += 1
                 else: nobjectives += 1
         else:
-            if (self.poc_problem_count > 1 and
+            if (self.poc_problem_count > 1 and problem_no >= 0 and
                 problem_no < self.poc_problem_count):
 
                 varlist = self.multiproblem_objective_index_list[problem_no]
-                nobjectives = np.array(varlist).unique.shape[0]
+                nobjectives = np.unique(varlist).shape[0]
 
                 # Note that cell-level calibration has not implemented in the
                 # case of multi-problem calibration. this is why varlist length
@@ -648,17 +655,108 @@ class Configuration:
 
     def get_constraints_count(self): return 0
 
-    def get_parameter_bounds(self):
+    def get_parameter_bounds(self, problem_no:int=-1):
+        """
+        The function generates two lists of upper and lower parameter bound for 
+        a specified problem. If no problem is specified, it is assumed that the 
+        calibration problem in single-problem calibration
+
+        Parameters:
+        problem_no: int (optional, default -1)
+            problem identification number that is used to specify the problem.
+            this parameter will only be used for multi-problem calibration case.
+        
+        Returns:
+        list, list
+            two list of parameter bounds. the first contains the lower limits 
+            and the second list contains the upper limits of parameters for the
+            specific problem
+        """
         lower, upper = [], []
 
-        for p in self.parameters:
-            lower.append(p.get_lower_bound())
-            upper.append(p.get_upper_bound())
+        if self.poc_problem_count == 1:
+            for param in self.parameters:
+                nunits = 0
+                if param.cell_level_representation:
+                    for el in param.cell_list:
+                        if type(el) is list: nunits += len(el)
+                        else: nunits += 1
+                else: nunits += 1
+
+                lower += [param.get_lower_bound()] * nunits
+                upper += [param.get_upper_bound()] * nunits
+        elif (self.poc_problem_count > 1 and problem_no >= 0 and
+              problem_no < self.poc_problem_count):
+            
+            indexarray = self.multiproblem_parameter_index_list[problem_no]
+            for num in indexarray:
+                param = self.parameters[num]
+                lower.append(param.get_lower_bound())
+                upper.append(param.get_upper_bound())
+            
+            # Note that in multi-problem calibration, cell level calibration is 
+            # not implemented. 
+        else: pass
 
         return lower, upper
     
-    def get_epsilons(self):
-        epsilons = [var.get_epsilon() for var in self.obs_variables]
+    def get_epsilons(self, problem_no:int=-1):
+        """
+        This function returns the list of epsilon values for all objectives 
+        assiciated with a specified problem. If problem no is not provided, it 
+        is assumed that the calibration experiment contains only a single 
+        problem
+
+        Parameters:
+        problem_no: int (optional, default -1)
+            the problem indentifier for which the epsilons should be returned. 
+            the parameter is only used for multi-problem calibration case. the
+            problem must be a positive number ranging from 0 till one less than
+            the number of problems in experiment.
+        
+        Returns:
+        list
+            list of epsilon values for objective concerning the specified 
+            problem
+        """
+        epsilons = []
+
+        if self.poc_problem_count == 1:
+            for var in self.obs_variables:
+                if var.data_cloud.data.ndim == 2: 
+                    nobjs = var.data_cloud.data.shape[1]
+                    # see explanation in get_objective_count() function for 
+                    # getting more than one objective from a single variable 
+                else: nobjs = 1 
+
+                epsilons += [var.get_epsilon()] * nobjs
+        elif (self.poc_problem_count > 1 and problem_no >= 0 and
+              problem_no < self.poc_problem_count):
+            
+            indexlist = self.multiproblem_objective_index_list[problem_no]
+            
+            temp = OrderedDict()
+            for num in indexlist: temp[num] = None
+            varnumlist = list(temp.keys())
+            # Note that in multi-problem calibration case, in the objective list
+            # or the observation variable index list, the same variable can 
+            # occur multiple times; however, a average of the objectives 
+            # concerning the variable will be computed. thus the total number 
+            # of objectives would be the same as the length of the unique 
+            # index number of the observation variables in the multi-problem
+            # objective index list. However, order is very important here. The 
+            # order of the epsilons must be the same as how the objectives are
+            # computed and appears in the array of objectives when the 
+            # objectives are computed in model evaluation. this is why, unique 
+            # list of objective index (or obs. variable index) has been created
+            # above with preserving the order of appreance of an observation
+            # variable
+
+            for num in varnumlist:
+                var = self.obs_variables[num]
+                epsilons.append(var.get_epsilon())
+        else: pass
+
         return epsilons
 
     @staticmethod

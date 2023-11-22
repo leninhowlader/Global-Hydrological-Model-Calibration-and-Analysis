@@ -75,6 +75,12 @@ def main(argv):
     # read configuration file
     config = Configuration.read_configuration_file(filename=filename_config)
     
+    if not WaterGAP.is_okay():
+        if world_rank == 0:
+            print('Wrong model configuration!')
+        BorgMOEA.MPI_Stop()
+        return -1
+    
     errcode = config.is_okay_errcode(skip_observation=False)
     if errcode != 0: 
         if world_rank == 0:
@@ -82,12 +88,6 @@ def main(argv):
         
         BorgMOEA.MPI_Stop()
         return errcode
-    
-    if not WaterGAP.is_okay():
-        if world_rank == 0:
-            print('Wrong model configuration!')
-        BorgMOEA.MPI_Stop()
-        return -1
 
     # define problem
     Calibration.set_calibration_configurations(config)
@@ -101,10 +101,10 @@ def main(argv):
     )
     
     if world_rank == 0: 
-        BorgMOEA.BORG_Problem_Description(config_poc=config, out=sys.stdout)
+        BorgMOEA.BORG_Problem_Description(out=sys.stdout)
 
     # solve optimization problem
-    succeed = BorgMOEA.BORG_SolveProblem(config_poc=config)
+    succeed = BorgMOEA.BORG_SolveProblem()
     
     # Stop MPI
     BorgMOEA.MPI_Stop()
