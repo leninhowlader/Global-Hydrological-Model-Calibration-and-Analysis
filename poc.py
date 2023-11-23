@@ -79,6 +79,11 @@ def main(argv):
         if world_rank == 0:
             print('Wrong model configuration!')
         BorgMOEA.MPI_Stop()
+        
+        # note that WaterGAP consistency must be checked prior to check the
+        # configuration object. This is because few methods of the configuration
+        # object assumes that all WaterGAP input filenames, like Stations.dat
+        # filename, are correct.
         return -1
     
     errcode = config.is_okay_errcode(skip_observation=False)
