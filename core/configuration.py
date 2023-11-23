@@ -1069,12 +1069,13 @@ class Configuration:
         # step-x:
         # check number of problems in parameter index list and objective 
         # index list. the length of these two list should be equal.
-        if (len(self.multiproblem_objective_index_list) 
-            != len(self.multiproblem_parameter_index_list)):
-            return 830
-        else:
-            self.poc_problem_count = len(self.multiproblem_objective_index_list)
-            # self.__one_problem = False
+        if self.calibration_type in ['multiple', 'many']:
+            if (len(self.multiproblem_objective_index_list) 
+                != len(self.multiproblem_parameter_index_list)):
+                return 830
+            else:
+                self.poc_problem_count = \
+                len(self.multiproblem_objective_index_list)
         # end [step]
         
         # step: 
