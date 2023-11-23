@@ -531,7 +531,7 @@ class BorgMOEA:
 
     @staticmethod
     def BORG_Optimization_Problem_Create(
-        poc_config:Configuration, eval_func:function
+        poc_config:Configuration, eval_func
     ):
         """
         The function creates borg problem instance (both Python-instances and
