@@ -296,6 +296,7 @@ class Configuration:
 
         self.__multiproblem_parameter_index_list = ()
         self.__multiproblem_objective_index_list = ()
+        self.__multiproblem_constraints_list = []
         # [.]
 
 
@@ -325,6 +326,13 @@ class Configuration:
         self.samples = []
         # [.]
 
+    @property
+    def multiproblem_constraints_list(self): 
+        return self.multiproblem_constraints_list
+    @multiproblem_constraints_list.setter
+    def multiproblem_constraints_list(self, array):
+        if array: self.multiproblem_constraints_list = array
+    
     @property
     def poc_problem_count(self): return self.__problem_count
     @poc_problem_count.setter
@@ -653,7 +661,20 @@ class Configuration:
 
         return nobjectives
 
-    def get_constraints_count(self): return 0
+    def get_constraints_count(self, problem_no:int=-1): 
+        """
+        The function returns number of constraints in the calibration problem.
+
+        Parameters:
+        problem_no: int (optional, default -1)
+            problem identification number that is used to specify the problem.
+            this parameter will only be used for multi-problem calibration case.
+
+        Returns:
+        int
+            number of constraints in the specified calibration problem
+        """
+        return 0
 
     def get_parameter_bounds(self, problem_no:int=-1):
         """
