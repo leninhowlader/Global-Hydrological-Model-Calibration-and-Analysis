@@ -17,22 +17,47 @@ class Calibration:
     __consistency_check = False
     __id_local = 0
 
+    __nvars = 0
+    __nobjs = 0
+    __nconts = 0
+
     @staticmethod
     def get_world_rank(): return Calibration.__world_rank
+    
     @staticmethod
     def set_world_rank(rank:int): Calibration.__world_rank = rank
 
     @staticmethod
     def get_world_size(): return Calibration.__world_size
+    
     @staticmethod
     def set_world_size(world_size:int): Calibration.__world_size = world_size
 
     @staticmethod
     def get_calibration_configurations(): return Calibration.__config
+    
     @staticmethod
     def set_calibration_configurations(config:Configuration):
         Calibration.__config = config
-    
+
+        nprobs = config.poc_problem_count
+        if nprobs == 1:
+            Calibration.__nvars = config.get_parameter_count()
+            Calibration.__nobjs = config.get_objective_count()
+            Calibration.__nconts = config.get_constraints_count()
+        else:
+            Calibration.__nvars = np.sum(
+                [config.get_parameter_count(i) for i in range(nprobs)]
+            )
+            
+            Calibration.__nobjs = np.sum(
+                [config.get_objective_count(i) for i in range(nprobs)]
+            )
+            
+            Calibration.__nconts = np.sum(
+                [config.get_constraints_count(i) for i in range(nprobs)]
+            )
+
     @staticmethod
     def is_okay():
         if not Calibration.__consistency_check:
@@ -42,7 +67,9 @@ class Calibration:
             world_rank = Calibration.__world_rank
             world_size = Calibration.__world_size
 
-            if not (world_rank >= 0 and world_size > 0): 
+            nvars, nobjs = Calibration.__nvars, Calibration.__nobjs
+            if not (nvars > 0 and nobjs > 0 and world_rank >= 0 and 
+                    world_size > 0): 
                 return False
             else: Calibration.__consistency_check = True
         
@@ -51,13 +78,14 @@ class Calibration:
     @staticmethod
     def model_evaluation(*vars):
         # [step-x]: Preparation, information gathering
+        config = Calibration.__config
+        my_rank = Calibration.__world_rank
+        
         nvars = Calibration.__nvars
         nobjs, nconts = Calibration.__nobjs, Calibration.__nconts
         objs, conts = [np.nan] * nobjs, [np.nan] * nconts
 
-        config = Calibration.__config
-        my_rank = Calibration.__world_rank
-        
+
         succeed = True
         messages = []
         arguments = OrderedDict()
@@ -76,12 +104,17 @@ class Calibration:
 
         ## [step-x]: update parameters
         Calibration.update_parameters(vars)
-        messages.append('\tParameter values: ')
-        for i in range(nvars):
-            param = Calibration.__config.parameters[i]
-            messages.append('\t[%02d] %s: %f'%(
-                i, param.parameter_name.ljust(40), param.parameter_value))
         
+        if config.poc_problem_count == 1:
+            messages.append('\tParameter values: ')
+            for i in range(nvars):
+                param = Calibration.__config.parameters[i]
+                messages.append('\t[%02d] %s: %f'%(
+                    i, param.parameter_name.ljust(40), param.parameter_value))
+        else:
+            # do not print the parameter values on screen
+            pass
+
         filename = WaterGAP.get_json_parameter_filename()
         filename = os.path.split(filename)[-1][:-5] + '_' \
                     + filename_specifier + '.json'
@@ -206,8 +239,16 @@ class Calibration:
         temp = Calibration.compute_objectives()
         if len(temp) == nobjs:
             for i in range(nobjs): objs[i] = temp[i]
-        messages.append('\n\tObjectives: %s'%(','.join(
-                                    ['%0.2f'%temp[i] for i in range(nobjs)])))
+        
+        if config.poc_problem_count == 1:
+            messages.append(
+                '\n\tObjectives: %s'%(
+                    ','.join(['%0.2f'%temp[i] for i in range(nobjs)])
+                )
+            )
+        else:
+            # do not print objective values for all problems on screen
+            pass
         # end [step-x]
 
         # [step-x] compte constraints
@@ -215,9 +256,17 @@ class Calibration:
         if len(temp) == nconts:
             for i in range(nconts): conts[i] = temp[i]
         
-        if nconts == 0: messages.append('\tConstraints: NA')
-        else: messages.append('\tConstraints: %s'%(','.join(
-                                    ['%0.2f'%temp[i] for i in range(nconts)])))
+        if config.poc_problem_count == 1:
+            if nconts == 0: messages.append('\tConstraints: NA')
+            else: 
+                messages.append(
+                    '\tConstraints: %s'%(
+                        ','.join(['%0.2f'%temp[i] for i in range(nconts)])
+                    )
+                )
+        else:
+            # do not print constraints for all problems on screen
+            pass
         # end [step-x]
 
         # [step-x] remove simulation output files
