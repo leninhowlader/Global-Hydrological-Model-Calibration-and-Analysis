@@ -496,34 +496,39 @@ class Upstream:
         return basins
 
     @staticmethod
-    def compute_disjoint_basin_extent(basins:OrderedDict, super_basin:dict):
+    def compute_nonoverlapping_basin_extent(basins:OrderedDict, super_basin:dict):
         '''
-        The method computes disjoint basin coverage i.e., the part of the basin starting from the basin outlet to the
-        next upstream basin outlet
-
-        :param basins: (OrderedDict) all basins and their upstream basin coverage [see more in the documentation of
-                                     compute_basin_coverage method]
-        :param super_basin: (dict)   super basins as keys and their sub-basins
-                                     as value [see more in the description of
-                                     find_super_basin method]
-        :return: (OrderedDict) disjoint (non-overlapping) basin coverage. the output data structure is similar to the
-                               input parameter 'basins'
+        The method computes non-overlapping basin coverage i.e., the area 
+        between two station outlets
+        
+        Parameters:
+        basins: OrderedDict
+            all basins and their upstream basin coverage [see more in the 
+            documentation of compute_basin_coverage method]
+        super_basin: dict
+            super basins as keys and their sub-basins as value [see more in the 
+            description of find_super_basin method]
+        
+        Returns: 
+        OrderedDict 
+            non-overlapping basin coverage. the output data structure is similar
+            to the input parameter 'basins'
         '''
         # copy basin information into a new variable
-        disjoint_basins = basins.copy()
+        nonoverlapping_basins = basins.copy()
 
         for key in super_basin.keys():
             # find sub-basins of a super-basin
             outlets_subbasin = super_basin[key]
 
             # exclude sub-basin cells from super-basin coverage, for each sub-basin
-            temp = set(disjoint_basins[key])
+            temp = set(nonoverlapping_basins[key])
             for cell in outlets_subbasin: temp = temp - set(basins[cell])
 
             # set non-overlapping cells as the coverage of the super basin
-            disjoint_basins[key] = list(temp)
+            nonoverlapping_basins[key] = list(temp)
 
-        return disjoint_basins
+        return nonoverlapping_basins
 
     @staticmethod
     def find_basin_discharge_cell(basins:OrderedDict, super_basin:dict):
@@ -697,7 +702,7 @@ class Upstream:
             if disjoint_basin:
                 basins = Upstream.compute_basin_extent(basin_outlets)
                 super_basins = Upstream.find_super_basin(basin_outlets)
-                disjoint_basins = Upstream.compute_disjoint_basin_extent(
+                disjoint_basins = Upstream.compute_nonoverlapping_basin_extent(
                     basins, 
                     super_basins
                 )

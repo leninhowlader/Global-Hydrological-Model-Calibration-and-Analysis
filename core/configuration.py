@@ -1300,7 +1300,7 @@ class Configuration:
             discharge_outlets_without_supbasin = \
             Upstream.find_basin_discharge_cell(basins, {})
             
-            basins = Upstream.compute_disjoint_basin_extent(basins, supbasins)
+            basins = Upstream.compute_nonoverlapping_basin_extent(basins, supbasins)
         else:
             for cell in outlets: discharge_outlets.append([cell])
         # end [step]
