@@ -766,8 +766,9 @@ class SensitivityAnalysis:
                 isort = np.argsort(-contrib[:, i] )
                 tcumsum = np.cumsum(contrib[isort, i])
                 tsel = np.zeros(nparam)
-                isel = np.where(tcumsum>=threshold)[0][0]
-                tsel[:isel+1] = 1
+                try: isel = (np.where(tcumsum>=threshold)[0][0]) + 1
+                except: isel = nparam
+                tsel[:isel] = 1
                 selection[isort,i] = tsel
 
             contrib_mean = contrib.mean(axis=1)
@@ -783,10 +784,6 @@ class SensitivityAnalysis:
             colnames.append('contrib_max')
             # end of step
 
-            # step: select parameters based on (least) contribution threshold
-
-            # find index of first element where cumulative contribution is
-            # higher or equal to the (least) contribution threshold
             sel = (selection.sum(axis=1)>0).astype(int).reshape(-1,1)
             d_out = np.concatenate((d_out, sel), axis=1)
             colnames.append('selection')
