@@ -273,7 +273,7 @@ class Configuration:
         self.__experiment_name = ''
         self.__do_parallel_evaluation = True
         self.__parameter_info_input_filename = ''
-        self.__compute_upstream_from_station_file = True
+        self.__compute_upstream_from_station_file = False
         self.__disjoint_basin_extent = True
         self.__output_directory = 'output'
         
