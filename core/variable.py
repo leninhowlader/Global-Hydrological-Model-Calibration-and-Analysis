@@ -1001,7 +1001,7 @@ class SimVariable(Variable):
         ),
         'cellnums': (
             'target_grid_cells', 'target_cells', 'target cells', 
-            'target grid cells'
+            'target grid cells', 'cell_list'
         ),
         'compute_anomaly': (
             'anomaly_computation', 'compute anomalies', 'compute anomaly' , 
