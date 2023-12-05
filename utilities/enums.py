@@ -69,7 +69,7 @@ class ObjectiveFunction(Enum):
             return ObjectiveFunction.ratio_of_rmse_and_obs_stdv
         elif func in ['nash-sutcliffe efficiency', 'nash sutcliffe efficiency', 'nse']: 
             return ObjectiveFunction.nash_sutcliffe_efficiency
-        elif func in ['nse-ou', 'nse_ou', 'nse_ou', 'nse observation uncertainty']:
+        elif func in ['nse-ou', 'nse_ou', 'nse observation uncertainty']:
             return ObjectiveFunction.NSE_observation_uncertainty
         elif func in ['kling-gupta efficiency', 'kling gupta efficiency', 'kling_gupta_efficiency', 'kge']: 
             return  ObjectiveFunction.kling_gupta_efficiency
