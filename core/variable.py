@@ -20,11 +20,21 @@ class DataSource:
         self.separator = ','
         self.skip_lines = 0
         self.header = False
-        self.data_column_num = -1
+        self.data_column_num = None
         self.data_column_name = ''
         self.data_index_column_nums = []
         self.data_index_column_names = []
 
+        # attributes connected to uncertainty information
+        self.filename_lower_bound = ''
+        self.lower_bound_column_name = ''
+        self.lower_bound_column_number = ''
+
+        self.filename_upper_bound = ''
+        self.upper_bound_column_name = ''
+        self.upper_bound_column_number = None
+
+        
         # properties required for binary files
         self.block_size = 0
         self.block_format = ''
@@ -454,7 +464,7 @@ class ObsVariable(Variable):
         weights themselves, so multiplication of weighting factors with objects 
         for a unit and sum up all fractional objective should give the weighted 
         mean.
-    weights_upstream_area_of: list of list of integer
+    GCRC_for_weighting_factor_based_on_upstream_area: list of list of integer
         the list contains list of station cell numbers within each unit.
 
         list of cell number (i.e., WaterGAP GCRC cell number) of the station
@@ -511,14 +521,15 @@ class ObsVariable(Variable):
         self.multiset_data_column_nums = []
 
         self.has_uncertainty_bound = False
-        self.lower_bound_column_name = ''
-        self.upper_bound_column_name = ''
 
         # attributes introduced for enabling multi-problem calibration
         self.objectives = Queue()
         self.weight_factors = [] # caution: they are wt. factors but not weights
-        self.weights_upstream_area_of = []
-    
+        self.GCRC_for_weighting_factor_based_on_upstream_area = []
+
+        # attributes related to data uncertainties
+        self.percent_uncertainty = 0
+
     def apply_objective_weighting_factors(self):
         """
         The function applies weighting factors to the objectives if weight 
@@ -571,73 +582,83 @@ class ObsVariable(Variable):
                         for i in range(len(temp)): temp[i] = temp[i].strip()
                         if len(temp) >= 2:
                             key, value = temp[0], temp[1]
+                            
                             if key in optionnames['varname']: 
                                 var.varname = value
+                            
                             elif key in optionnames['data_column_name']:
-                                if value.find(',') >= 0:
-                                    temp = value.split(',')
-                                    for i in range(len(temp)): temp[i].strip()
-                                    for i in reversed(range(len(temp))):
-                                        if temp[i] == '': temp.pop(i)
-                                    
-                                    if len(temp) > 0: 
-                                        var.is_multiset = True
-                                        var.data_source.data_column_name = temp
-                                else:
-                                    var.data_source.data_column_name = value
+                                temp = ObsVariable.get_column_identifiers(
+                                    value_in=value, dtype=str
+                                )
+
+                                var.data_source.data_column_name = temp
+
+                                if type(temp) is list: var.is_multiset = True
+                                
                             elif key in optionnames['data_column_number']:
+                                temp = ObsVariable.get_column_identifiers(
+                                    value_in=value, dtype=int
+                                )
                                 
-                                if value.find(',') >= 0:
-                                    temp=value.split(',')
-                                    for i in reversed(range(len(temp))):
-                                        try: temp[i] = int(temp[i])
-                                        except: temp.pop(i)
+                                var.data_source.data_column_num = temp
+                               
+                                if type(temp) is list: var.is_multiset = True
                                     
-                                    if len(temp) > 0:
-                                        var.is_multiset = True
-                                        var.data_source.data_column_num = temp
-                                
-                                elif value.find(':') >= 0:
-                                    temp = value.split(':')
-                                    for i in reversed(range(len(temp))):
-                                        try: temp[i] = int(temp[i])
-                                        except: _ = temp.pop(i)
-                                    
-                                    colnums = []
-                                    if len(temp) == 2:
-                                        colnums = list(
-                                            range(temp[0], temp[1]+1)
-                                        )
-                                    if len(colnums) > 1:
-                                        var.is_multiset = True
-                                        var.data_source.data_column_name = \
-                                        colnums
-                                    elif len(colnums) == 1:
-                                        var.data_source.data_column_name = \
-                                        colnums[0]
-                                else:
-                                    num = -1
-                                    try: num = int(value.strip())
-                                    except: pass
-                                    var.data_source.data_column_num = num
-                            elif key in ['lower_bound_column_name']:
-                                var.lower_bound_column_name = value
-                            elif key in ['upper_bound_column_name']:
-                                var.upper_bound_column_name = value
                             elif key in optionnames['index_column_names']:
-                                temp = value.strip().split(',')
-                                for i in reversed(range(len(temp))):
-                                    temp[i] = temp[i].strip()
-                                    if not temp[i]: temp.pop(i)
+                                temp = ObsVariable.get_column_identifiers(
+                                    value_in=value, dtype=str
+                                )
+
                                 var.data_source.data_index_column_names = temp
+                            
                             elif key in optionnames['index_column_numbers']:
-                                temp = value.strip().split(',')
-                                for i in reversed(range(len(temp))):
-                                    try: temp[i] = int(temp[i].strip())
-                                    except: temp.pop(i)
+                                temp = ObsVariable.get_column_identifiers(
+                                    value_in=value, dtype=int
+                                )
+
                                 var.data_source.data_index_column_nums = temp
+
+                            elif key in ['lower_bound_column_name']:
+                                temp = ObsVariable.get_column_identifiers(
+                                    value_in=value, dtype=str
+                                )
+                                
+                                var.data_source.lower_bound_column_name = temp
+                            
+                            elif key in ['lower_bound_column_number']:
+                                temp = ObsVariable.get_column_identifiers(
+                                    value_in=value, dtype=int
+                                )
+
+                                var.data_source.lower_bound_column_number = temp
+
+                            elif key in ['upper_bound_column_name']:
+                                temp = ObsVariable.get_column_identifiers(
+                                    value_in=value, dtype=str
+                                )
+
+                                var.data_source.upper_bound_column_name = temp
+                            
+                            elif key in ['upper_bound_column_number']:
+                                temp = ObsVariable.get_column_identifiers(
+                                    value_in=value, dtype=int
+                                )
+
+                                var.data_source.upper_bound_column_number = temp
+                            
+                            elif key in ['filename_lower_bound']:
+                                var.data_source.filename_lower_bound = value
+
+                            elif key in ['filename_upper_bound']:
+                                var.data_source.filename_upper_bound = value
+
+                            elif key in ['percent_uncertainty']:
+                                try: var.percent_uncertainty = float(value)
+                                except: pass
+                            
                             elif key in optionnames['filename']: 
                                 var.data_source.filename = value
+
                             elif key in optionnames['file_type']:
                                 value = value.lower()
                                 if value in [
@@ -646,19 +667,23 @@ class ObsVariable(Variable):
                                     var.data_source.file_type = FileType.flat
                                 else: 
                                     var.data_source.file_type = FileType.binary
+                            
                             elif key in ['separator', 'seperator']:
                                 if value: var.data_source.separator = value
                                 else: var.data_source.separator = ' '
+                            
                             elif key == "header":
                                 value = value.lower()
                                 if value in ['yes', 'y', 'true', 't', '1']: 
                                     var.data_source.header = True
                                 else: var.data_source.header = False
+                            
                             elif key in ['skip_lines', 'skip lines']:
                                 count = 0
                                 try: count = int(value)
                                 except: pass
                                 var.data_source.skip_lines = count
+                            
                             elif key in [
                                     'chunk_size', 'chunk size', 'block_size', 
                                     'block size'
@@ -667,11 +692,13 @@ class ObsVariable(Variable):
                                 try: size = int(value)
                                 except: pass
                                 var.data_source.block_size = size
+                            
                             elif key in [
                                     'chunk_format', 'chunk format', 
                                     'block_format', 'block format'
                                 ]:
                                 var.data_source.block_format = value
+                            
                             elif key in [
                                     'counter_simvar', 'counter_var', 
                                     'counter simvar', 'counter var', 
@@ -679,6 +706,7 @@ class ObsVariable(Variable):
                                     'counter_variable'
                                 ]:
                                 var.counter_variable = value
+                            
                             elif key in [
                                     'function', 'evaluation function', 
                                     'objective function', 'evaluation_function', 
@@ -693,6 +721,7 @@ class ObsVariable(Variable):
                             ]: 
                                 try: var.epsilon = float(value)
                                 except: pass
+                            
                             elif key in optionnames['weights_as_upstream_area']:
                                 if value.find(':') > 0:
                                     temp = value.split(':')
@@ -714,16 +743,54 @@ class ObsVariable(Variable):
                                             except: pass
                                         
                                         if temp_str:
-                                            var.weights_upstream_area_of \
+                                            var.GCRC_for_weighting_factor_based_on_upstream_area \
                                             = ObsVariable.read_groups(
                                                 temp_str, type='int'
                                             )
                                             temp_str = None
                                 else: 
-                                    var.weights_upstream_area_of \
+                                    var.GCRC_for_weighting_factor_based_on_upstream_area \
                                     = ObsVariable.read_groups(value, type='int')
                                 
             except: return None
+
+    @staticmethod
+    def get_column_identifiers(value_in, dtype=str):
+        value_out = None
+        
+        if value_in.find(',') >= 0:
+            temp=value_in.split(',')
+            for i in reversed(range(len(temp))):
+                temp[i] = temp[i].strip()
+                if not temp[i]: _ = temp.pop(i)
+            
+            if dtype is int:
+                for i in reversed(range(len(temp))):
+                    try: temp[i] = int(temp[i])
+                    except: _ = temp.pop(i)
+            
+            value_out = temp
+        
+        elif value_in.find(':') >= 0 and dtype is int:
+            temp=value_in.split(':')
+            for i in reversed(range(len(temp))):
+                temp[i] = temp[i].strip()
+                if not temp[i]: _ = temp.pop(i)
+            
+            if len(temp) == 2:
+                try: 
+                    a, b = int(temp[0]), int(temp[1])
+                    value_out = list(range(a, b + 1))
+                except: pass
+            else: value_out = None
+        
+        else:
+            if dtype is int:
+                try: value_out = int(value_in)
+                except: value_out = None
+            else: value_out = value_in
+
+        return value_out
 
     @staticmethod
     def read_observations(obs_variables):
@@ -731,82 +798,127 @@ class ObsVariable(Variable):
         
         for var in obs_variables:
             succeed = False
-
-            file_type = var.data_source.file_type
+            ds = var.data_source
+                
+            file_type = ds.file_type
             if file_type == FileType.flat:
-                filename = var.data_source.filename
-                separator = var.data_source.separator
-                header = var.data_source.header
-                skiplines = var.data_source.skip_lines
+                filename = ds.filename
+                separator = ds.separator
+                header = ds.header
+                skiplines = ds.skip_lines
 
                 if not header: header=None
                 else: header = 'infer'
 
-                df = pd.read_csv(
-                    filename, sep=separator, skiprows=skiplines, header=header
+                # [+] read data from data file
+                colnames = ds.data_column_name
+                colnums = ds.data_column_num
+                arr = ObsVariable.get_data_from_csvfile(
+                    filename, colnames=colnames, colnumbers=colnums,
+                    sep=separator, skiprows=skiplines, header=header
                 )
-                if df.shape[0] > 0: succeed = True
-                
-                # get data from the data frame
-                if succeed:
-                    colname = var.data_source.data_column_name
-                    try:
-                        var.data_cloud.data = df.loc[:, colname].values
-                    except: pass
-                    
-                    if len(var.data_cloud.data) == 0:
-                        if var.is_multiset:
-                            colnum = []
-                            for x in var.data_source.data_column_num: 
-                                colnum.append(x-1)
-                        else: colnum = var.data_source.data_column_num - 1
+                if arr.shape[0] > 0:
+                    var.data_cloud.data = arr
+                    succeed = True
+                # [.]
+
+                # [+] read indices from data file
+                colnames = ds.data_index_column_names
+                colnums = ds.data_index_column_nums
+                arr = ObsVariable.get_data_from_csvfile(
+                    filename, colnames=colnames, colnumbers=colnums,
+                    sep=separator, skiprows=skiplines, header=header
+                )
+                if arr.shape[0] > 0:
+                    var.data_cloud.data_indices = arr
+                    succeed &= True
+                # [.]
+
+                ## [+] read uncertainty bounds
+                is_required = False
+
+                colnames_lb = ds.lower_bound_column_name
+                colnums_lb = ds.lower_bound_column_number
+                colnames_ub = ds.upper_bound_column_name
+                colnums_ub = ds.upper_bound_column_number
+
+                if ((colnames_lb or colnums_lb) and (colnames_ub or colnums_ub)
+                ) or (var.percent_uncertainty > 0):
+                    is_required = True
+
+                if is_required:
+                    if var.percent_uncertainty > 0:
+                        arr = var.data_cloud.data
                         
-                        try: 
-                            var.data_cloud.data = df.iloc[:, colnum].values
-                        except: pass
-                    
-                    if len(var.data_cloud.data) == 0: succeed = False
-                ##
+                        if arr.shape[0] > 0:
+                            lb = arr / (1 + var.percent_uncertainty)
+                            ub = arr / (1 - var.percent_uncertainty)
 
-                # read indices
-                if succeed:
-                    colnames = var.data_source.data_index_column_names
-                    try:
-                        var.data_cloud.data_indices = df.loc[:, colnames].values
-                    except: pass
+                            var.data_cloud.lower_bound = lb
+                            var.data_cloud.upper_bound = ub
+                    else:
+                        filename_lb = ds.filename_lower_bound
+                        if not filename_lb: filename_lb = filename
+                        
+                        arr = ObsVariable.get_data_from_csvfile(
+                            filename_lb, 
+                            colnames=colnames_lb, colnumbers=colnums_lb,
+                            sep=separator, skiprows=skiplines, header=header
+                        )
+                        
+                        if arr.shape[0] > 0:
+                            var.data_cloud.lower_bound = arr
+                            succeed &= True
+                        
+                        filename_ub = ds.filename_upper_bound
+                        if not filename_ub: filename_ub = filename
 
-                    if len(var.data_cloud.data_indices) == 0:
-                        colnums = var.data_source.data_index_column_nums
-                        colnums = [(x-1) for x in colnums]
-                        try:
-                            indices = df.iloc[:, colnums].values 
-                            var.data_cloud.data_indices = indices
-                        except: succeed = False
-
-                    if len(var.data_cloud.data_indices) == 0: succeed = False
-                ##
-
-                ## read uncertainty bounds
-                if succeed:
-                    lb, ub = np.empty(0), np.empty(0)
-                    if var.lower_bound_column_name:
-                        colname = var.lower_bound_column_name
-                        lb = df.loc[:, colname].values
-
-                    if var.upper_bound_column_name:
-                        colname = var.upper_bound_column_name
-                        ub = df.loc[:, colname].values 
-                    
-                    if lb.shape[0] > 0 and lb.shape == ub.shape:
-                        var.data_cloud.lower_bound = lb
-                        var.data_cloud.upper_bound = ub
-                        var.has_uncertainty_bound = True
-                ###
+                        arr = ObsVariable.get_data_from_csvfile(
+                            filename_ub, 
+                            colnames=colnames_ub, colnumbers=colnums_ub,
+                            sep=separator, skiprows=skiplines, header=header
+                        )
+                        
+                        if arr.shape[0] > 0:
+                            var.data_cloud.upper_bound = arr
+                            succeed &= True
+                # [.]        
 
             if succeed: var.data_cloud.sort()
+
             else: break
         
-        return succeed   
+        return succeed
+    
+    @staticmethod
+    def get_data_from_csvfile(
+        filename, colnumbers=None, colnames=None, sep=',', skiprows=0, 
+        header=None
+    ):
+        if not (filename and (colnumbers or colnames)): return np.empty(0)
+
+        df = pd.read_csv(filename, sep=sep, header=header, skiprows=skiprows)
+        if df.shape[0] == 0: return np.empty(0)
+
+        ncol, arr = 1, np.empty(0)
+        if colnumbers:
+            if type(colnumbers) is list: 
+                arr = df.iloc[:, [x-1 for x in colnumbers]].values
+                ncol = len(colnumbers)
+            else: 
+                arr = df.iloc[:, [colnumbers]].values
+        
+        if colnames: 
+            if type(colnames) is list: 
+                arr = df.loc[:, colnames].values
+                ncol = len(colnames)
+            else: 
+                arr = df.loc[:, [colnames]].values
+        
+        if arr.shape[1] != ncol: return np.empty(0)
+
+        return arr
+
 
     @staticmethod
     def data_collection2(obs_vars):
