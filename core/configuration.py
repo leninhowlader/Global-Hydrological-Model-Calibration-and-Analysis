@@ -1150,11 +1150,10 @@ class Configuration:
         # 
         if len(self.obs_variables) > 0:
             for var in self.obs_variables:
-                var = ObsVariable()
-                if len(var.weights_upstream_area_of) > 0 :
+                if len(var.GCRC_for_weighting_factor_based_on_upstream_area) > 0:
                     weights_allunits = np.array([])
                     
-                    for stations_cellnum in var.weights_upstream_area_of:
+                    for stations_cellnum in var.GCRC_for_weighting_factor_based_on_upstream_area:
                         upstream_areas = np.array(
                             [Upstream.compute_entire_upstream_area(x)
                             for x in stations_cellnum]
@@ -1167,7 +1166,7 @@ class Configuration:
 
                         weights /= weights.sum()   # rescale
                         
-                        weights_allunits = np.np.concatenate(
+                        weights_allunits = np.concatenate(
                             (weights_allunits, weights), axis=0
                         )
                     
