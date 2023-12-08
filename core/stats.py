@@ -202,9 +202,15 @@ class stats:
         scale_alpha=1, 
         scale_beta=1,
         lb=np.empty(0),
-        ub=np.empty(0)
+        ub=np.empty(0),
+        rmna=True
     ):
         sim, obs = np.array(sim), np.array(obs)
+        
+        if rmna:
+            ii = (np.isnan(sim) | np.isnan(obs))
+            sim, obs = sim[~ii], obs[~ii]
+
         if (normalize != DataNormalization.none and fun in [
             ObjectiveFunction.root_mean_square_error,
             ObjectiveFunction.mean_absolute_error, 
@@ -252,8 +258,15 @@ class stats:
 
     @staticmethod
     def all_efficiencies(sim, obs):
-        sse, mse, rmse, mae, mape, pbias, rsr, r, r2, ioa, nse, kge = None, None, None, None, None, None, None, None, None, None, None, None
-        statistic_names = ['sse', 'mse', 'rmse', 'mae', 'mape', 'pbias', 'rsr', 'r', 'r2', 'ioa', 'nse', 'kge']
+        sse, mse, rmse, mae, mape, pbias, rsr, r, r2, ioa, nse, kge = (
+            None, None, None, None, None, None, None, None, None, None, None, 
+            None
+        )
+
+        statistic_names = [
+            'sse', 'mse', 'rmse', 'mae', 'mape', 'pbias', 'rsr', 'r', 'r2', 
+            'ioa', 'nse', 'kge'
+        ]
 
         try:
             sim, obs = np.array(sim), np.array(obs)
