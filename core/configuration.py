@@ -55,7 +55,7 @@ class Configuration:
     output_directory, __output_directory: str
         name of the directory to save output of the experiment or any temporary
         files created during the experiment
-    
+        
     (attributes only related to 'calibration' experiment)
     calibration_type, __calibration_type: str
         Describe the type of calibration experiment. Probable value for the 
@@ -176,6 +176,11 @@ class Configuration:
         the list contains the parameters (see details in Parameter class)
     samples: list
         The list contains parameter samples.
+    calunit_cellls: list (of list)
+        the cell number of calibration units. 
+    calunit_staioncells: list (of list)
+        holds the station cell numbers (WaterGAP GCRC number) for each 
+        calibration unit
     __optionnames: dict
         hold the keyword for the options and their alternative named used in the
         configuration file
@@ -265,7 +270,13 @@ class Configuration:
             'input_sample_filename', 'sample_filename'
         ),
         'change_from_refsimulation': (),
-        'function_to_compute_change': ()
+        'function_to_compute_change': (),
+        'calibration_unit_cells': (
+            'cell_list_of_calibration_units', 'calibration_unit_cells'
+        ),
+        'calibration_unit_stationcells': (
+            'station_cells_of_calibration_units', 'calibration_unit_stationcells'
+        )
     }
 
     def __init__(self, experiment_type='sensitivity'):
@@ -324,6 +335,9 @@ class Configuration:
         self.derived_variables = []
         self.parameters = []
         self.samples = []
+        
+        self.calunit_cellls = []
+        self.calunit_staioncells = []
         # [.]
 
     @property
@@ -886,7 +900,19 @@ class Configuration:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']:
                                 config.disjoint_basin_extent = True
                             else: config.disjoint_basin_extent = False
+                        
+                        elif key in optionnames['calibration_unit_cells']:
+                            config.calunit_cellls \
+                            = SimVariable.read_groupped_cell_attribute(
+                                value, dtype=int
+                            )
 
+                        elif key in optionnames['calibration_unit_stationcells']:    
+                            config.calunit_staioncells \
+                            = SimVariable.read_groupped_cell_attribute(
+                                value, dtype=int
+                            )
+                        
                         elif key in optionnames['output_directory']:
                             config.output_directory = value
 
@@ -993,7 +1019,7 @@ class Configuration:
                             config.function = fun
 
         return False
-
+    
     def is_okay(self, skip_observation=False, error_code=False):
         # if error_code: return self.is_okay_errcode(skip_observation=skip_observation)
         # else: return not bool(self.is_okay_errcode(skip_observation=skip_observation))
@@ -1022,6 +1048,7 @@ class Configuration:
             followings
                 0	no error
                 100 failed to create target cell list from stations in station file
+                150 cell list consistency check for multi-proble calibration failed
                 200 absence of sim-variable
                 20x error in sim variable no. x
                 300 failed to acquire observation dataset
@@ -1092,7 +1119,9 @@ class Configuration:
         if self.compute_upstream_from_station_file:
             succeed = self.generate_target_cells_from_station_file()
             if not succeed: return 100
-
+        # end [step]
+        
+        
         # step: 
         # check completeness of parameters
         if not self.parameters: return 700
@@ -1101,8 +1130,101 @@ class Configuration:
             for param in self.parameters:
                 pnum += 1
                 if not param.is_okey(): return (700 + pnum)
+        # end [step]    
+        
+        
+        # step:
+        # distribute the cell list of calibration units into parameter 
+        # cell list
+        if self.calunit_cellls:
+            if self.calibration_type in ['multiple', 'many']:
+                param_indices = self.multiproblem_parameter_index_list
+    
+                # [+] map calunit to parameter by parameter index
+                param_calunit = {}
+                for i in range(len(param_indices)):
+                    for ip in param_indices[i]:
+                        try: param_calunit[ip].append(i)
+                        except: param_calunit[ip] = [i]
+                # [.]
+                
+                iparams = set(param_calunit.keys())
+                for i in iparams:
+                    iunits = param_calunit[i]
+                    param = self.parameters[i] 
+                    
+                    for iu in iunits:
+                        param.cell_list.append(
+                            self.calunit_cellls[iu]
+                        )
+                
+                if not self.multi_problem_celllist_consistency_test():
+                    return 150
+            else:
+                for param in self.parameters:
+                    param.cell_list = self.calunit_cellls
         # end [step]
 
+
+        # step:
+        # assign cell list to simulation variables (only if cell list of cal. 
+        # units provided)
+        #
+        if self.calunit_cellls:
+            if self.calibration_type in ['multiple', 'many']:
+                obj_indices = self.multiproblem_objective_index_list
+
+                obj_calunit_map = {}
+                for i in range(len(obj_indices)):
+                    for iobj in obj_indices[i]:
+                        try: obj_calunit_map[iobj].append(i)
+                        except: obj_calunit_map[iobj] = [i]
+
+                iobjs = set(obj_calunit_map.keys())
+                for i in iobjs:
+                    iunits = obj_calunit_map[i]
+                    
+                    obs_var = self.obs_variables[i]
+                    sim_var = self.find_counter_variable(
+                        obs_var.counter_variable
+                    )
+                    
+                    if not sim_var.basin_outlets_only:
+                        for iu in iunits:
+                            sim_var.basin_cell_list.append(
+                                self.calunit_cellls[iu]
+                            )
+                    
+                    else:
+                        succeed = True
+                        station_calunit = OrderedDict()
+                        for iu in iunits:
+                            try: station_calunit[iu].append(iu)
+                            except: station_calunit[iu] = [iu]
+                        
+                        cell_list = []
+                        for iu in station_calunit.keys():
+                            nstations = len(station_calunit[iu])
+                            
+                            if len(self.calunit_staioncells[iu]) == nstations:
+                                cell_list.append(self.calunit_staioncells[iu])
+                            else: 
+                                succeed = False
+                                break
+                        
+                        if succeed and cell_list:
+                            sim_var.basin_cell_list += cell_list
+                        else: return 160
+                else:
+                    for sim_var in self.sim_variables:
+                        if not sim_var.basin_outlets_only:
+                            sim_var.basin_cell_list = self.calunit_cellls
+                        else:
+                            sim_var.basin_cell_list = self.calunit_staioncells
+                        
+        # end [step] 
+
+        
         # step: 
         # check completeness of simulation variables. there must at least be one
         # simulation variable
@@ -1114,6 +1236,7 @@ class Configuration:
                 var.data_source.file_endian = WaterGAP.output_endian_type
                 if not var.is_okay(): return (200 + varnum)
         # end [step]
+
 
         # step: 
         # check completeness of observation variables (if any). Try to load the 
@@ -1207,6 +1330,46 @@ class Configuration:
         # end [step]
 
         return 0
+
+    def find_counter_variable(self, varname):
+        for var in self.sim_variables:
+            if var.varname == varname: return var
+        
+        for var in self.derived_variables:
+            if var.varname == varname: return var
+        
+        return None
+
+    def multi_problem_celllist_consistency_test(self):
+        param_indices = self.multiproblem_parameter_index_list
+        
+        # [+] map calunit to parameter by parameter index
+        param_calunit = {}
+        for i in range(len(param_indices)):
+            for ip in param_indices[i]:
+                try: param_calunit[ip].append(i)
+                except: param_calunit[ip] = [i]
+        # [.]
+        
+        cunit_cells = [np.array(x) for x in self.calunit_cellls]
+        
+        iparams = set(param_calunit.keys())
+        for i in iparams:
+            iunits = param_calunit[i]
+            param = self.parameters[i] 
+            if len(param.cell_list) != len(iunits): 
+                return False
+            
+            param_cells = [np.array(x) for x in param.cell_list]
+            for j in range(len(param_cells)):
+                iu = iunits[j]
+                try:
+                    if np.abs(param_cells[j]-cunit_cells[iu]).sum() != 0:
+                        return False
+                except: return False        
+        
+        return True
+
     
     def get_parameter_indices_for_manyPoc(self, parameter_index_filename):
         
@@ -1251,7 +1414,7 @@ class Configuration:
         f.close()
 
         return tuple(objective_list)
-
+    
     def generate_target_cells_from_station_file(self):
         '''
         This method generate basin cell list from given station file and then 
@@ -1339,6 +1502,9 @@ class Configuration:
         if self.calibration_type in ['multiple', 'many']:
             simvarmap = {}
             for var in self.sim_variables:
+                simvarmap[var.varname] = var
+            
+            for var in self.derived_variables:
                 simvarmap[var.varname] = var
 
             for prob_no in range(self.poc_problem_count):
