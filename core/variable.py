@@ -6,6 +6,7 @@ from queue import Queue, deque
 
 from utilities.enums import FileType, FileEndian, PredictionType, SortAlgorithm, CompareResult, ObjectiveFunction
 from utilities.fileio import FileInputOutput as io
+from utilities.globalgrid import GlobalGrid
 from core.stats import stats
 from calendar import isleap
 from collections import OrderedDict
@@ -388,18 +389,29 @@ class Variable:
         else: return True
     
     @staticmethod
-    def read_groups(groups_str, type='float'):
-        groups = groups_str.strip().split(']')
+    def read_groupped_cell_attribute(attribute_str, dtype=float):
+        info_str = ''
+        if attribute_str.find(':') > 0:
+            temp = attribute_str.split(':')
+            for i in reversed(range(len(temp))): 
+                temp[i] = temp[i].strip()
+                if not temp[i]: _ = temp.pop(i)
+
+            if (len(temp) == 2 and temp[0].lower() == 'filename'):
+                try:
+                    fs = open(temp[1], 'r')
+                    for l in fs.readlines(): info_str += l
+                    fs.close()
+                except: info_str = ''
+        else: info_str = attribute_str
+        
+        groups = info_str.strip().split(']')
         for i in reversed(range(len(groups))):
             groups[i] = groups[i].strip('[, ').split(',')
             for j in reversed(range(len(groups[i]))):
-                try: groups[i][j] = float(groups[i][j].strip('\n '))
+                try: groups[i][j] = dtype(groups[i][j].strip('\n '))
                 except: groups[i].pop(j)
             if len(groups[i]) == 0: groups.pop(i)
-
-        if type == 'int':
-            for i in range(len(groups)):
-                for j in range(len(groups[i])): groups[i][j] = int(groups[i][j])
 
         return groups # 2-D array
 
@@ -723,34 +735,10 @@ class ObsVariable(Variable):
                                 except: pass
                             
                             elif key in optionnames['weights_as_upstream_area']:
-                                if value.find(':') > 0:
-                                    temp = value.split(':')
-                                    for i in range(len(temp)): 
-                                        temp[i] = temp[i].strip()
-
-                                    if (len(temp) == 2 and 
-                                        temp[0].lower() == 'filename'):
-                                        filename, temp_str = temp[1], ''
-
-                                        fs = None
-                                        try:
-                                            fs = open(filename, 'r')
-                                            for l in fs.readlines(): 
-                                                temp_str += l
-                                        except: temp_str = None
-                                        finally:
-                                            try: fs.close()
-                                            except: pass
-                                        
-                                        if temp_str:
-                                            var.GCRC_for_weighting_factor_based_on_upstream_area \
-                                            = ObsVariable.read_groups(
-                                                temp_str, type='int'
-                                            )
-                                            temp_str = None
-                                else: 
-                                    var.GCRC_for_weighting_factor_based_on_upstream_area \
-                                    = ObsVariable.read_groups(value, type='int')
+                                var.GCRC_for_weighting_factor_based_on_upstream_area \
+                                = ObsVariable.read_groupped_cell_attribute(
+                                    value, dtype=int
+                                )
                                 
             except: return None
 
@@ -1223,6 +1211,36 @@ class SimVariable(Variable):
 
         if self.__spatial_scale == 'cell': self.group_stats = False
 
+        
+        # step:
+        # compute cell area from GCRC cell number when cell_area_as_weight
+        # flag is set true
+        if self.cell_area_as_weight == True and self.basin_cell_list:
+            cells = []
+            for x in self.basin_cell_list:
+                if type(x) is list: cells += x
+                else: cells.append(x)
+            cells = np.array(cells)
+
+            lonlat = GlobalGrid.wghm_cellnumber_to_centroid_lonlat(cells)
+            rowcol = GlobalGrid.find_rowcol_ndarray(
+                lons=lonlat[:,0], lats=lonlat[:,1]
+            )
+            areas = GlobalGrid.find_wghm_cellarea_ndarray(rowcol[:,0])
+
+            map_area = {cells[i]:areas[i] for i in range(len(cells))}
+
+            cell_weights = []
+            for x in self.basin_cell_list:
+                if type(x) is list: 
+                    t = [map_area[c] for c in x]
+                    cell_weights.append(t)
+                else: cell_weights.append(map_area[x])
+            
+            self.cell_weights = cell_weights
+        # end [step]
+
+
         # step: validity check of aggregation options
         if self.group_stats:
             if not self.basin_cell_list: return False
@@ -1284,38 +1302,14 @@ class SimVariable(Variable):
                                     var.group_stats = True
                                 else: var.group_stats = False
                             elif key in options['cellnums']:
-                                if value.find(':') > 0:
-                                    temp = value.split(':')
-                                    for i in range(len(temp)): 
-                                        temp[i] = temp[i].strip()
-
-                                    if (len(temp) == 2 and 
-                                        temp[0].lower() == 'filename'):
-                                        filename, temp_str = temp[1], ''
-
-                                        fs = None
-                                        try:
-                                            fs = open(filename, 'r')
-                                            for l in fs.readlines(): 
-                                                temp_str += l
-                                        except: temp_str = None
-                                        finally:
-                                            try: fs.close()
-                                            except: pass
-                                        
-                                        if temp_str:
-                                            var.basin_cell_list \
-                                            = SimVariable.read_groups(
-                                                temp_str, type='int'
-                                            )
-                                            temp_str = None
-                                else: 
-                                    var.basin_cell_list \
-                                    = SimVariable.read_groups(value, type='int')
+                                var.basin_cell_list \
+                                = SimVariable.read_groupped_cell_attribute(
+                                    value, dtype=int
+                                )
                                 
                                 if len(var.basin_cell_list) > 0:
-                                    var.__allow_insertion_of_cellnum_list = \
-                                    False
+                                    var.__allow_insertion_of_cellnum_list \
+                                    = False
 
                             elif key in options['compute_anomaly']:
                                 value = value.lower()
@@ -1340,32 +1334,10 @@ class SimVariable(Variable):
                                     = tuple(temp)
 
                             elif key in options['weights']:
-                                if value.find(':') > 0:
-                                    temp = value.split(':')
-                                    for i in range(len(temp)):
-                                        temp[i] = temp[i].strip()
-                                    
-                                    if (len(temp) ==2 and 
-                                        temp[0].lower() == 'filename'):
-                                        filename, temp_str = temp[1], ''
-
-                                        fs = None
-                                        try:
-                                            fs = open(filename, 'r')
-                                            for l in fs.readlines(): 
-                                                temp_str += l
-                                        except: temp_str = None
-                                        finally:
-                                            try: fs.close()
-                                            except: pass
-
-                                        if temp_str:
-                                            var.cell_weights \
-                                            = SimVariable.read_groups(temp_str)
-                                            temp_str = None
-                                else: 
-                                    var.cell_weights \
-                                    = SimVariable.read_groups(value)
+                                var.cell_weights \
+                                = SimVariable.read_groupped_cell_attribute(
+                                    value, dtype=float
+                                )
 
                             elif key in options['area_as_weight']:
                                 value = value.lower()
