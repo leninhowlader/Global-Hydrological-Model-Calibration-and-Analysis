@@ -870,6 +870,9 @@ class ObsVariable(Variable):
                         if arr.shape[0] > 0:
                             var.data_cloud.upper_bound = arr
                             succeed &= True
+                    
+                    if var.data_cloud.lower_bound.shape[0] > 0:
+                        var.has_uncertainty_bound = True
                 # [.]        
 
             if succeed: var.data_cloud.sort()
