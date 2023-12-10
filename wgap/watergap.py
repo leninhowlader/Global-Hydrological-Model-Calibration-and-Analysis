@@ -382,7 +382,7 @@ class WaterGAP:
                                     for c in temp: 
                                         value_curr[c - 1] = value_new
                                 else:
-                                    for i in range(value_curr):
+                                    for i in range(len(value_curr)):
                                         value_curr[i] = value_new
                             # end of new code segment
 
