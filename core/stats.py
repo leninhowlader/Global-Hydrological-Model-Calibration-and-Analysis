@@ -206,10 +206,14 @@ class stats:
         rmna=True
     ):
         sim, obs = np.array(sim), np.array(obs)
-        
+        lb, ub = np.array(lb), np.array(ub)
+
         if rmna:
             ii = (np.isnan(sim) | np.isnan(obs))
             sim, obs = sim[~ii], obs[~ii]
+
+            if lb.shape[0] > 0: lb = lb[~ii]
+            if ub.shape[0] > 0: ub = ub[~ii]
 
         if (normalize != DataNormalization.none and fun in [
             ObjectiveFunction.root_mean_square_error,
