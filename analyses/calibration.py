@@ -274,7 +274,7 @@ class Calibration:
         # end [step-x]
 
         # [step-x] write predictions, parameter values, objectives etc..
-        Calibration.write_parameter_values(evaluation_num=evaluation_num)
+        Calibration.write_parameter_values(evaluation_num, vars)
         Calibration.write_objective_values(evaluation_num, objs)
         # end [step-x]
 
@@ -334,11 +334,16 @@ class Calibration:
             obs = obsvar.data_cloud.data[ii]
             sim = var.data_cloud.data[jj]
 
-            lb, ub = np.empty(0), np.empty(0)
+            lb, ub, use_uncertainty = np.empty(0), np.empty(0), False
             if obsvar.has_uncertainty_bound:
                 lb = obsvar.data_cloud.lower_bound[ii]
                 ub = obsvar.data_cloud.upper_bound[ii]
+                
+                if lb.shape[0] > 0 and ub.shape == lb.shape: 
+                    use_uncertainty = True
             
+            lim1, lim2 = np.empty(0), np.empty(0)
+
             if ((sim.ndim == 1 or sim.shape[1] == 1) and 
                 (obs.ndim == 1 or obs.shape[1] == 1)):
                 # this is the usual case where we would have one observation 
@@ -346,12 +351,15 @@ class Calibration:
 
                 obs = obs.flatten()
                 sim = sim.flatten()
+                if use_uncertainty: 
+                    lim1, lim2 = lb, ub
+
                 f = stats.objective_function(
                         fun=fun, 
                         sim=sim, 
                         obs=obs,
-                        lb=lb,
-                        ub=ub
+                        lb=lim1,
+                        ub=lim2
                     )
 
                 obsvar.objectives.put(f)
@@ -369,12 +377,14 @@ class Calibration:
                 sim = sim.flatten()
                 for i in range(obs.shape[1]):
                     o = obs[:, i].flatten()
+                    if use_uncertainty: lim1, lim2 = lb[:, i], ub[:, i]
+
                     f = stats.objective_function(
                         fun=fun, 
                         sim=sim, 
                         obs=o,
-                        lb=lb,
-                        ub=ub
+                        lb=lim1,
+                        ub=lim2
                     )
 
                     obsvar.objectives.put(f)
@@ -388,8 +398,10 @@ class Calibration:
                     o = obs[:, i].flatten()
                     s = sim[:, i].flatten()
                     
+                    if use_uncertainty: lim1, lim2 = lb[:, i], ub[:, i]
+
                     f = stats.objective_function(
-                        fun=fun, sim=s, obs=o, lb=lb, ub=ub
+                        fun=fun, sim=s, obs=o, lb=lim1, ub=lim2
                     )
 
                     obsvar.objectives.put(f)
@@ -474,18 +486,15 @@ class Calibration:
         #
     
     @staticmethod
-    def write_parameter_values(evaluation_num):
+    def write_parameter_values(evaluation_num, parameter_values):
         filename = Calibration.__config.parameter_value_output_filename
         if filename:
             filename = '%s_%d_.%s'%(
                 filename[:-4], Calibration.__world_rank, filename[-3:]
             )
 
-            values = [evaluation_num] +  [
-                p.parameter_value for p in  Calibration.__config.parameters]
-
             f = open(filename, 'a')
-            f.write(','.join([str(x) for x in values]) + '\n')
+            f.write(','.join([str(x) for x in parameter_values]) + '\n')
             f.close()
     
     @staticmethod
@@ -598,6 +607,7 @@ class BorgMOEA:
             for problem_no in range(nproblems):
                 nvars = poc_config.get_parameter_count(problem_no)
                 nobjs = poc_config.get_objective_count(problem_no)
+                epsilons = poc_config.get_epsilons(problem_no)
                 
                 lower_bound, upper_bound = poc_config.get_parameter_bounds(
                     problem_no
