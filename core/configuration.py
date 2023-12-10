@@ -1121,7 +1121,6 @@ class Configuration:
             if not succeed: return 100
         # end [step]
         
-        
         # step: 
         # check completeness of parameters
         if not self.parameters: return 700
@@ -1375,22 +1374,48 @@ class Configuration:
         
         if len(self.parameters) == 0: return []
         
+        paramnames_all = []
+        f = open(parameter_index_filename, 'r')
+        for line in f.readlines():
+            temp = line.strip().split(',')
+            pnames = []
+            for i in range(len(temp)):
+                x = temp[i].strip()
+                if x != '': pnames.append(x)
+            if len(pnames) > 0: paramnames_all.append(pnames)
+        f.close()
+
+        # [+] find and remove those parameters that are not used in 
+        # multi-problem calibration
+        all = set([p.parameter_name for p in self.parameters])
+        used = set(
+            [y for x in paramnames_all for y in x]
+        )
+        not_used = list(all - used)
+
+        for pname in not_used:
+            for i in range(len(self.parameters)):
+                if self.parameters[i].parameter_name == pname:
+                    _ = self.parameters.pop(i)
+                    break
+        # [.]
+
+        # [+] check whether or not all parameters in parameter_index_filename
+        # are already available in self.parameters list
+        all = set([p.parameter_name for p in self.parameters])
+        if np.sum([(x not in all) for x in used]) > 0: 
+            return []
+        # [.]
+
         param_index = dict()
         for i in range(len(self.parameters)): 
             param_index[self.parameters[i].parameter_name] = i
 
         param_list = []
-
-        f = open(parameter_index_filename, 'r')
-        for line in f.readlines():
-            temp = line.strip().split(',')
-            indices = []
-            for i in range(len(temp)):
-                x = temp[i].strip()
-                if x != '': indices.append(param_index[x])
-            if len(indices) > 0: param_list.append(tuple(indices))
-        f.close()
-
+        for pnames in paramnames_all:
+            ii = [param_index[x] for x in pnames]
+            param_list.append(tuple(ii))
+        
         return tuple(param_list) 
                     
     def get_objective_indices_for_manyPoc(self, objective_index_filename):
