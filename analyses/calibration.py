@@ -794,8 +794,8 @@ class BorgMOEA:
             if results and BorgMOEA.__world_rank == 0:
                 for problem_id in range(poc_config.poc_problem_count):
                     try:
-                        filename_problem_results = '%s%02d%s'%(
-                            filename_results[:,-1], '_', problem_id, 
+                        filename_problem_results = '%s_%02d%s'%(
+                            filename_results[:-4], problem_id, 
                             filename_results[-4:]
                         )
                         f = open(
