@@ -442,8 +442,14 @@ class Borg:
     def __del__(self):
         """ Deletes the underlying C objects. """
         try:
-            BorgConfiguration.libborg.BORG_Problem_destroy(self.reference)
-            BorgConfiguration.libborg.BORG_Algorithm_empty_all_archives()
+            if not self.problems:
+                BorgConfiguration.libborg.BORG_Problem_destroy(self.reference)
+                BorgConfiguration.libborg.BORG_Algorithm_empty_all_archives()
+            # else:
+            #     for problem in self.problems:
+            #         BorgConfiguration.libborg.BORG_Problem_destroy(
+            #             problem.reference
+            #         )
         except AttributeError:
             pass
 
