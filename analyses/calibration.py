@@ -459,6 +459,14 @@ class Calibration:
         """
         config = Calibration.__config
         
+        # [+] clear previous parameter values, if any
+        for param in config.parameters:
+            if type(param.parameter_value) is list:
+                param.parameter_value.clear()
+            else: param.parameter_value = None
+        # [.]
+
+
         if config.calibration_type in ['single', 'one']:
             var_index = 0
             for i in range(len(config.parameters)):
@@ -488,13 +496,15 @@ class Calibration:
     @staticmethod
     def write_parameter_values(evaluation_num, parameter_values):
         filename = Calibration.__config.parameter_value_output_filename
+        
+        t = [evaluation_num] + parameter_values
         if filename:
             filename = '%s_%d_.%s'%(
                 filename[:-4], Calibration.__world_rank, filename[-3:]
             )
 
             f = open(filename, 'a')
-            f.write(','.join([str(x) for x in parameter_values]) + '\n')
+            f.write(','.join([str(x) for x in t]) + '\n')
             f.close()
     
     @staticmethod
