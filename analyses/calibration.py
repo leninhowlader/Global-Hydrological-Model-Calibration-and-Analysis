@@ -497,7 +497,7 @@ class Calibration:
     def write_parameter_values(evaluation_num, parameter_values):
         filename = Calibration.__config.parameter_value_output_filename
         
-        t = [evaluation_num] + parameter_values
+        t = [evaluation_num] + [x for x in parameter_values]
         if filename:
             filename = '%s_%d_.%s'%(
                 filename[:-4], Calibration.__world_rank, filename[-3:]
