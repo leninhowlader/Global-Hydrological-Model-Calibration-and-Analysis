@@ -987,7 +987,7 @@ class GlobalGrid:
                     v = vertices[i]
                     r = data[i, :]
                     
-                    sf.poly([v])
+                    sf.poly([v.tolist()])
                     sf.record(*r)
         except Exception as ex:
             print(str(ex))
