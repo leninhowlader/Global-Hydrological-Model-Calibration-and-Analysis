@@ -1281,12 +1281,7 @@ class Configuration:
                             for x in stations_cellnum]
                         )
 
-                        # the maximum upstream area represent the entire basin 
-                        # from the most downstream station, and this area will
-                        # be used as reference for area normalization.
-                        weights = upstream_areas/upstream_areas.max()
-
-                        weights /= weights.sum()   # rescale
+                        weights = upstream_areas/upstream_areas.sum()
                         
                         weights_allunits = np.concatenate(
                             (weights_allunits, weights), axis=0
