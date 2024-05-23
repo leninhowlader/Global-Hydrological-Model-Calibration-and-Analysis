@@ -6,7 +6,9 @@ import os, sys, numpy as np
 from datetime import datetime
 from collections import OrderedDict
 from copy import deepcopy
-from matplotlib import pyplot as plt
+try: from matplotlib import pyplot as plt
+except: plt = None
+    
 
 from wgap.wgapio import WaterGapIO
 from wgap.watergap import WaterGAP
