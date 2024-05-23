@@ -1,6 +1,6 @@
 __author__ = 'mhasan'
 
-import sys, os, numpy as np
+import sys, os, numpy as np, pandas as pd
 
 from utilities.fileio import FileInputOutput as io
 from utilities.globalgrid import GlobalGrid as gg
@@ -49,6 +49,7 @@ class Station:
         stations = np.array([])
         if os.path.exists(filename):
             d = np.loadtxt(filename, skiprows=0, ndmin=2)
+            # d = pd.read_csv(filename, header=None, sep=' ').values
             if len(d) > 0: stations = d[:,:3]
             # if unique_only: stations = np.unique(stations, axis=0)
 
@@ -123,19 +124,39 @@ class Station:
     @staticmethod
     def write_stations(stations, filename, id_as_integer=True):
         succeed = False
-
+        
         data = []
         for s in stations: data.append(list(s) + [-99] * (6 - len(s)))
+                
+        if data:
+            df = pd.DataFrame(data=data)
+            if id_as_integer: df.iloc[:,0] = df.iloc[:0].astype(int)
 
-        # id as integer
-        if id_as_integer:
-            for i in range(len(data)): data[i][0] = int(data[i][0])
-
-        if data: succeed = io.write_flat_file(filename, data, separator=' ')
+            df.to_csv(filename, header=False, index=False, sep='\t')
+            succeed = True            
 
         return succeed
 
     class GlobalCDA:
+        @staticmethod
+        def create_STATION_DAT_1509(filename):
+            filename_station_info = os.path.join(
+                'D:/mhasan/Experiments/POC_WB_II/data',
+                'streamflow_stations_1509.txt'
+            )
+            
+            df = pd.read_csv(filename_station_info)
+            df = df.loc[:, ['ID_1', 'Lon_ddm30', 'Lat_ddm30']]
+            df['a1'] = -99
+            df['a2'] = -99
+            df['a3'] = -99
+            
+            filename = os.path.join(
+                'D:/mhasan/Code&Script/ProjectWGHM',
+                'utilities/data/STATIONS1509.DAT'
+            )
+            df.to_csv(filename, header=False, index=False, sep='\t')
+            
         @staticmethod
         def create_watergap_station_file_FGB(
             filename_out:str,
