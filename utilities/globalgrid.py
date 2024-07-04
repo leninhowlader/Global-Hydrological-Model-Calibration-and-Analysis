@@ -611,7 +611,9 @@ class GlobalGrid:
         else: return None
 
     @staticmethod
-    def write_cell_info(filename, array, mode='w', format_str=''):
+    def write_cell_info(
+        filename, array, mode='w', format_str='', newline_separation=False
+    ):
         '''
         Writes cell info (i.e., cell number or cell area) into output file.
 
@@ -645,7 +647,8 @@ class GlobalGrid:
                 for item in array: str_list.append(
                     '[' + ','.join(format_str.format(x) for x in item) + ']')
                 
-            f.write(', '.join(str_list))
+            if newline_separation: f.write(',\n'.join(str_list))
+            else: f.write(', '.join(str_list))
         except: return False
         finally:
             try: f.close()
