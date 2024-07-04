@@ -343,8 +343,9 @@ class Upstream:
     @staticmethod
     def next_downstream_cell(row, col):
         '''
-        Finds the next downstream cell towards flow direction from given cell. If the reference cell flows into an inland
-        sink or ocean, the reference cell is returned as the next cell.
+        Finds the next downstream cell towards flow direction from given cell. 
+        If the reference cell flows into an inland sink or ocean, the reference
+        cell is returned as the next cell.
 
         :param row: (int) row index of the reference cell
         :param col: (int) column index of the reference cell
@@ -473,12 +474,15 @@ class Upstream:
         return super_basin
 
     @staticmethod
-    def compute_basin_extent(basin_outlets):
+    def compute_basin_extent(basin_outlets, remove_overlapping_cells=False):
         '''
         This method find the upstream basin coverage (i.e., cells) from each given outlet points. The outlet points are
         given as tuples of row and column index of a grid cell
 
         :param basin_outlets: (list of tuples/list or 2-d numpy array) basin outlets as their row and column index pairs
+        :remove_overlapping_cells: (boolean; optional; default False) if the
+            flag is set true, only the non-overlapping cells will be returns,
+            otherwise the complete basin extent will be returned
         :return: (OrderedDict) basin coverage in terms of occupied cells belonging to the upstream of given outlet
                                points. The output is an ordered dictionary, the keys of the dictionary refer to the
                                basin outlet and the value contains the list of basin cell
@@ -493,6 +497,13 @@ class Upstream:
             cell = tuple(cell)
             upstream_basin = [cell] + Upstream.get_upstream_cells(cell[0], cell[1])
             basins[cell] = upstream_basin
+        
+        if remove_overlapping_cells:
+            super_basin = Upstream.find_super_basin(basin_outlets)
+            basins = Upstream.compute_nonoverlapping_basin_extent(
+                basins=basins, super_basin=super_basin
+            )
+
         return basins
 
     @staticmethod
