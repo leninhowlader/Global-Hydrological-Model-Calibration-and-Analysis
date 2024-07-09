@@ -64,7 +64,7 @@ class stats:
         return 1 - (np.sum((obs-sim)**2)/np.sum((obs-obs_mean)**2))
     
     @staticmethod
-    def nse_observation_uncertainty(sim, obs, lb, ub):
+    def nse_observation_uncertainty_version_old(sim, obs, lb, ub):
         err_var = 0
         ii, jj = (sim < lb), (sim > ub)
         err_var += np.sum((lb[ii]-sim[ii])**2)  
@@ -73,6 +73,26 @@ class stats:
         obs_var = np.sum((obs-obs.mean())**2)
 
         return 1 - err_var / obs_var
+    
+    @staticmethod
+    def nse_observation_uncertainty(sim, obs, lb, ub):
+        err = np.abs(obs-sim)
+        
+        # Initialize penalty,  p with ones
+        p = np.ones_like(sim)
+
+        ii = (lb < sim) & (sim <= obs)
+        p[ii] = err[ii] / (obs[ii]-lb[ii])
+
+        ii =  (obs <= sim) & (sim < ub)
+        p[ii] = err[ii]/(ub[ii]-obs[ii])
+
+        # Mean of observed values
+        mu_obs = obs.mean()
+
+        nse_ou = 1 - (np.sum((p * err)**2) / np.sum((obs-mu_obs)**2))
+
+        return nse_ou
 
     @staticmethod
     def mean_absolute_error(sim, obs):
