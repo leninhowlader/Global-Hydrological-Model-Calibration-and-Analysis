@@ -407,7 +407,7 @@ class Variable:
         
         groups = info_str.strip().split(']')
         for i in reversed(range(len(groups))):
-            groups[i] = groups[i].strip('[, ').split(',')
+            groups[i] = groups[i].strip().strip(',').strip().strip('[').split(',')
             for j in reversed(range(len(groups[i]))):
                 try: groups[i][j] = dtype(groups[i][j].strip('\n '))
                 except: groups[i].pop(j)
@@ -517,9 +517,10 @@ class ObsVariable(Variable):
         ),
         'filename': ('data_file', 'data file', 'filename'),
         'file_type': ('data_file_type', 'data file type'),
-        'weights_as_upstream_area': (
-            'weights_as_upstream_area', 'weights as upstream area'
-        )
+        'compute_upstream_area_for_weights': (
+            'compute_upstream_area_for_weights'
+        ),
+        'objective_weights': ('objective_weights', 'objective weights')
     }
 
     def __init__(self):
@@ -538,6 +539,8 @@ class ObsVariable(Variable):
         self.objectives = Queue()
         self.weight_factors = [] # caution: they are wt. factors but not weights
         self.GCRC_for_weighting_factor_based_on_upstream_area = []
+        self.objective_weights = []
+        self.objective_weights_filename = ''
 
         # attributes related to data uncertainties
         self.percent_uncertainty = 0
@@ -734,11 +737,21 @@ class ObsVariable(Variable):
                                 try: var.epsilon = float(value)
                                 except: pass
                             
-                            elif key in optionnames['weights_as_upstream_area']:
+                            elif key in optionnames['compute_upstream_area_for_weights']:
                                 var.GCRC_for_weighting_factor_based_on_upstream_area \
                                 = ObsVariable.read_groupped_cell_attribute(
                                     value, dtype=int
                                 )
+                                
+                            elif key in optionnames['objective_weights']:
+                                var.objective_weights \
+                                = ObsVariable.read_groupped_cell_attribute(
+                                    value, dtype=float
+                                )
+                                
+                                if value.find(':'):
+                                    filename = value.split(':')[-1].strip()
+                                    var.objective_weights_filename = filename
                                 
             except: return None
 
@@ -1000,6 +1013,18 @@ class ObsVariable(Variable):
                                     var.data_cloud.data_indices.append(ndces)
                             var.data_obtained = True
             except: succeed = False
+
+        return succeed
+    
+
+    def __write_description_into_file(self, file):
+        succeed = True
+
+        text_lines = []
+        text_lines.append('@')
+
+
+        text_lines.append('@@')
 
         return succeed
 
@@ -1963,7 +1988,7 @@ class SimVariable(Variable):
             if self.cell_weights:
                 weights = np.array(self.cell_weights[i])
                 d = (d * weights[None,:]).sum(axis=1) / weights.sum()
-            else: d = d.sum(axis=1)
+            else: d = d.mean(axis=1)
 
             try: d_out = np.concatenate((d_out, d[:, None]), axis=1)
             except: d_out = d[:, None]

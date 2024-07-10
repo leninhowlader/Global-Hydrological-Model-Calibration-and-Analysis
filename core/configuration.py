@@ -201,6 +201,7 @@ class Configuration:
             'maximum_iteration', 'maximum iteration', 'max iter', 'max_iter'
         ),
         'parameter_description_filename': (
+            'parameter_description_filename',
             'parameter_info', 'parameter_info_input_filename', 
             'parameter_info_filename'
         ),
@@ -222,13 +223,14 @@ class Configuration:
             'funvalue dumpfile'
         ),
         'parameter_outfile': (
+            'parameter_output_filename',
             'save_param_values' , 'save param values' , 'save_param_value' , 
             'save param value', 'parameter_dumpfile', 'parameter dumpfile',
             'parameter_value_output_filename'
         ),
         'result_outfile': (
             'result_outfile', 'calibration_output_filename', 'output_filename',
-            'result_filelname', 'result_dumpfile', 'output_filename'
+            'result_filename', 'result_dumpfile', 'output_filename'
         ),
         'runtime_dynamics_outfile': (
             'runtime_dynamics_filename', 'runtime dynamics filename'
@@ -251,10 +253,12 @@ class Configuration:
             'calibration_type', 'calibration type', 'calibration-type'
         ),
         'multiproblem_calibration_parameter_list': (
+            'multiproblem_calibration_parameter_list_filename',
             'multiproblem_calibration_parameter_list',
             'multiproblem calibration parameter list'
         ),
         'multiproblem_calibration_objective_list': (
+            'multiproblem_calibration_objective_list_filename',
             'multiproblem_calibration_objective_list',
             'multiproblem calibration objective list',
             'multiproblem_calibration_observation_list',
@@ -272,9 +276,11 @@ class Configuration:
         'change_from_refsimulation': (),
         'function_to_compute_change': (),
         'calibration_unit_cells': (
+            'filename_calibration_unit_cells',
             'cell_list_of_calibration_units', 'calibration_unit_cells'
         ),
         'calibration_unit_stationcells': (
+            'filename_calibration_unit_stationcells',
             'station_cells_of_calibration_units', 'calibration_unit_stationcells'
         )
     }
@@ -336,6 +342,8 @@ class Configuration:
         self.parameters = []
         self.samples = []
         
+        self.calunit_cells_filename = ''
+        self.calunit_stationcell_filename = ''
         self.calunit_cellls = []
         self.calunit_staioncells = []
         # [.]
@@ -906,12 +914,14 @@ class Configuration:
                             = SimVariable.read_groupped_cell_attribute(
                                 value, dtype=int
                             )
+                            config.calunit_cells_filename = value
 
                         elif key in optionnames['calibration_unit_stationcells']:    
                             config.calunit_staioncells \
                             = SimVariable.read_groupped_cell_attribute(
                                 value, dtype=int
                             )
+                            config.caliunti_stationcell_filename = value
                         
                         elif key in optionnames['output_directory']:
                             config.output_directory = value
@@ -1048,7 +1058,7 @@ class Configuration:
             followings
                 0	no error
                 100 failed to create target cell list from stations in station file
-                150 cell list consistency check for multi-proble calibration failed
+                150 cell list consistency check for multi-problem calibration failed
                 200 absence of sim-variable
                 20x error in sim variable no. x
                 300 failed to acquire observation dataset
@@ -1136,9 +1146,14 @@ class Configuration:
         # distribute the cell list of calibration units into parameter 
         # cell list
         if self.calunit_cellls:
+            # [+] clear existing cell list
+            for param in self.parameters: 
+                param.cell_list.clear()
+            # [.] 
+            
             if self.calibration_type in ['multiple', 'many']:
                 param_indices = self.multiproblem_parameter_index_list
-    
+                
                 # [+] map calunit to parameter by parameter index
                 param_calunit = {}
                 for i in range(len(param_indices)):
@@ -1169,58 +1184,46 @@ class Configuration:
         # assign cell list to simulation variables (only if cell list of cal. 
         # units provided)
         #
-        if self.calunit_cellls:
-            if self.calibration_type in ['multiple', 'many']:
-                obj_indices = self.multiproblem_objective_index_list
+        if self.calibration_type in ['multiple', 'many']:
+            obj_indices = self.multiproblem_objective_index_list
 
-                obj_calunit_map = {}
-                for i in range(len(obj_indices)):
-                    for iobj in obj_indices[i]:
-                        try: obj_calunit_map[iobj].append(i)
-                        except: obj_calunit_map[iobj] = [i]
+            obj_calunit_map = OrderedDict()
+            for i in range(len(obj_indices)):
+                for iobj in obj_indices[i]:
+                    try: obj_calunit_map[iobj].append(i)
+                    except: obj_calunit_map[iobj] = [i]
 
-                iobjs = set(obj_calunit_map.keys())
-                for i in iobjs:
-                    iunits = obj_calunit_map[i]
-                    
-                    obs_var = self.obs_variables[i]
-                    sim_var = self.find_counter_variable(
-                        obs_var.counter_variable
-                    )
-                    
-                    if not sim_var.basin_outlets_only:
+            for i in obj_calunit_map.keys():
+                iunits = obj_calunit_map[i]
+                
+                obs_var = self.obs_variables[i]
+                sim_var = self.find_counter_variable(
+                    obs_var.counter_variable
+                )
+                
+                # basin cell list can be assigned by specifying values 
+                # in variable declaration. thus, if a variable already
+                # has cell list, re-assignment of cell list must be avoided
+                if not sim_var.basin_cell_list:
+                    if self.calunit_cellls and not sim_var.basin_outlets_only:
                         for iu in iunits:
                             sim_var.basin_cell_list.append(
                                 self.calunit_cellls[iu]
                             )
                     
-                    else:
-                        succeed = True
-                        station_calunit = OrderedDict()
+                    if self.calunit_staioncells and sim_var.basin_outlets_only:
                         for iu in iunits:
-                            try: station_calunit[iu].append(iu)
-                            except: station_calunit[iu] = [iu]
-                        
-                        cell_list = []
-                        for iu in station_calunit.keys():
-                            nstations = len(station_calunit[iu])
-                            
-                            if len(self.calunit_staioncells[iu]) == nstations:
-                                cell_list.append(self.calunit_staioncells[iu])
-                            else: 
-                                succeed = False
-                                break
-                        
-                        if succeed and cell_list:
-                            sim_var.basin_cell_list += cell_list
-                        else: return 160
-                else:
-                    for sim_var in self.sim_variables:
-                        if not sim_var.basin_outlets_only:
-                            sim_var.basin_cell_list = self.calunit_cellls
-                        else:
-                            sim_var.basin_cell_list = self.calunit_staioncells
-                        
+                            sim_var.basin_cell_list.append(
+                                self.calunit_staioncells[iu]
+                            )
+        else:
+            for sim_var in self.sim_variables:
+                if not sim_var.basin_cell_list:
+                    if self.calunit_cellls and not sim_var.basin_outlets_only:
+                        sim_var.basin_cell_list = self.calunit_cellls
+            
+                    if self.calunit_staioncells and sim_var.basin_outlets_only:
+                        sim_var.basin_cell_list = self.calunit_staioncells
         # end [step] 
 
         
@@ -1288,6 +1291,13 @@ class Configuration:
                         )
                     
                     var.weight_factors = weights_allunits.flatten().tolist()
+                
+                elif len(var.objective_weights) > 0:
+                    weight_factors = []
+                    for x in var.objective_weights:
+                        weight_factors += (np.array(x)/np.sum(x)).tolist()
+                    
+                    var.weight_factors = weight_factors
         # end [step]
 
         # step: 
@@ -1352,15 +1362,19 @@ class Configuration:
             iunits = param_calunit[i]
             param = self.parameters[i] 
             if len(param.cell_list) != len(iunits): 
-                return False
+                # return False
+                print('False1')
             
             param_cells = [np.array(x) for x in param.cell_list]
             for j in range(len(param_cells)):
                 iu = iunits[j]
                 try:
                     if np.abs(param_cells[j]-cunit_cells[iu]).sum() != 0:
-                        return False
-                except: return False        
+                        # return False
+                        print('False2')
+                except: 
+                    print('False3')
+                    # return False        
         
         return True
 
@@ -1369,16 +1383,10 @@ class Configuration:
         
         if len(self.parameters) == 0: return []
         
-        paramnames_all = []
-        f = open(parameter_index_filename, 'r')
-        for line in f.readlines():
-            temp = line.strip().split(',')
-            pnames = []
-            for i in range(len(temp)):
-                x = temp[i].strip()
-                if x != '': pnames.append(x)
-            if len(pnames) > 0: paramnames_all.append(pnames)
-        f.close()
+        paramnames_all = gg.read_cell_info(
+            parameter_index_filename, data_type=str
+        )
+        
 
         # [+] find and remove those parameters that are not used in 
         # multi-problem calibration
@@ -1420,19 +1428,20 @@ class Configuration:
         for i in range(len(self.obs_variables)):
             obj_index[self.obs_variables[i].varname] = i 
 
+        varnames_all = gg.read_cell_info(
+            objective_index_filename, data_type=str
+        )
+        
         objective_list = []
-        f = open(objective_index_filename, 'r')
-        for line in f.readlines():
-            temp = line.strip().split(',')
+        for varnames in varnames_all:
             indices = []
-            for i in range(len(temp)):
-                vname = temp[i].strip()
+            for i in range(len(varnames)):
+                vname = varnames[i].strip()
                 if vname != '': indices.append(obj_index[vname])
             if len(indices) > 0:
                 # indices.sort()
                 objective_list.append(tuple(indices))
-        f.close()
-
+        
         return tuple(objective_list)
     
     def generate_target_cells_from_station_file(self):
@@ -1571,6 +1580,137 @@ class Configuration:
 
         return succeed
 
+    def write_general_experiment_settings(self, file):
+        """
+        The method writes the general configuration options i.e., the basic 
+        experiment settings into a file.
+
+        @param
+        file (file descriptor): a open and functional writable file descriptor
+
+        @return (bool)
+        True on success, False otherwise
+        """
+        succeed = True
+
+        text_lines = []
+        text_lines.append('BEGIN SETTINGS')
+        if self.experiment_type:
+            keyword = 'experiment_type'
+            value = self.experiment_type
+            text_lines.append('%s = %s'%(keyword, value))
+
+        if self.experiment_name:
+            keyword = 'experiment_name'
+            value = self.experiment_name
+            text_lines.append('%s = %s'%(keyword, value))
+
+        if self.experiment_type in ['calibration']: 
+            keyword = 'calibration_type'
+            value = self.calibration_type
+            text_lines.append('%s = %s'%(keyword, value))
+
+            keyword = 'maximum_iteration'
+            value = self.maximum_iteration
+            text_lines.append('%s = %d'%(keyword, value))
+
+            keyword = 'objective_output_filename'
+            value = self.objective_values_output_filename
+            if value: text_lines.append('%s = %s'%(keyword, value))
+
+            keyword = 'parameter_output_filename'
+            value = self.parameter_value_output_filename
+            if value: text_lines.append('%s = %s'%(keyword, value))
+
+            keyword = 'result_filename'
+            value = self.calibration_result_output_filename
+            if not value: value = '[not provided]'
+            text_lines.append('%s = %s'%(keyword, value))
+
+            keyword = 'runtime_dynamics_filename'
+            value = self.runtime_dynamics_output_filename
+            if value: 
+                text_lines.append('%s = %s'%(keyword, value))
+
+                keyword = 'runtime_dynamics_write_frequency'
+                value = self.runtime_dynamics_frequency
+                text_lines.append('%s = %d'%(keyword, value))
+            
+            if self.calibration_type in ['many', 'multiple']:
+                keyword = 'multiproblem_calibration_parameter_list_filename'
+                value = self.multiproblem_parameter_list_filename
+                if not value: value = '[not provided]'
+                text_lines.append('%s = %s'%(keyword, value))
+
+                keyword = 'multiproblem_calibration_objective_list_filename'
+                value = self.multiproblem_objective_list_filename
+                if not value: value = '[not provided]'
+                text_lines.append('%s = %s'%(keyword, value))
+
+        if self.experiment_type in ['sa', 'sensitivity', 'glue', 'se']:
+            keyword = 'sample_filename'
+            value = self.input_sample_filename
+            if not value: value = '[not provided]'
+            text_lines.append('%s = %s'%(keyword, value))
+        
+        keyword = 'parameter_description_filename'
+        value = self.parameter_info_filename
+        if value: text_lines.append('%s = %s'%(keyword, value))
+    
+        keyword = 'save_simulation_output'
+        value = self.__dump_simulation_timeseries
+        if value: 
+            text_lines.append('%s = %s'%(keyword, 'true'))
+
+            keyword = 'output_directory'
+            value = self.output_directory
+            if not value: value = '[not provided]'
+            text_lines.append('%s = %s'%(keyword, value))
+        
+        if self.compute_upstream_from_station_file:
+            keyword = 'compute_upstream_from_station_file'
+            value = 'true'
+            text_lines.append('%s = %s'%(keyword, value))
+            
+            keyword = 'non_overlapping_basin'
+            value = 'true' if self.disjoint_basin_extent else 'false'
+            text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'filename_calibration_unit_cells'
+        value = self.calunit_cells_filename
+        if value: text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'filename_calibration_unit_stationcells'
+        value = self.calunit_stationcell_filename
+        if value: text_lines.append('%s = %s'%(keyword, value))
+        
+        keyword = 'parallel_evaluation'
+        value = 'true' if self.parallel_evaluation else 'false'
+        if value: text_lines.append('%s = %s'%(keyword, value))
+        
+        text_lines.append('END SETTINGS')
+        
+        try:
+            _ = file.write('\n'.join(text_lines))
+        except: succeed = False
+
+        return succeed 
+
+    @staticmethod    
+    def write_configuration_file(config, filename_out):
+        config = Configuration()
+
+        file = open(filename_out, 'w')
+        succeed = config.write_general_experiment_settings(file)
+        succeed &= WaterGAP.write_watergap_configurations(file)
+        succeed &= Parameter.write_parameter_description(config.parameters, file)
+        file.close()
+
+        return True
+    
+    
+    
+    
     @staticmethod
     def runtime_report(
         filename_config:str,

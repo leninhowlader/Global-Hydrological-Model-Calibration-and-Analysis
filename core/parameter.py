@@ -292,3 +292,53 @@ class Parameter:
             except: pass
 
         return values
+    
+    def __write_description_into_file(self, file):
+        succeed = True
+        
+        text_lines = []
+        text_lines.append('@')
+
+        keyword = 'parameter_name'
+        value = self.parameter_name
+        if not value: value = '[not provided]'
+        text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'lower_bound'
+        value = self.lower_bound
+        text_lines.append('%s = %f'%(keyword, value))
+
+        keyword = 'upper_bound'
+        value = self.upper_bound
+        text_lines.append('%s = %f'%(keyword, value))
+
+        keyword = 'logarithmic_scale'
+        value = self.logarithmic_scale
+        if value: text_lines.append('%s = %s'%(keyword, 'true'))
+
+        keyword = 'precision_level'
+        value = self.precision_level
+        if value > 0 : text_lines.append('%s = %d'%(keyword, value))
+
+        text_lines.append('@@')
+
+        try:
+            _ = file.write('\n'.join(text_lines))
+        except: succeed = False
+
+        return succeed
+
+    @staticmethod
+    def write_parameter_description(parameter_list, file):
+        succeed = True
+
+        try: _ = file.write('BEGIN PARAMETER\n')
+        except: succeed = False
+
+        for param in parameter_list:
+            succeed &= param.__write_description_into_file(file)
+
+        try: _ = file.write('END PARAMETER\n')
+        except: succeed &= False
+
+        return succeed

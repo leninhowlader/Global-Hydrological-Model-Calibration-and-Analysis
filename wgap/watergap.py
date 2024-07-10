@@ -679,3 +679,92 @@ class WaterGAP:
                     year_summary[var.varname] = results
 
         return basic_summary, month_summary, year_summary
+    
+    @staticmethod
+    def write_watergap_configurations(
+        file
+    ):
+        """
+        
+        """
+        succeed = True
+
+        text_lines = []
+        text_lines.append('BEGIN MODEL-OPTIONS')
+
+        keyword = 'model_executable'
+        value = WaterGAP.executable
+        if not value: value = '[not provided]'
+        text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'model_version'
+        value = WaterGAP.model_version
+        if not value: value = '[not provided]'
+        text_lines.append('%s = %s'%(keyword, value))
+
+        if WaterGAP.model_version in ['wghm2.2e']:
+            keyword = 'wgap_config_filename'
+            value = WaterGAP.model_config_filename
+            if not value: value = '[not provided]'
+            text_lines.append('%s = %s'%(keyword, value))
+        else:
+            keyword = 'parameter_filename'
+            value = WaterGAP.json_parameter_file
+            if not value: value = '[not provided]'
+            text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'additional_arguments'
+        value = WaterGAP.__system_arguments
+        if value: text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'start_year'
+        value = WaterGAP.start_year
+        text_lines.append('%s = %d'%(keyword, value))
+
+        keyword = 'end_year'
+        value = WaterGAP.end_year
+        text_lines.append('%s = %d'%(keyword, value))
+
+        keyword = 'log_directory'
+        value = WaterGAP.log_directory
+        if value: text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'output_endian_type'
+        if WaterGAP.output_endian_type == FileEndian.big_endian: 
+            value = 2
+        else: value = 1
+        text_lines.append('%s = %d'%(keyword, value))
+
+        if not WaterGAP.model_version:
+            keyword = 'grid_cell_count'
+            value = WaterGAP.get_grid_cell_count()
+            if value: text_lines.append('%s = %d'%(keyword, value))
+
+        keyword = 'temporary_output_directory'
+        value = WaterGAP.temporary_output_directory
+        if value: text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'remove_modelfiles_after_evaluation'
+        value = WaterGAP.remove_waterGap_files_after_evaluation
+        text_lines.append('%s = %s'%(keyword, 'true' if value else 'false'))
+
+        keyword = 'station_filename'
+        value = WaterGAP.station_filename
+        if value: text_lines.append('%s = %s'%(keyword, value))
+
+        keyword = 'max_repetitions_upon_failing_model_run'
+        value = WaterGAP.repetitions_on_failure
+        if value: 
+            text_lines.append('%s = %s'%(keyword, 'true'))
+        
+            keyword = 'sleep_time_after_unsuccessful_run'
+            value = WaterGAP.sleep_time
+            if value > 0 : text_lines.append('%s = %d'%(keyword, value))
+
+        text_lines.append('END MODEL-OPTIONS')
+
+        try:
+            _ = file.write('\n'.join(text_lines))
+        except: succeed = False
+
+        return succeed 

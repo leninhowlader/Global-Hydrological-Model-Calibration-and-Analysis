@@ -684,6 +684,9 @@ class GlobalGrid:
                         for j in reversed(range(len(group_items))):
                             try: group_items[j] = int(group_items[j])
                             except: group_items.pop(j)
+                    elif data_type == str:
+                        for j in reversed(range(len(group_items))):
+                            group_items[j] = group_items[j]
                     else:
                         for j in reversed(range(len(group_items))):
                             try: group_items[j] = float(group_items[j])
