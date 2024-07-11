@@ -554,7 +554,7 @@ class ObsVariable(Variable):
         cleared.
         """
         if (self.weight_factors and 
-            len(self.objectives.queue) == self.weight_factors):
+            len(self.objectives.queue) == len(self.weight_factors)):
             x = np.array(self.objectives.queue).flatten()
             wt = np.array(self.weight_factors).flatten()
             
