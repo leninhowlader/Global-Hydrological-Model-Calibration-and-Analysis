@@ -8,6 +8,7 @@ Created on Sun Jul 14 13:56:40 2024
 
 import os, sys, numpy as np, pandas as pd
 from copy import deepcopy
+import time
 
 from core.configuration import Configuration
 from core.parameter import Parameter
@@ -192,7 +193,7 @@ class WaterGAPSimulation:
         succeed = True
         
         dump_directory = os.path.join(path_experiment_home, path_output)
-        if not os.path.exists(dump_directory): os.mkdir(dump_directory, 0o777)
+        # if not os.path.exists(dump_directory): os.mkdir(dump_directory, 0o777)
         
         watergap_output_dir = os.path.join(
             WaterGAP.home_directory, WaterGAP.model_config.output_directory
@@ -357,9 +358,10 @@ class WaterGAPSimulation:
 
 def run_simulations(argv):
     global config, path_experiment_home, filename_config, calunit_count
-    global repeat_count, filename_solution_table
+    global repeat_count, filename_solution_table, path_output
     global world_size, world_rank
     
+    # [ ] read in and process the command line arguments
     try:
         path_experiment_home = argv[1]
         filename_config = argv[2]
@@ -368,35 +370,64 @@ def run_simulations(argv):
         world_size = int(argv[-2])
         world_rank = int(argv[-1])
     except: return -100
+    # [.]
 
+    # [ ] change the working directory to the experiment directory
     os.chdir(path_experiment_home)
+    # [.]
     
+    # [ ] read the configuration file to create config object. check consistency
+    # of the config object and WaterGAP class. Note that during these check all
+    # necessary data will be loaded into correct places.
+    #  
     f = os.path.join(path_experiment_home, filename_config)
     config = Configuration.read_configuration_file(f)
     
     if not config.is_okay(skip_observation=True) or not WaterGAP.is_okay(): 
         return 100
-    
+    # [.]
+
+    # [ ] create directory to save variable time-series
+    dump_directory = os.path.join(path_experiment_home, path_output)
+    while not os.path.exists(dump_directory): 
+        if world_rank == 0: 
+            os.mkdir(dump_directory, 0o777)
+            if not os.path.exists(dump_directory): exit(os.EX_OSERR)
+        else: time.sleep(1)
+    # [ ]
+        
+    # [ ] find number of calibration units
     calunit_count = len(config.multiproblem_parameter_index_list)
+    # [.]
     
+    # [ ] read in all solutions in all replications
     f = os.path.join(path_experiment_home, filename_solution_table)
-    if not os.path.exists(f):
-        succeed = WaterGAPSimulation.write_solution_table(
-            path_experiment_home=path_experiment_home, 
-            calunit_count=calunit_count, 
-            repeat_count=repeat_count,
-            filename_out=f
-        )
-        if not succeed: return 200
-    
+    while not os.path.exists(f):
+        if world_rank == 0:
+            succeed = WaterGAPSimulation.write_solution_table(
+                path_experiment_home=path_experiment_home, 
+                calunit_count=calunit_count, 
+                repeat_count=repeat_count,
+                filename_out=f
+            )
+            if not succeed: exit(os.EX_OSERR)
+        else: time.sleep(2)
+
     df = pd.read_csv(f)
     all_solution_ids = df['solution_id'].values
     solution_count = df.shape[0]
+    # [.]
     
+    # [ ] find start and end index of solution to be processed by the current
+    # processor
     start_index, end_index = WaterGAPSimulation.get_start_and_end_index(
         solution_count
     )
+    # [.]
     
+    # [ ] run watergap model with all solutions within start and end solution
+    # indices, read model output and generate time-series for each variable. 
+    # finally, save the time-series of the variables
     solution_id = -1
     for i in range(start_index, end_index+1):
         solution_id = all_solution_ids[i]
@@ -407,7 +438,8 @@ def run_simulations(argv):
         
         succeed = WaterGAPSimulation.run(solution_id)
         if not succeed: return 300
-        
+    # [.]
+
     return 0
 
 def test():
