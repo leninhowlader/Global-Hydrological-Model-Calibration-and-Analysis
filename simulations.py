@@ -345,7 +345,7 @@ def run_simulations(argv):
     try:
         path_experiment_home = argv[1]
         filename_config = argv[2]
-        repeat_count = argv[3]
+        repeat_count = int(argv[3])
         if len(argv[:-2]) == 5: path_output = argv[4]
         world_size = int(argv[-2])
         world_rank = int(argv[-1])
