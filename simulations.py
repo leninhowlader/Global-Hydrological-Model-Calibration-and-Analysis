@@ -343,10 +343,10 @@ def run_simulations(argv):
     global world_size, world_rank
     
     try:
-        path_experiment_home = argv[2]
-        filename_config = argv[3]
-        repeat_count = argv[4]
-        if len(argv[:-2]) == 6: path_output = argv[5]
+        path_experiment_home = argv[1]
+        filename_config = argv[2]
+        repeat_count = argv[3]
+        if len(argv[:-2]) == 5: path_output = argv[4]
         world_size = int(argv[-2])
         world_rank = int(argv[-1])
     except: return -100
