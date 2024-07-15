@@ -225,9 +225,24 @@ class WaterGAPSimulation:
     def get_parameter_copies(calunit_index, repeat_index, solindex):
         global config, path_experiment_home
         
-        param_indices = config.multiproblem_parameter_index_list[calunit_index]
-        nparams = len(param_indices)
+        # [ ] listing parameter indices in the earlier basins which is used to 
+        # determine index of the cell list for the current basin. Note that not 
+        # all parameters get selected for all units that cause the length of the
+        # the cell list of a parameter sometimes less than the no. of basins
+        #  
+        param_indices_earlier_units = []
+        for i in range(calunit_index):
+            param_indices_earlier_units \
+            += config.multiproblem_parameter_index_list[i]
+        param_indices_earlier_units = np.array(param_indices_earlier_units)
+        # [ ]
+
+        param_indices_curr \
+        = config.multiproblem_parameter_index_list[calunit_index]
         
+        nparams = len(param_indices_curr)
+        
+        # [ ] read parameter values in the solution
         f = os.path.join(
             path_experiment_home, 
             '%s_%02d'%(config.output_directory, repeat_index+1), 
@@ -236,16 +251,19 @@ class WaterGAPSimulation:
         
         rr = BorgOutput.read_borg_output(f)
         param_values = rr[solindex][1:nparams+1]
-        
+        # [ ]
+
         parameter_list =[]
         for i in range(nparams):
-            i_param = param_indices[i]
-            
+            i_param = param_indices_curr[i]
+            i_celllist = (param_indices_earlier_units==i_param).sum()
+
             param = Parameter()
             param.parameter_name = config.parameters[i_param].parameter_name
-            
             param.parameter_value = param_values[i]
-            param.cell_list=config.parameters[i_param].cell_list[calunit_index]
+            
+            param.cell_list=config.parameters[i_param].cell_list[i_celllist]
+            
             parameter_list.append(param)
         
         return parameter_list
