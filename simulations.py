@@ -192,34 +192,47 @@ class WaterGAPSimulation:
         
         succeed = True
         
-        dump_directory = os.path.join(path_experiment_home, path_output)
-        # if not os.path.exists(dump_directory): os.mkdir(dump_directory, 0o777)
-        
+        # [ ] defining additional filename identifier for separating the outputs 
+        # for each calibration units
+        calunit_index, _, _ = WaterGAPSimulation.split_solution_id(solution_id)
+        identifier = 'cu%d_%d'%(calunit_index, world_rank)
+        # [ ]
+
+        # [ ] reading and processing watergap output to create the time-series
+        # for all variables 
         watergap_output_dir = os.path.join(
             WaterGAP.home_directory, WaterGAP.model_config.output_directory
         )
         
+        dump_directory = os.path.join(path_experiment_home, path_output)
+        
         for var in var_arr:
+            # [ ] read model output
             succeed = var.cell_level_predicted_time_series(
                     start_year=WaterGAP.start_year,
                     end_year=WaterGAP.end_year,
                     prediction_directory=watergap_output_dir
                 )
             
+            # [ ] apply spatial aggregation
             if succeed: succeed = var.aggregate_prediction_at_spatial_scale()
             
+            # [ ] compute anomaly
             if succeed: var.do_anomaly_computation()
             
+            # [ ] apply conversion factor
             var.apply_conversion_factor()
             
+            # [ ] save time-series 
             succeed = var.dump_data_into_binary_file(
                     directory_out=dump_directory,
-                    additional_filename_identifier=str(world_rank),
+                    additional_filename_identifier=identifier,
                     additional_attributes=[solution_id]
             )
             
             if not succeed: break
-        
+        # [.]
+
         return succeed
     
     @staticmethod

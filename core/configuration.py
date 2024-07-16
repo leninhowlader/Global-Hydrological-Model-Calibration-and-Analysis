@@ -1141,7 +1141,6 @@ class Configuration:
                 if not param.is_okey(): return (700 + pnum)
         # end [step]    
         
-        
         # step:
         # distribute the cell list of calibration units into parameter 
         # cell list
