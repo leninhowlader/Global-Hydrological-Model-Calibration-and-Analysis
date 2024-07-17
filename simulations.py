@@ -137,8 +137,8 @@ class WaterGAPSimulation:
         return succeed
     
     @staticmethod
-    def get_simvar_copies(calunit_index):
-        global config
+    def get_simvar_copies(calunit_index, include_all=False):
+        global config, calunit_count
         
         var_arr = []
         
@@ -162,13 +162,14 @@ class WaterGAPSimulation:
             
             # [ ] if target variable is not found in the sim-variables list, 
             #     examine the derived variable list
-            if not simvar:
-                for var in config.derived_variables:
-                    if var.varname == sim_varname:
-                        simvar = deepcopy(var)
-                        break
+            # if not simvar:
+            #     for var in config.derived_variables:
+            #         if var.varname == sim_varname:
+            #             simvar = deepcopy(var)
+            #             break
             # [ ]
-            
+            if not simvar: continue
+
             m = (obj_arr_curr==var_index).sum()
             n = (obj_arr_all==var_index).sum()
             
@@ -184,6 +185,28 @@ class WaterGAPSimulation:
         
             var_arr.append(simvar)
         
+        # [+] include all other simulation variables, if necessary
+        if include_all:
+            varname_all = []
+            for var in config.sim_variables: varname_all.append(var.varname)
+            varname_all = set(varname_all)
+            
+            included = []
+            for var in var_arr: included.append(var.varname)
+            included = set(included)
+
+            varname_additional = list(varname_all - included)
+            for var in config.sim_variables:
+                if (var.varname in varname_additional and 
+                    len(var.basin_cell_list) == calunit_count):
+                    simvar = deepcopy(var)
+                    simvar.basin_cell_list = var.basin_cell_list[calunit_index]
+                    if var.cell_weights:
+                        simvar.cell_weights = var.cell_weights[calunit_index]
+                    
+                    var_arr.append(simvar)
+        # [.]
+
         return var_arr
     
     @staticmethod
@@ -335,7 +358,10 @@ class WaterGAPSimulation:
         # [.]
         
         # [+] read simulation output
-        var_arr = WaterGAPSimulation.get_simvar_copies(calunit_index)
+        var_arr = WaterGAPSimulation.get_simvar_copies(
+            calunit_index, include_all=True
+        )
+
         if succeed: 
             succeed = WaterGAPSimulation.read_and_dump_watergap_output(
                 var_arr, solution_id
