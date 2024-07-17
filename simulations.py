@@ -200,9 +200,9 @@ class WaterGAPSimulation:
                 if (var.varname in varname_additional and 
                     len(var.basin_cell_list) == calunit_count):
                     simvar = deepcopy(var)
-                    simvar.basin_cell_list = var.basin_cell_list[calunit_index]
+                    simvar.basin_cell_list =[var.basin_cell_list[calunit_index]]
                     if var.cell_weights:
-                        simvar.cell_weights = var.cell_weights[calunit_index]
+                        simvar.cell_weights = [var.cell_weights[calunit_index]]
                     
                     var_arr.append(simvar)
         # [.]
@@ -299,7 +299,7 @@ class WaterGAPSimulation:
             param.parameter_name = config.parameters[i_param].parameter_name
             param.parameter_value = param_values[i]
             
-            param.cell_list=config.parameters[i_param].cell_list[i_celllist]
+            param.cell_list=[config.parameters[i_param].cell_list[i_celllist]]
             
             parameter_list.append(param)
         
