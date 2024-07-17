@@ -3,6 +3,7 @@ __author__ = 'mhasan'
 import sys, os, numpy as np
 from collections import OrderedDict
 from datetime import datetime
+from copy import deepcopy
 
 from core.variable import ObsVariable, SimVariable, DerivedVariable
 from wgap.watergap import WaterGAP
@@ -1578,6 +1579,71 @@ class Configuration:
         # end [step]
 
         return succeed
+
+    def get_copies_of_single_unit_parameters(
+        self, calunit_index, param_values=[]
+    ):
+        """
+        This method creates a list of copies of parameter for a single basin/
+        unit from the common parmeter sets in a multi-unit problem
+
+        Parameters:
+        :param calunit_index (int)
+            index of experimental unit
+        :param param_values (list of float; optional)
+            list of parameter values; if provided, the current parameter value 
+            will be updated by the values in this list. The values must be 
+            provided in the same order as they are defined in the multi-problem
+            parameter list file. in addition, the length of the parameter value
+            list must match with the parameter list in the multi-problem 
+            parameter file
+        :return (list of Parameter)
+            A list of Parameter for the target experimental unit
+        """
+        
+        if not self.multiproblem_parameter_index_list or not self.parameters: 
+            return [] 
+
+        # [ ] listing parameter indices in the earlier basins which is used to 
+        # determine index of the cell list for the current basin. Note that not 
+        # all parameters get selected for all units that cause the length of the
+        # the cell list of a parameter sometimes less than the no. of basins
+        #  
+        param_indices_earlier_units = []
+        for i in range(calunit_index):
+            param_indices_earlier_units \
+            += self.multiproblem_parameter_index_list[i]
+        param_indices_earlier_units = np.array(param_indices_earlier_units)
+        
+        param_indices_curr = self.multiproblem_parameter_index_list[calunit_index]
+        # [.]
+
+        
+        # [ ] create (deep) copies of parameters for the target experimental 
+        # unit
+        param_count = len(param_indices_curr)
+        
+        parameter_list =[]
+        for i in range(param_count):
+            # deep copy the parameter instance
+            i_param = param_indices_curr[i]
+            param = deepcopy(self.parameters[i_param])
+            
+            # update the cell list of the parameter for the target experiemntal 
+            # unit
+            i_celllist = (param_indices_earlier_units==i_param).sum()
+            param.cell_list=self.parameters[i_param].cell_list[i_celllist]
+            
+            parameter_list.append(param)
+        # [.]
+
+        # [ ] set parameter values, if provided 
+        if len(param_values) == len(parameter_list):
+            for i in range(len(parameter_list)):
+                parameter_list[i].parameter_value = param_values[i]
+        # [.]
+
+        return parameter_list
 
     def write_general_experiment_settings(self, file):
         """
