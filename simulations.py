@@ -217,7 +217,9 @@ class WaterGAPSimulation:
         
         # [ ] defining additional filename identifier for separating the outputs 
         # for each calibration units
-        calunit_index, _, _ = WaterGAPSimulation.split_solution_id(solution_id)
+        calunit_index, repeat_index, solindex \
+        = WaterGAPSimulation.split_solution_id(solution_id)
+        
         identifier = 'cu%d_%d'%(calunit_index, world_rank)
         # [ ]
 
@@ -250,7 +252,7 @@ class WaterGAPSimulation:
             succeed = var.dump_data_into_binary_file(
                     directory_out=dump_directory,
                     additional_filename_identifier=identifier,
-                    additional_attributes=[solution_id]
+                    additional_attributes=[calunit_index,repeat_index,solindex]
             )
             
             if not succeed: break
