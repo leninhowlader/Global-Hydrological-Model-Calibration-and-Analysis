@@ -106,8 +106,9 @@ class WaterGapIO:
 
         # step: read model output file
         d = np.fromfile(filename, dtype=dtype)
-        d = d.byteswap().newbyteorder()
-
+        # d = d.byteswap().newbyteorder()              # not working in the new
+                                                       # numpy 2.0 version
+        
         # step: reshape data if ncol is larger than 1
         if ncol > 1:
             nrow = d.size//ncol
