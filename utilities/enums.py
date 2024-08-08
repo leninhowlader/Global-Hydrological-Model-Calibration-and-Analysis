@@ -46,6 +46,7 @@ class ObjectiveFunction(Enum):
     KGE_dBeta = 15
     NSE_observation_uncertainty = 16
     NSE_observation_uncertainty_II = 17
+    KGE_2009 = 18
 
     @staticmethod
     def find_function(func):
@@ -66,19 +67,34 @@ class ObjectiveFunction(Enum):
             return ObjectiveFunction.mean_absolute_error
         elif func in ['percentage error', 'percentage bias', 'pb', 'pbias']: 
             return ObjectiveFunction.percentage_bias
-        elif func in ['rmse-obs. std. dev. ratio', 'rmse-observed std. dev. ratio', 'rsr']: 
+        elif func in [
+            'rmse-obs. std. dev. ratio', 'rmse-observed std. dev. ratio', 'rsr']: 
             return ObjectiveFunction.ratio_of_rmse_and_obs_stdv
-        elif func in ['nash-sutcliffe efficiency', 'nash sutcliffe efficiency', 'nse']: 
+        elif func in [
+            'nash-sutcliffe efficiency', 'nash sutcliffe efficiency', 'nse']: 
             return ObjectiveFunction.nash_sutcliffe_efficiency
         elif func in ['nse_ou', 'nse-ou', 'nse observation uncertainty']:
             return ObjectiveFunction.NSE_observation_uncertainty
-        elif func in ['nse_ou_ii', 'nse-ou-ii', 'nse observation uncertainty (ii)']:
+        elif func in [
+            'nse_ou_ii', 'nse-ou-ii', 'nse observation uncertainty (ii)']:
             return ObjectiveFunction.NSE_observation_uncertainty_II
-        elif func in ['kling-gupta efficiency', 'kling gupta efficiency', 'kling_gupta_efficiency', 'kge']: 
+        elif func in [
+            'kling-gupta efficiency', 'kling gupta efficiency', 
+            'kling_gupta_efficiency', 'kge']: 
             return  ObjectiveFunction.kling_gupta_efficiency
-        elif func in ['scaled kling-gupta efficiency', 'scaled kling gupta efficiency', 'scaled_kling_gupta_efficiency', 'skge', 'kges', 'kge-scaled', 'kge_scaled']:
+        elif func in [
+            'kling gupta efficiency (2009)', 'kling_gupta_efficiency_2009', 
+            'kge2009', 'kge-2009', 'kge_2009']: 
+            return  ObjectiveFunction.KGE_2009
+        elif func in [
+            'scaled kling-gupta efficiency', 'scaled kling gupta efficiency', 
+            'scaled_kling_gupta_efficiency', 'skge', 'kges', 'kge-scaled', 
+            'kge_scaled']:
             return ObjectiveFunction.scaled_kling_gupta_efficiency
-        elif func in ['correlation coefficient', 'correlation_coefficient', 'pearson correlation coefficient', 'pearson_correlation_coefficient', 'r']:
+        elif func in [
+            'correlation coefficient', 'correlation_coefficient', 
+            'pearson correlation coefficient', 
+            'pearson_correlation_coefficient', 'r']:
             return ObjectiveFunction.pearson_correlation_coefficient
         elif func in ['kge-alpha', 'kge_alpha', 'kge alpha', 'alpha']: 
             return ObjectiveFunction.KGE_alpha
@@ -95,21 +111,27 @@ class ObjectiveFunction(Enum):
         if func == ObjectiveFunction.mean_square_error: return 'mse'
         elif func == ObjectiveFunction.root_mean_square_error: return 'rmse'
         elif func == ObjectiveFunction.coefficient_of_determination: return 'r2'
-        elif func == ObjectiveFunction.mean_absolute_percentage_error: return 'mape'
+        elif func == ObjectiveFunction.mean_absolute_percentage_error: 
+            return 'mape'
         elif func == ObjectiveFunction.index_of_agreement: return 'ioa'
         elif func == ObjectiveFunction.mean_absolute_error: return 'mae'
         elif func == ObjectiveFunction.percentage_bias: return 'pbias'
         elif func == ObjectiveFunction.ratio_of_rmse_and_obs_stdv: return 'rsr'
         elif func == ObjectiveFunction.nash_sutcliffe_efficiency: return 'nse'
         elif func == ObjectiveFunction.kling_gupta_efficiency: return 'kge'
-        elif func == ObjectiveFunction.scaled_kling_gupta_efficiency: return 'skge'
-        elif func == ObjectiveFunction.pearson_correlation_coefficient: return 'r'
+        elif func == ObjectiveFunction.kling_gupta_efficiency: return 'kge-2009'
+        elif func == ObjectiveFunction.scaled_kling_gupta_efficiency: 
+            return 'skge'
+        elif func == ObjectiveFunction.pearson_correlation_coefficient: 
+            return 'r'
         elif func == ObjectiveFunction.KGE_alpha: return 'kge-alpha'
         elif func == ObjectiveFunction.KGE_beta: return 'kge-beta'
         elif func == ObjectiveFunction.KGE_dAlpha: return 'kge-dAlpha'
         elif func == ObjectiveFunction.KGE_dBeta: return 'kge-dBeta'
-        elif func == ObjectiveFunction.NSE_observation_uncertainty: return 'nse-ou'
-        elif func == ObjectiveFunction.NSE_observation_uncertainty_II: return 'nse-ou-ii'
+        elif func == ObjectiveFunction.NSE_observation_uncertainty: 
+            return 'nse-ou'
+        elif func == ObjectiveFunction.NSE_observation_uncertainty_II: 
+            return 'nse-ou-ii'
         else: return 'n/a'
 
 class DataNormalization(Enum):

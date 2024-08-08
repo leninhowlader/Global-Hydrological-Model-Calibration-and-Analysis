@@ -154,7 +154,8 @@ class stats:
         return cv_sim/cv_obs
 
     @staticmethod
-    def kling_gupta_efficiency(sim, obs):
+    def kling_gupta_efficiency_2009(sim, obs):
+        # Reference: Gupta et al., 2009
         sim_mean, obs_mean = np.mean(sim), np.mean(obs)
         sim_stdv, obs_stdv = np.std(sim), np.std(obs)
 
@@ -169,7 +170,7 @@ class stats:
         return 1- np.sqrt((r-1)**2 + (alpha-1)**2 + (beta-1)**2)
 
     @staticmethod
-    def kling_gupta_efficiency2012(sim, obs):
+    def kling_gupta_efficiency(sim, obs):
         # Reference: Kling et al., 2012
         mean_sim, mean_obs = np.mean(sim), np.mean(obs)
         stdv_sim, stdv_obs = np.std(sim), np.std(obs)
@@ -269,6 +270,8 @@ class stats:
             )
         elif fun == ObjectiveFunction.kling_gupta_efficiency: 
             return -stats.kling_gupta_efficiency(sim, obs)
+        elif fun == ObjectiveFunction.KGE_2009: 
+            return -stats.kling_gupta_efficiency_2009(sim, obs)
         elif fun == ObjectiveFunction.scaled_kling_gupta_efficiency: 
             return -stats.scaled_kling_gupta_efficiency(
                                 sim, obs, scale_r, scale_alpha, scale_beta)
