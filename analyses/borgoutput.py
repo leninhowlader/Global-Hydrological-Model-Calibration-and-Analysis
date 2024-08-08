@@ -394,12 +394,11 @@ class RuntimeDynamicReport:
         # end of inner function
 
         # inner function
-        def draw_pf_color(ax, x, y, linestyle, zorder, label=''):
-            p = ax.plot(x, y, linestyle=linestyle,
-                        marker=marker,
-                        markersize=markersize,
-                        label=label,
-                        zorder=zorder)
+        def draw_pf_color(ax, x, y, linestyle, zorder, color, label=''):
+            p = ax.plot(
+                x, y, linestyle=linestyle, marker=marker, markersize=markersize,
+                label=label, zorder=zorder, color=color
+            )
             return p
 
         # end of inner function
@@ -424,7 +423,8 @@ class RuntimeDynamicReport:
         if not rpt_list: return None
 
         max_pf_count = 4
-        pf_styles = [(0, (5, 5)), (0, (2, 2)), (0, (1, 1)), (0, ())]
+        pf_styles = [(0, (5, 1)), (0, (4, 2)), (0, (2, 1)), (0, ())]
+        colors = ['#0072B2', '#D55E00', '#FFC107', '#004D40']
 
         #nfes.sort()
         if len(nfes) > max_pf_count: nfes = nfes[-max_pf_count:]
@@ -440,8 +440,10 @@ class RuntimeDynamicReport:
             label = '%d Model runs' % nfes[i]
 
             if do_color_plot:
-                p = draw_pf_color(ax, x, y, linestyle=pf_styles[i],
-                                  zorder=zorder, label=label)
+                p = draw_pf_color(
+                    ax, x, y, linestyle=pf_styles[i], zorder=zorder, 
+                    label=label, color=colors[i]
+                )
             else:
                 markerfacecolor = 'white'
                 if i == pf_count - 1: markerfacecolor = 'black'

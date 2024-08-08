@@ -216,7 +216,7 @@ class ParetoFrontPlot(Plot):
                             figsize=(7, 6),
                             add_2d_projection=True,
                             lim_visible=0.5,
-                            lim_compromise=0.7,
+                            lim_behavioral=0.7,
                             axis_labels=[],
                             title='',
                             axis_labelfontsize=18,
@@ -309,7 +309,7 @@ class ParetoFrontPlot(Plot):
         # end [step]
 
         # [step] mark compromised solutions
-        ii = np.where((fx >= lim_compromise).all(axis=1))
+        ii = np.where((fx >= lim_behavioral).all(axis=1))
         x, y, z = fx[ii][:, 0], fx[ii][:, 1], fx[ii][:, 2]
 
         ax.scatter(x, y, z, marker='o',
