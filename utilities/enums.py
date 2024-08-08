@@ -45,6 +45,7 @@ class ObjectiveFunction(Enum):
     KGE_dAlpha = 14
     KGE_dBeta = 15
     NSE_observation_uncertainty = 16
+    NSE_observation_uncertainty_II = 17
 
     @staticmethod
     def find_function(func):
@@ -71,6 +72,8 @@ class ObjectiveFunction(Enum):
             return ObjectiveFunction.nash_sutcliffe_efficiency
         elif func in ['nse_ou', 'nse-ou', 'nse observation uncertainty']:
             return ObjectiveFunction.NSE_observation_uncertainty
+        elif func in ['nse_ou_ii', 'nse-ou-ii', 'nse observation uncertainty (ii)']:
+            return ObjectiveFunction.NSE_observation_uncertainty_II
         elif func in ['kling-gupta efficiency', 'kling gupta efficiency', 'kling_gupta_efficiency', 'kge']: 
             return  ObjectiveFunction.kling_gupta_efficiency
         elif func in ['scaled kling-gupta efficiency', 'scaled kling gupta efficiency', 'scaled_kling_gupta_efficiency', 'skge', 'kges', 'kge-scaled', 'kge_scaled']:
@@ -106,6 +109,7 @@ class ObjectiveFunction(Enum):
         elif func == ObjectiveFunction.KGE_dAlpha: return 'kge-dAlpha'
         elif func == ObjectiveFunction.KGE_dBeta: return 'kge-dBeta'
         elif func == ObjectiveFunction.NSE_observation_uncertainty: return 'nse-ou'
+        elif func == ObjectiveFunction.NSE_observation_uncertainty_II: return 'nse-ou-ii'
         else: return 'n/a'
 
 class DataNormalization(Enum):

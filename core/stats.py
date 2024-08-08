@@ -64,7 +64,7 @@ class stats:
         return 1 - (np.sum((obs-sim)**2)/np.sum((obs-obs_mean)**2))
     
     @staticmethod
-    def nse_observation_uncertainty_version_old(sim, obs, lb, ub):
+    def nse_observation_uncertainty_II(sim, obs, lb, ub):
         err_var = 0
         ii, jj = (sim < lb), (sim > ub)
         err_var += np.sum((lb[ii]-sim[ii])**2)  
@@ -261,6 +261,10 @@ class stats:
             return -stats.nash_sutcliffe_efficiency(sim, obs)
         elif fun == ObjectiveFunction.NSE_observation_uncertainty:
             return -stats.nse_observation_uncertainty(
+                sim=sim, obs=obs, lb=lb, ub=ub
+            )
+        elif fun == ObjectiveFunction.NSE_observation_uncertainty_II:
+            return -stats.nse_observation_uncertainty_II(
                 sim=sim, obs=obs, lb=lb, ub=ub
             )
         elif fun == ObjectiveFunction.kling_gupta_efficiency: 
