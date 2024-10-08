@@ -47,6 +47,8 @@ class ObjectiveFunction(Enum):
     NSE_observation_uncertainty = 16
     NSE_observation_uncertainty_II = 17
     KGE_2009 = 18
+    KGE_obs_uncertainty = 19
+    NSE_observation_uncertainty_III = 20
 
     @staticmethod
     def find_function(func):
@@ -79,9 +81,15 @@ class ObjectiveFunction(Enum):
             'nse_ou_ii', 'nse-ou-ii', 'nse observation uncertainty (ii)']:
             return ObjectiveFunction.NSE_observation_uncertainty_II
         elif func in [
+            'nse_ou_iii', 'nseou_iii', 'nseou iii', 'nse-ou-iii']:
+            return ObjectiveFunction.NSE_observation_uncertainty_III
+        elif func in [
             'kling-gupta efficiency', 'kling gupta efficiency', 
             'kling_gupta_efficiency', 'kge']: 
             return  ObjectiveFunction.kling_gupta_efficiency
+        elif func in [
+            'kge_ou', 'kgeou', 'kge-ou']: 
+            return  ObjectiveFunction.KGE_obs_uncertainty
         elif func in [
             'kling gupta efficiency (2009)', 'kling_gupta_efficiency_2009', 
             'kge2009', 'kge-2009', 'kge_2009']: 
@@ -119,6 +127,7 @@ class ObjectiveFunction(Enum):
         elif func == ObjectiveFunction.ratio_of_rmse_and_obs_stdv: return 'rsr'
         elif func == ObjectiveFunction.nash_sutcliffe_efficiency: return 'nse'
         elif func == ObjectiveFunction.kling_gupta_efficiency: return 'kge'
+        elif func == ObjectiveFunction.KGE_obs_uncertainty: return 'kge-ou'
         elif func == ObjectiveFunction.kling_gupta_efficiency: return 'kge-2009'
         elif func == ObjectiveFunction.scaled_kling_gupta_efficiency: 
             return 'skge'
@@ -132,6 +141,8 @@ class ObjectiveFunction(Enum):
             return 'nse-ou'
         elif func == ObjectiveFunction.NSE_observation_uncertainty_II: 
             return 'nse-ou-ii'
+        elif func == ObjectiveFunction.NSE_observation_uncertainty_III: 
+            return 'nse-ou-iii'
         else: return 'n/a'
 
 class DataNormalization(Enum):

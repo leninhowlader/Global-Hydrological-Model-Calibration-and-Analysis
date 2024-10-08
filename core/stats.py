@@ -75,6 +75,16 @@ class stats:
         return 1 - err_var / obs_var
     
     @staticmethod
+    def nse_observation_uncertainty_III(sim, obs, lb, ub):
+        ii, jj = (sim < lb), (sim > ub)
+
+        obs = sim.copy()
+        obs[ii] = lb[ii]
+        obs[jj] = ub[jj]
+
+        return stats.nash_sutcliffe_efficiency(sim=sim, obs=obs)
+
+    @staticmethod
     def nse_observation_uncertainty(sim, obs, lb, ub):
         err = np.abs(obs-sim)
         
@@ -119,7 +129,7 @@ class stats:
         ss_sim = np.sum((sim-sim_mean)**2)
         ss_obs = np.sum((obs-obs_mean)**2)
 
-        return cov/(np.sqrt(ss_sim)*np.sqrt(ss_obs))
+        return cov/np.sqrt(ss_sim*ss_obs)
 
     @staticmethod
     def KGE_alpha(sim, obs): return np.std(sim)/np.std(obs)
@@ -180,6 +190,47 @@ class stats:
         r = stats.pearson_correlation_coefficient(sim, obs)
 
         if round(mean_obs, 8) == 0.0:
+            # with observed mean equals 0.0, the kling-gupta equation turns into
+            # kge2009 (Gupta et al., 2009)
+
+            alpha = stdv_sim / stdv_obs
+
+            # beta is removed from the equation considering it would equal to 1.0
+            # i.e.,
+            # beta = 1.0
+            # kge = 1 - np.sqrt((r - 1) ** 2 + (alpha - 1) ** 2 + (beta - 1) ** 2)
+            # which is equivalent to
+            # kge = 1 - np.sqrt((r - 1) ** 2 + (alpha - 1) ** 2)
+
+            return 1 - np.sqrt((r - 1) ** 2 + (alpha - 1) ** 2)
+        else:
+            cv_sim = stdv_sim/mean_sim
+            cv_obs = stdv_obs/mean_obs
+
+            beta = mean_sim / mean_obs
+            gamma = cv_sim / cv_obs
+
+            return 1- np.sqrt((r-1)**2 + (beta-1)**2 + (gamma-1)**2)
+
+    @staticmethod
+    def kge_observation_uncertainty(sim, obs, lb, ub):
+        ii, jj = (sim < lb), (sim > ub)
+        
+        has_zero_mean = (round(np.mean(obs), 8) == 0.0)
+        
+        obs = sim.copy()
+        obs[ii] = lb[ii]
+        obs[jj] = ub[jj]
+
+        # Reference: Kling et al., 2012
+        mean_sim, mean_obs = np.mean(sim), np.mean(obs)
+        stdv_sim, stdv_obs = np.std(sim), np.std(obs)
+
+        if round(stdv_obs, 8) == 0.0: return np.nan
+
+        r = stats.pearson_correlation_coefficient(sim, obs)
+
+        if has_zero_mean:
             # with observed mean equals 0.0, the kling-gupta equation turns into
             # kge2009 (Gupta et al., 2009)
 
@@ -268,8 +319,16 @@ class stats:
             return -stats.nse_observation_uncertainty_II(
                 sim=sim, obs=obs, lb=lb, ub=ub
             )
+        elif fun == ObjectiveFunction.NSE_observation_uncertainty_III:
+            return -stats.nse_observation_uncertainty_III(
+                sim=sim, obs=obs, lb=lb, ub=ub
+            )
         elif fun == ObjectiveFunction.kling_gupta_efficiency: 
             return -stats.kling_gupta_efficiency(sim, obs)
+        elif fun == ObjectiveFunction.KGE_obs_uncertainty: 
+            return -stats.kge_observation_uncertainty(
+                sim=sim, obs=obs, lb=lb, ub=ub
+            )
         elif fun == ObjectiveFunction.KGE_2009: 
             return -stats.kling_gupta_efficiency_2009(sim, obs)
         elif fun == ObjectiveFunction.scaled_kling_gupta_efficiency: 
