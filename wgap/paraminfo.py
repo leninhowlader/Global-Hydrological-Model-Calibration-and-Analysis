@@ -3,268 +3,305 @@ from collections import OrderedDict
 
 class ParameterInfo:
     __param_info = OrderedDict()
-    __param_info['gammaHBV_runoff_coeff'] = {
-                'description': 'Runoff Coefficient',
-                'acronym': 'Gamma',
-                'log_scale': False,
-                'min': 0.3,
-                'max': 3.0,
-                'nominal': 2.0,
-                'optimal': None,
-                'distribution': 'uniform'
-    }
-
-    __param_info['root_depth_multiplier'] = {
-                'description': 'Root Depth Multiplier',
-                'acronym': 'RTDM',
-                'log_scale': False,
-                'min': 0.5,
-                'max': 3.0,
-                'nominal': 1.0,
-                'optimal': None,
-                'distribution': 'triangular'
-    }
-
-    __param_info['river_roughness_coeff_mult'] = {
-                'description': 'River Roughness Coefficient Multiplier',
-                'acronym': 'RRCM',
-                'log_scale': False,
-                'min': 1.0,
-                'max': 5.0,
-                'nominal': 3,
-                'optimal': None,
-                'distribution': 'triangular'
-    }
-
-    __param_info['lake_depth'] = {
-                'description': 'Lake Depth',
-                'acronym': 'LKDep',
-                'log_scale': False,
-                'min': 1.0,
-                'max': 20.0,
-                'nominal': 5,
-                'optimal': None,
-                'distribution': 'uniform'
-    }
-
-    __param_info['wetland_depth'] = {
-                'description': 'Wetland Depth',
-                'acronym': 'WLDep',
-                'log_scale': False,
-                'min': 1.0,
-                'max': 20.0,
-                'nominal': 2.0,
-                'optimal': None,
-                'distribution': 'uniform'
-    }
-
-    __param_info['surfacewater_outflow_coefficient'] = {
-                'description': 'Surface Water Outflow Coefficient',
-                'acronym': 'SWOC',
-                'log_scale': False,
-                'min': 0.001,
-                'max': 0.1,
-                'nominal': 0.01,
-                'optimal': None,
-                'distribution': 'uniform'
-    }
-
-    __param_info['evapo_red_fact_exp_mult'] = {
-                'description': 'Evaporation Reduction Factor Exponent Multiplier',
-                'acronym': 'ERFM',
-                'log_scale': False,
-                'min': 0.33,
-                'max': 1.5,
-                'nominal': 1,
-                'optimal': None,
-                'distribution': 'triangular'
-    }
-
-    __param_info['net_radiation_mult'] = {
-                'description': 'Net Radiation Multiplier',
-                'acronym': 'NRDM',
+    __param_info['precip_mult'] = {
+                'description': 'Precipitation multiplier',
+                'acronym': 'P-PM',
                 'log_scale': False,
                 'min': 0.5,
                 'max': 2.0,
                 'nominal': 1.0,
                 'optimal': None,
-                'distribution': 'triangular'
+                'distribution': 'triangular',
+                'group': 'P',
+                'index': 1
     }
-
+    __param_info['net_radiation_mult'] = {
+                'description': 'Net radiation multiplier',
+                'acronym': 'EP-NM',
+                'log_scale': False,
+                'min': 0.5,
+                'max': 2.0,
+                'nominal': 1.0,
+                'optimal': None,
+                'distribution': 'triangular',
+                'group': 'EP',
+                'index': 2
+    }
     __param_info['PT_coeff_humid'] = {
-                'description': 'PT-Coefficient - Humid',
-                'acronym': 'PTCH',
+                'description': 'Priestley-Taylor coefficient (humid)',
+                'acronym': 'EP-PTh',
                 'log_scale': False,
                 'min': 0.885,
                 'max': 1.65,
                 'nominal': 1.26,
                 'optimal': None,
-                'distribution': 'uniform'
+                'distribution': 'uniform',
+                'group': 'EP',
+                'index': 3
     }
-
     __param_info['PT_coeff_arid'] = {
-                'description': 'PT-Coefficient - Arid',
-                'acronym': 'PTCA',
+                'description': 'Priestley-Taylor coefficient (semi-arid/arid)',
+                'acronym': 'EP-PTa',
                 'log_scale': False,
                 'min': 1.365,
                 'max': 2.115,
                 'nominal': 1.74,
                 'optimal': None,
-                'distribution': 'uniform'
+                'distribution': 'uniform',
+                'group': 'EP',
+                'index': 4
     }
-
-    __param_info['max_daily_PET'] = {
-                'description': 'Max Daily PET',
-                'acronym': 'MDPET',
-                'log_scale': False,
-                'min': 6.0,
-                'max': 22.0,
-                'nominal': 15.0,
-                'optimal': None,
-                'distribution': 'uniform'
-    }
-
     __param_info['mcwh'] = {
-                'description': 'Maximum Canopy Water Height',
-                'acronym': 'MCWH',
+                'description': 'Max. canopy water height [mm]',
+                'acronym': 'CA-MC',
                 'log_scale': False,
                 'min': 0.1,
                 'max': 1.4,
                 'nominal': 0.3,
                 'optimal': None,
-                'distribution': 'uniform'
+                'distribution': 'uniform',
+                'group': 'CA',
+                'index': 5
     }
-
     __param_info['LAI_mult'] = {
-                'description': 'LAI Multiplier',
-                'acronym': 'LAIM',
+                'description': 'LAI multiplier',
+                'acronym': 'CA-LAIM',
                 'log_scale': False,
                 'min': 0.2,
                 'max': 2.5,
                 'nominal': 1.0,
                 'optimal': None,
-                'distribution': 'triangular'
+                'distribution': 'triangular',
+                'group': 'CA',
+                'index': 6
     }
-
     __param_info['snow_freeze_temp'] = {
-                'description': 'Snow Freeze Temperature  ',
-                'acronym': 'SNFT',
+                'description': 'Snow-freeze temperature [°C]',
+                'acronym': 'SN-FT',
                 'log_scale': False,
                 'min': -1,
                 'max': 3.0,
                 'nominal': 2.0,
                 'optimal': None,
-                'distribution': 'uniform'
+                'distribution': 'uniform',
+                'group': 'SN',
+                'index': 7
     }
-
     __param_info['snow_melt_temp'] = {
-                'description': 'Snow Melt Temperature',
-                'acronym': 'SNMT',
+                'description': 'Snow-melt temperature [°C]',
+                'acronym': 'SN-MT',
                 'log_scale': False,
                 'min': -3.75,
                 'max': 3.75,
                 'nominal': 0.0,
                 'optimal': None,
-                'distribution': 'uniform'
+                'distribution': 'uniform',
+                'group': 'SN',
+                'index': 8
     }
-
     __param_info['degree_day_factor_mult'] = {
-                'description': 'Degree Day Factor Multiplier',
-                'acronym': 'DDFM',
+                'description': 'Degree-day factor multiplier',
+                'acronym': 'SN-DM',
                 'log_scale': False,
                 'min': 0.5,
                 'max': 2.0,
                 'nominal': 1.0,
                 'optimal': None,
-                'distribution': 'triangular'
+                'distribution': 'triangular',
+                'group': 'SN',
+                'index': 9
     }
-
     __param_info['temperature_gradient'] = {
-                'description': 'Temperature Gradient',
-                'acronym': 'TempG',
+                'description': 'Temperature gradient [°C/m]',
+                'acronym': 'SN-TG',
                 'log_scale': False,
                 'min': 0.001,
                 'max': 0.01,
                 'nominal': 0.006,
                 'optimal': None,
-                'distribution': 'uniform'
+                'distribution': 'uniform',
+                'group': 'SN',
+                'index': 10
     }
-
+    __param_info['gammaHBV_runoff_coeff'] = {
+                'description': 'Runoff coefficient',
+                'acronym': 'SL-RC',
+                'log_scale': False,
+                'min': 0.3,
+                'max': 3.0,
+                'nominal': 2.0,
+                'optimal': None,
+                'distribution': 'uniform',
+                'group': 'SL',
+                'index': 11
+    }
+    __param_info['root_depth_multiplier'] = {
+                'description': 'Maximum soil capacity multiplier',
+                'acronym': 'SL-MSM',
+                'log_scale': False,
+                'min': 0.5,
+                'max': 3.0,
+                'nominal': 1.0,
+                'optimal': None,
+                'distribution': 'triangular',
+                'group': 'SL',
+                'index': 12
+    }
+    __param_info['max_daily_PET'] = {
+                'description': 'Maximum EP (mm/d)',
+                'acronym': 'SL-MEP',
+                'log_scale': False,
+                'min': 6.0,
+                'max': 22.0,
+                'nominal': 15.0,
+                'optimal': None,
+                'distribution': 'uniform',
+                'group': 'SL',
+                'index': 13
+    }
+    __param_info['river_roughness_coeff_mult'] = {
+                'description': 'River roughness coefficient multiplier',
+                'acronym': 'SW-RRM',
+                'log_scale': False,
+                'min': 1.0,
+                'max': 5.0,
+                'nominal': 3,
+                'optimal': None,
+                'distribution': 'triangular',
+                'group': 'SW',
+                'index': 14
+    }
+    __param_info['lake_depth'] = {
+                'description': 'Active lake depth [m]',
+                'acronym': 'SW-LD',
+                'log_scale': False,
+                'min': 1.0,
+                'max': 20.0,
+                'nominal': 5,
+                'optimal': None,
+                'distribution': 'uniform',
+                'group': 'SW',
+                'index': 15
+    }
+    __param_info['wetland_depth'] = {
+                'description': 'Active wetland depth [m]',
+                'acronym': 'SW-WD',
+                'log_scale': False,
+                'min': 1.0,
+                'max': 20.0,
+                'nominal': 2.0,
+                'optimal': None,
+                'distribution': 'uniform',
+                'group': 'SW',
+                'index': 16
+    }
+    __param_info['surfacewater_outflow_coefficient'] = {
+                'description': 'SW discharge coefficient [1/d]',
+                'acronym': 'SW-DC',
+                'log_scale': False,
+                'min': 0.001,
+                'max': 0.1,
+                'nominal': 0.01,
+                'optimal': None,
+                'distribution': 'uniform',
+                'group': 'SW',
+                'index': 17
+    }
+    __param_info['evapo_red_fact_exp_mult'] = {
+                'description': 'ET reduction factor multiplier',
+                'acronym': 'SW-ERM',
+                'log_scale': False,
+                'min': 0.33,
+                'max': 1.5,
+                'nominal': 1,
+                'optimal': None,
+                'distribution': 'triangular',
+                'group': 'SW',
+                'index': 18
+    }
     __param_info['gw_factor_mult'] = {
-                'description': 'Groundwater Factor Multiplier',
-                'acronym': 'GWFM',
+                'description': 'GW recharge factor multiplier',
+                'acronym': 'GW-RFM',
                 'log_scale': False,
                 'min': 0.3,
                 'max': 3.0,
                 'nominal': 1.0,
                 'optimal': None,
-                'distribution': 'triangular'
+                'distribution': 'triangular',
+                'group': 'GW',
+                'index': 19
     }
-
     __param_info['rg_max_mult'] = {
-                'description': 'Maximum Groundwater Recharge Factor Multiplier',
-                'acronym': 'MRGM',
+                'description': 'Max. GW recharge multiplier',
+                'acronym': 'GW-MM',
                 'log_scale': False,
                 'min': 0.3,
                 'max': 3.0,
                 'nominal': 1.0,
                 'optimal': None,
-                'distribution': 'triangular'
+                'distribution': 'triangular',
+                'group': 'GW',
+                'index': 20
     }
-
     __param_info['pcrit_aridgw'] = {
-                'description': 'Critical Precipitation for GW - Arid Zone',
-                'acronym': 'CPGW',
+                'description': 'Critical precipitation for GW recharge (arid/semi-arid) [mm/d]',
+                'acronym': 'GW-CP',
                 'log_scale': False,
                 'min': 2.5,
                 'max': 20.0,
                 'nominal': 12.5,
                 'optimal': None,
-                'distribution': 'uniform'
+                'distribution': 'uniform',
+                'group': 'GW',
+                'index': 21
     }
-
     __param_info['groundwater_outflow_coeff'] = {
-                'description': 'Groundwater Outflow Coefficient',
-                'acronym': 'GWOC',
+                'description': 'GW discharge coefficient [1/d]',
+                'acronym': 'GW-DC',
                 'log_scale': False,
                 'min': 0.001,
                 'max': 0.02,
                 'nominal': 0.01,
                 'optimal': None,
-                'distribution': 'uniform'
+                'distribution': 'uniform',
+                'group': 'GW',
+                'index': 22
     }
-
     __param_info['net_abstraction_surfacewater_mult'] = {
-                'description': 'Net Surfacewater Abstraction Multiplier ',
-                'acronym': 'SWAM',
+                'description': 'Net SW abstraction multiplier',
+                'acronym': 'NA-SM',
                 'log_scale': False,
                 'min': -2.0,
                 'max': 2.0,
                 'nominal': 1.0,
                 'optimal': None,
-                'distribution': 'triangular'
+                'distribution': 'triangular',
+                'group': 'NA',
+                'index': 23
     }
-
     __param_info['net_abstraction_groundwater_mult'] = {
-                'description': 'Net Groundwater Abstraction Multiplier',
-                'acronym': 'GWAM',
+                'description': 'Net GW abstraction multiplier',
+                'acronym': 'NA-GM',
                 'log_scale': False,
                 'min': -2.0,
                 'max': 2.0,
                 'nominal': 1.0,
                 'optimal': None,
-                'distribution': 'triangular'
+                'distribution': 'triangular',
+                'group': 'NA',
+                'index': 24
     }
-
-    __param_info['precip_mult'] = {
-                'description': 'Precipitation Multiplier',
-                'acronym': 'PrecipM',
+    __param_info['consumptive_use_mult'] = {
+                'description': 'Consumptive use multiplier',
+                'acronym': 'CU-M',
                 'log_scale': False,
-                'min': 0.5,
-                'max': 2.0,
+                'min': 0.2,
+                'max': 6.0,
                 'nominal': 1.0,
                 'optimal': None,
-                'distribution': 'triangular'
+                'distribution': 'triangular',
+                'group': 'CU',
+                'index': 25
     }
 
     @staticmethod
