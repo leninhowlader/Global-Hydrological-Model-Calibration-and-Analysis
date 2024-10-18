@@ -1,6 +1,7 @@
 import os, sys, numpy as np
 from collections import OrderedDict
 from datetime import datetime
+from copy import deepcopy
 
 from core.configuration import Configuration
 from wgap.watergap import WaterGAP
@@ -134,8 +135,31 @@ class Calibration:
                 WaterGAP.dir_info.input_directory,
                 filename
             )
-        
-        if not WaterGAP.update_parameter_file(config.parameters, filename):
+
+        parameters = deepcopy(config.parameters)
+        # note that following steps are necessary to accomodate the new 
+        # consumptive water use parameter - consumptive_use_mult (CU-M). if
+        # the parameter CU-M is present in the parameter list, two parameters -
+        # net_abstraction_surfacewater_mult (NA-SM) and 
+        # net_abstraction_groundwater_mult (NA-GM), will be added to the 
+        # parameter. Both the parameters will receive the value of CU-M. In the
+        # end the parameter CU-M will be deleted from the parameter list
+        #   
+        for i in reversed(range(len(parameters))):
+            if parameters[i].parameter_name == 'consumptive_use_mult':
+                param1,param2 = deepcopy(parameters[i]), deepcopy(parameters[i])
+                param1.parameter_name = 'net_abstraction_surfacewater_mult'
+                param2.parameter_name = 'net_abstraction_groundwater_mult'
+                
+                parameters += [param1, param2]
+                _ = parameters.pop(i)
+        #
+        # note that the parameter bounds for CU-M is different from the bounds 
+        # of NA-SM and NA-GM. however, value of bounds will not be used while
+        # writing the parmeter file (json file). thus, the values of lower and
+        # upper bound are not updated. 
+
+        if not WaterGAP.update_parameter_file(parameters, filename):
             return (objs, conts)
         ## end [step-x]
 

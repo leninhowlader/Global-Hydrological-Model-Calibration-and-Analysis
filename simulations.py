@@ -319,7 +319,30 @@ class WaterGAPSimulation:
             calunit_index, repeat_index, solindex
         )
         
-        arguments = {}
+        # note that following steps are necessary to accomodate the new 
+        # consumptive water use parameter - consumptive_use_mult (CU-M). if
+        # the parameter CU-M is present in the parameter list, two 
+        # parameters - net_abstraction_surfacewater_mult (NA-SM) and 
+        # net_abstraction_groundwater_mult (NA-GM), will be added to the 
+        # parameter. Both the parameters will receive the value of CU-M. In 
+        # the end the parameter CU-M will be deleted from the parameter list
+        #   
+        for i in reversed(range(len(parameter_list))):
+            if parameter_list[i].parameter_name == 'consumptive_use_mult':
+                param1 = deepcopy(parameter_list[i])
+                param1.parameter_name = 'net_abstraction_surfacewater_mult'
+                param2 = deepcopy(parameter_list[i])
+                param2.parameter_name = 'net_abstraction_groundwater_mult'
+                
+                parameter_list += [param1, param2]
+                _ = parameter_list.pop(i)
+        #
+        # note that the parameter bounds for CU-M is different from the 
+        # bounds of NA-SM and NA-GM. however, value of bounds will not be 
+        # used while writing the parmeter file (json file). thus, the values 
+        # of lower and upper bound are not updated.
+
+        
         succeed = WaterGAPSimulation.write_json_parameter_file(
             parameter_list, text_solution_id
         )
@@ -343,6 +366,7 @@ class WaterGAPSimulation:
         # [.]
         
         # [+] write watergap configuration file
+        arguments = {}
         mconfig_filename = os.path.join(
             WaterGAP.home_directory,
             '%s_%s.txt'%(WaterGAP.model_config_filename[:-4], text_solution_id)
