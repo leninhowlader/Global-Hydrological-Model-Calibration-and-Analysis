@@ -27,8 +27,8 @@ class Configuration:
     Properties/attributes:
     experiment_type, __experiment_type: str
         Describes the type of experiment. Experiment types can be 'sensitivity',
-        'glue', 'se' (acronym for 'solution evaluation'), or 'calibration'. The 
-        default value for this attribute is 'sensitivity'
+        'glue', 'se' (acronym for 'solution evaluation'), 'simulation', or 
+        'calibration'. The default value for this attribute is 'sensitivity'
     experiment_name, __experiment_name: str
         Gives the name of the experiment. A name is important when multiple 
         experiments are carried out in parallell. Many file names the are 
@@ -103,7 +103,7 @@ class Configuration:
         the data structure where all objective indices (or the indices of the 
         observation variables) are stored
         
-    (attributes related to 'sensitivity' or 'glue' or 'se' analysis)
+    (attributes related to 'sensitivity' or 'glue' or 'se' or 'simulation' analysis)
     input_sample_filename, __input_sample_filename: str
         name of the sample file. this is usually a comma separated CSV file (
         probably without header)
@@ -120,8 +120,8 @@ class Configuration:
     dump_simulation_timeseries, __dump_simulation_timeseries: bool
         The flag determines whether or not the simulation time-series (usually 
         time-series of each grid cell) is stored in binary 2-d array. the flag
-        must be set ture during 'glue' and 'se' type experiment and also can be
-        used during 'sensitivity' experiment.
+        must be set ture during 'glue' and 'se' or 'simulation' type experiment 
+        and also can be used during 'sensitivity' experiment.
     
     (attributes that is rarely used)
     compute_simulation_performance, __compute_simulation_performance: bool
@@ -318,7 +318,8 @@ class Configuration:
         # [.]
 
 
-        # [ ] attributes connected to 'sensitivity' or 'glue' or 'se' experiment
+        # [ ] attributes connected to 'sensitivity' or 'glue' or 'se' or 
+        # 'simulation' experiment
         self.__input_sample_filename = ''
         self.__sensivity_as_change_in_simulation = True
         self.__function_to_measure_change = None
@@ -941,8 +942,8 @@ class Configuration:
 
                         elif key in optionnames['save_simulation_output']:
                             if value.lower() in ['y', 'yes', 'true', 't', '1']:
-                                config.dump_model_prediction = True
-                            else: config.dump_model_prediction = False
+                                config.dump_simulation_timeseries = True
+                            else: config.dump_simulation_timeseries = False
                         
                         elif key in optionnames['objective_outfile']:
                             config.objective_values_output_filename = value
@@ -1316,7 +1317,7 @@ class Configuration:
         # check if the samples can be gathered in the case of sensitivity 
         # analysis experiment. load the samples. note that 'se' stands for 
         # 'solution evaluation'
-        if self.__experiment_type in ['sensitivity', 'glue', 'se']: 
+        if self.__experiment_type in ['sensitivity', 'glue', 'se', 'simulation']: 
             # check the sample file and load samples
             if not self.__input_sample_filename: return 501
             elif not self.samples:
@@ -1712,7 +1713,7 @@ class Configuration:
                 if not value: value = '[not provided]'
                 text_lines.append('%s = %s'%(keyword, value))
 
-        if self.experiment_type in ['sa', 'sensitivity', 'glue', 'se']:
+        if self.experiment_type in ['sa', 'sensitivity', 'glue', 'se', 'simulation']:
             keyword = 'sample_filename'
             value = self.input_sample_filename
             if not value: value = '[not provided]'
