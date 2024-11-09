@@ -12,6 +12,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'P',
                 'index': 1
     }
@@ -24,6 +25,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'EP',
                 'index': 2
     }
@@ -36,6 +38,7 @@ class ParameterInfo:
                 'nominal': 1.26,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 3,
                 'group': 'EP',
                 'index': 3
     }
@@ -48,6 +51,7 @@ class ParameterInfo:
                 'nominal': 1.74,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 3,
                 'group': 'EP',
                 'index': 4
     }
@@ -60,6 +64,7 @@ class ParameterInfo:
                 'nominal': 0.3,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 2,
                 'group': 'CA',
                 'index': 5
     }
@@ -72,6 +77,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'CA',
                 'index': 6
     }
@@ -84,6 +90,7 @@ class ParameterInfo:
                 'nominal': 2.0,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 2,
                 'group': 'SN',
                 'index': 7
     }
@@ -96,6 +103,7 @@ class ParameterInfo:
                 'nominal': 0.0,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 2,
                 'group': 'SN',
                 'index': 8
     }
@@ -108,6 +116,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'SN',
                 'index': 9
     }
@@ -120,6 +129,7 @@ class ParameterInfo:
                 'nominal': 0.006,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 3,
                 'group': 'SN',
                 'index': 10
     }
@@ -132,6 +142,7 @@ class ParameterInfo:
                 'nominal': 2.0,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 2,
                 'group': 'SL',
                 'index': 11
     }
@@ -144,6 +155,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'SL',
                 'index': 12
     }
@@ -156,6 +168,7 @@ class ParameterInfo:
                 'nominal': 15.0,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 2,
                 'group': 'SL',
                 'index': 13
     }
@@ -168,6 +181,7 @@ class ParameterInfo:
                 'nominal': 3,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'SW',
                 'index': 14
     }
@@ -180,6 +194,7 @@ class ParameterInfo:
                 'nominal': 5,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 2,
                 'group': 'SW',
                 'index': 15
     }
@@ -192,6 +207,7 @@ class ParameterInfo:
                 'nominal': 2.0,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 2,
                 'group': 'SW',
                 'index': 16
     }
@@ -204,6 +220,7 @@ class ParameterInfo:
                 'nominal': 0.01,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 3,
                 'group': 'SW',
                 'index': 17
     }
@@ -216,6 +233,7 @@ class ParameterInfo:
                 'nominal': 1,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'SW',
                 'index': 18
     }
@@ -228,6 +246,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'GW',
                 'index': 19
     }
@@ -240,6 +259,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'GW',
                 'index': 20
     }
@@ -252,6 +272,7 @@ class ParameterInfo:
                 'nominal': 12.5,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 2,
                 'group': 'GW',
                 'index': 21
     }
@@ -264,6 +285,7 @@ class ParameterInfo:
                 'nominal': 0.01,
                 'optimal': None,
                 'distribution': 'uniform',
+                'precision': 3,
                 'group': 'GW',
                 'index': 22
     }
@@ -276,6 +298,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'NA',
                 'index': 23
     }
@@ -288,6 +311,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'NA',
                 'index': 24
     }
@@ -300,6 +324,7 @@ class ParameterInfo:
                 'nominal': 1.0,
                 'optimal': None,
                 'distribution': 'triangular',
+                'precision': 2,
                 'group': 'CU',
                 'index': 25
     }
