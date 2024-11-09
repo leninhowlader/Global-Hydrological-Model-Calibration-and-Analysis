@@ -1961,6 +1961,7 @@ class SimVariable(Variable):
         # set data manipulation flags to their defaults
         self.__has_aggregated = False
         self.__has_anomaly_computed = False
+        self.__has_conversion_applied = False
         # end [step-05]
 
         return True
