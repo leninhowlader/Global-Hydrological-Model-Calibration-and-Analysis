@@ -112,6 +112,9 @@ def main(argv):
                 # compute anomaly
                 succeed = var.do_anomaly_computation()
 
+                # [ ] apply conversion factor
+                var.apply_conversion_factor()
+
                 reference_predictions[var.varname] = {
                     'data': var.data_cloud.data.copy(),
                     'indices': var.data_cloud.data_indices.copy()
@@ -148,6 +151,9 @@ def main(argv):
 
             # compute anomaly
             succeed = var.do_anomaly_computation()
+
+            # [ ] apply conversion factor
+            var.apply_conversion_factor()
 
             # dump predictions
             if config.dump_simulation_timeseries:
