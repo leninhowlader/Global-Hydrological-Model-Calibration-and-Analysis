@@ -402,7 +402,7 @@ class WaterGAPSimulation:
     
     @staticmethod
     def get_start_and_end_index(solution_count):
-        global world_size, world_size
+        global world_size, world_rank
         
         x1 = solution_count % world_size
         x2 = solution_count // world_size
