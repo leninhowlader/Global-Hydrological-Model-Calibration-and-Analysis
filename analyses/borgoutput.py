@@ -45,6 +45,18 @@ class BorgOutput:
             cond = (cond & (objs[:, i] >= thresholds[i]))
 
         return np.where(cond==True)[0]
+    
+    @staticmethod
+    def index_of_best_solutions(objs:np.ndarray, nsolutions, wts=[], utopia=[]):
+        wts, utopia = np.array(wts).flatten(), np.array(utopia)
+        if utopia.size == 0: utopia = np.ones((1, objs.shape[1]))
+
+        if wts.size > 0:
+            if wts.size != objs.shape[1]:
+                wts = wts.repeat(np.ceil(objs.shape[1]/wts.size))[:objs.shape[1]]
+            objs = objs * wts
+
+        return np.argsort(np.sum((utopia - objs) ** 2, axis=1))[:nsolutions]
 
     @staticmethod
     def find_nan_objectives(objs, nanvalue=np.float64('1.79769e+308')):
