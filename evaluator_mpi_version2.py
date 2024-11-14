@@ -168,12 +168,12 @@ def main(argv):
             if config.experiment_type == 'sensitivity':
                 # compute fx
                 if config.sensitivity_as_change_in_simulation:
-                    fun = config.function_to_measure_the_change
-                    if fun in ['rmse', 'rmsd']:
+                    funname = config.function_to_measure_the_change
+                    if funname in ['rmse', 'rmsd']:
                         fun = stats.root_mean_square_error
                     else:
                         fun = stats.root_mean_square_error
-                        fun = 'rmsd'
+                        funname = 'rmsd'
 
                     data_curr = var.data_cloud.data
                     indicies_curr = var.data_cloud.data_indices
@@ -200,7 +200,7 @@ def main(argv):
                     # step: dump fx into binary file
                     fx = np.array([sample_no] + fx) # add sample number
                     f_out = '%s_%s_%d.%d.unf0'%(
-                        fun, var.varname.lower(), world_rank, ncol + 1
+                        funname, var.varname.lower(), world_rank, ncol + 1
                     )
                     f_out = os.path.join(config.output_directory, f_out)
 
