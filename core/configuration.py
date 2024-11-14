@@ -1025,8 +1025,9 @@ class Configuration:
                             config.compute_seasonal_statistics = True
                         elif key in optionnames['measure_of_sensitivity']:
                             value = value.lower()
-                            if value in ['rmsd', 'rmse','change_in_simulation']:
-                                config.sensitivity_as_change_in_prediction = True
+                            if value in ['rmsd', 'rmse']:
+                                config.sensitivity_as_change_in_simulation = True
+                                config.function_to_measure_the_change = value
 
                         # elif key in ['as_change_in_prediction']:
                         #     if value.lower() in ['true', 't', '1', 'yes', 'y']:
