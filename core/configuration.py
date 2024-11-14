@@ -283,6 +283,11 @@ class Configuration:
         'calibration_unit_stationcells': (
             'filename_calibration_unit_stationcells',
             'station_cells_of_calibration_units', 'calibration_unit_stationcells'
+        ),
+        
+        ## options related to sensitivity
+        'measure_of_sensitivity' : (
+            'measure_of_sensitivity', 'measure of sensitivity'
         )
     }
 
@@ -1018,11 +1023,16 @@ class Configuration:
                         elif key in ['seasonal_statistics_output_filename']:
                             config.seasonal_statistics_output_filename = value
                             config.compute_seasonal_statistics = True
-                        elif key in ['as_change_in_prediction']:
-                            if value.lower() in ['true', 't', '1', 'yes', 'y']:
+                        elif key in optionnames['measure_of_sensitivity']:
+                            value = value.lower()
+                            if value in ['rmsd', 'rmse','change_in_simulation']:
                                 config.sensitivity_as_change_in_prediction = True
-                            else:
-                                config.sensitivity_as_change_in_prediction = False
+
+                        # elif key in ['as_change_in_prediction']:
+                        #     if value.lower() in ['true', 't', '1', 'yes', 'y']:
+                        #         config.sensitivity_as_change_in_prediction = True
+                        #     else:
+                        #         config.sensitivity_as_change_in_prediction = False
                         elif key in ['function']:
                             fun = None
                             value = value.lower()
