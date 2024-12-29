@@ -47,7 +47,10 @@ class BorgOutput:
         return np.where(cond==True)[0]
     
     @staticmethod
-    def index_of_best_solutions(objs:np.ndarray, nsolutions, wts=[], utopia=[]):
+    def index_of_best_solutions(
+        objs:np.ndarray, nsolutions=0, wts=[], utopia=[], 
+        quantile_min=0.0, quantile_max=1.0
+    ):
         wts, utopia = np.array(wts).flatten(), np.array(utopia)
         if utopia.size == 0: utopia = np.ones((1, objs.shape[1]))
 
@@ -56,7 +59,26 @@ class BorgOutput:
                 wts = wts.repeat(np.ceil(objs.shape[1]/wts.size))[:objs.shape[1]]
             objs = objs * wts
 
-        return np.argsort(np.sum((utopia - objs) ** 2, axis=1))[:nsolutions]
+        ed = np.sum((utopia - objs) ** 2, axis=1)
+        
+        if nsolutions > 0:
+            if nsolutions > ed.shape[0]: nsolutions = ed.shape[0]
+
+            return np.argsort(ed)[:nsolutions]
+        
+        if (0.0 <= quantile_min <= 1.0) and (0.0 <= quantile_max <= 1.0):
+            if quantile_max >  quantile_min:
+                # note that lower ED stands for better solution; thus we need to
+                # invert the quantile min and max
+                qmin = 1 - quantile_max
+                qmax = 1 - quantile_min
+
+                ed_min = np.quantile(ed, qmin)
+                ed_max = np.quantile(ed, qmax)
+                ii, = np.where((ed>=ed_min)&(ed<=ed_max))
+                return ii
+
+        return np.empty(0)
 
     @staticmethod
     def find_nan_objectives(objs, nanvalue=np.float64('1.79769e+308')):
