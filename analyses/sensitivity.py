@@ -771,9 +771,11 @@ class SensitivityAnalysis:
                 threshold=0.5
         ):
             # step: check inputs
-            e = np.empty(0)
-            if type(mu) is not np.ndarray or mu.shape[0] == 0:
-                return e, []
+            mu, se = np.array(mu), np.array(se)
+            e = np.zeros((mu.shape[0],1))
+            if mu.shape[0] == 0 or mu.sum() == 0 or se.sum() == 0:
+                return e, ['selection']
+            
 
             if threshold <= 0:
                 __self__ = SensitivityAnalysis.ParameterSelection
