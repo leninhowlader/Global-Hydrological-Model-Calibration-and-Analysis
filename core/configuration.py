@@ -611,7 +611,7 @@ class Configuration:
             Parameter count for the specified problem
         """
         nparameters = 0
-        if self.poc_problem_count == 1:
+        if self.calibration_type in ['single', 'one']:
             for param in self.parameters:
                 if param.cell_level_representation:
                     for el in param.cell_list:
@@ -620,7 +620,7 @@ class Configuration:
                 else: nparameters += 1
         
         else:
-            if (self.poc_problem_count > 1 and problem_no >= 0 and
+            if (self.poc_problem_count >= 1 and problem_no >= 0 and
                 problem_no < self.poc_problem_count):
                 
                 nparameters += len(
@@ -650,7 +650,7 @@ class Configuration:
         """
         nobjectives = 0
         
-        if self.poc_problem_count == 1:
+        if self.calibration_type in ['single', 'one']:
             for var in self.obs_variables:
                 if type(var.data_cloud.data) is np.ndarray:
                     if var.data_cloud.data.ndim == 2:
@@ -665,7 +665,7 @@ class Configuration:
                     else: nobjectives += 1
                 else: nobjectives += 1
         else:
-            if (self.poc_problem_count > 1 and problem_no >= 0 and
+            if (self.poc_problem_count >= 1 and problem_no >= 0 and
                 problem_no < self.poc_problem_count):
 
                 varlist = self.multiproblem_objective_index_list[problem_no]
@@ -724,7 +724,7 @@ class Configuration:
         """
         lower, upper = [], []
 
-        if self.poc_problem_count == 1:
+        if self.calibration_type in ['single', 'one']:
             for param in self.parameters:
                 nunits = 0
                 if param.cell_level_representation:
@@ -735,7 +735,7 @@ class Configuration:
 
                 lower += [param.get_lower_bound()] * nunits
                 upper += [param.get_upper_bound()] * nunits
-        elif (self.poc_problem_count > 1 and problem_no >= 0 and
+        elif (self.poc_problem_count >= 1 and problem_no >= 0 and
               problem_no < self.poc_problem_count):
             
             indexarray = self.multiproblem_parameter_index_list[problem_no]
@@ -771,7 +771,7 @@ class Configuration:
         """
         epsilons = []
 
-        if self.poc_problem_count == 1:
+        if self.calibration_type in ['single', 'one']:
             for var in self.obs_variables:
                 if var.data_cloud.data.ndim == 2: 
                     nobjs = var.data_cloud.data.shape[1]
@@ -780,7 +780,7 @@ class Configuration:
                 else: nobjs = 1 
 
                 epsilons += [var.get_epsilon()] * nobjs
-        elif (self.poc_problem_count > 1 and problem_no >= 0 and
+        elif (self.poc_problem_count >= 1 and problem_no >= 0 and
               problem_no < self.poc_problem_count):
             
             indexlist = self.multiproblem_objective_index_list[problem_no]
