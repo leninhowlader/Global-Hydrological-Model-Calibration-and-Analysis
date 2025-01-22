@@ -208,7 +208,7 @@ class BorgConfiguration:
         # The following line is needed to load the MPI library correctly
         if libmpi_path:
             CDLL(libmpi_path, RTLD_GLOBAL)
-        else: CDLL("libmpi.so.0", RTLD_GLOBAL)
+        else: CDLL("libmpi.so", RTLD_GLOBAL)
 
         # Pass the command-line arguments to MPI_Init
         argc = c_int(len(sys.argv))
