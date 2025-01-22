@@ -1042,3 +1042,87 @@ class Upstream:
         #     return False
 
         return True
+
+    @staticmethod
+    def create_basin_shape_from_GCRC_cellnum_list(
+        filename, list_of_basins, basin_ids
+    ):
+        succeed = True
+        
+        # step-1: find geo-coordinates of each vertex of each cell of each basin
+        geopoints = []
+        for basin in list_of_basins:
+            if not type(basin) is np.ndarray: basin = np.array(basin)
+            centroids = GlobalGrid.wghm_cellnumber_to_centroid_lonlat(
+                basin
+            )[:,[1,0]] #note that latitude must be the first col of centroids
+            
+            geopoints.append(
+                GlobalGrid.cell_vertices(
+                    centroids.tolist(),degree_resolution=0.5)
+            )
+        # ... end [step]
+        
+        # step-4: create shapefile and export the file
+        
+        import shapefile as shp
+        version = int(shp.__version__[0])
+        
+        try:
+            # create shape object
+            if version == 1: shp_basin = shp.Writer(shp.POLYGON)
+            elif version == 2: shp_basin = shp.Writer(filename, shp.POLYGON)
+            else: return False
+        
+            shp_basin.autoBalance = 1
+
+            # add shape attributes
+            shp_basin.field('BASIN_ID', 'C', 40)
+            shp_basin.field('CNUM', 'N', 8)
+
+            # generate basin IDs, if not given
+            if not basin_ids: basin_ids = list(range(len(list_of_basins)))
+
+            # create shape for each basin
+            if version == 1:
+                for i in range(len(list_of_basins)):
+                    basin = list_of_basins[i]
+                    points = geopoints[i]
+
+                    basin_id = basin_ids[i]
+
+                    # add cells and their attributes to basin shape
+                    for j in range(len(basin)):
+                        cnum = basin[j]
+                        shp_basin.poly(parts=[points[j]], shapeType=shp.POLYGON)
+                        shp_basin.record(str(basin_id), cnum)
+
+            else: # version == 2
+                for i in range(len(list_of_basins)):
+                    basin = list_of_basins[i]
+                    points = geopoints[i]
+
+                    basin_id = basin_ids[i]
+
+                    # add cells and their attributes to basin shape
+                    for j in range(len(basin)):
+                        cnum = basin[j]
+                        shp_basin.poly([points[j]])
+                        shp_basin.record(basin_id, cnum)
+
+            # save shapefile
+            if version == 1: shp_basin.save(filename)
+            else: shp_basin.close()
+
+            # create a projection file
+            ndx = filename.lower().find('.shp')
+            if ndx >= 0: filename = filename[:ndx]
+            filename += '.prj'
+            f = open(filename, 'w')
+            prj_string = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]'
+            f.write(prj_string)
+            f.close()
+        except: succeed = False
+        # ... end [step-4]
+        
+        return succeed
