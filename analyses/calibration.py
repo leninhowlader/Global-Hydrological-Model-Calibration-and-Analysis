@@ -804,7 +804,9 @@ class BorgMOEA:
                 
             succeed = True
         
-        elif poc_config.poc_problem_count > 1:
+        # calibration_type = 'multiple'
+        # elif poc_config.poc_problem_count > 1:
+        else:
             results = Borg.solveMPI(
                 problem=None,
                 islands=1,
