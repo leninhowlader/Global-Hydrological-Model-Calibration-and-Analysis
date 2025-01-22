@@ -106,7 +106,7 @@ class Calibration:
         ## [step-x]: update parameters
         Calibration.update_parameters(vars)
         
-        if config.poc_problem_count == 1:
+        if config.calibration_type in ['single', 'one']:
             messages.append('\tParameter values: ')
             for i in range(nvars):
                 param = Calibration.__config.parameters[i]
@@ -264,7 +264,7 @@ class Calibration:
         if len(temp) == nobjs:
             for i in range(nobjs): objs[i] = temp[i]
         
-        if config.poc_problem_count == 1:
+        if config.calibration_type in ['single', 'one']:
             messages.append(
                 '\n\tObjectives: %s'%(
                     ','.join(['%0.2f'%temp[i] for i in range(nobjs)])
@@ -280,7 +280,7 @@ class Calibration:
         if len(temp) == nconts:
             for i in range(nconts): conts[i] = temp[i]
         
-        if config.poc_problem_count == 1:
+        if config.calibration_type in ['single', 'one']:
             if nconts == 0: messages.append('\tConstraints: NA')
             else: 
                 messages.append(
