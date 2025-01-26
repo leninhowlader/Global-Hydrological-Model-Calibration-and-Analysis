@@ -372,11 +372,11 @@ class Calibration:
                 (obs.ndim == 1 or obs.shape[1] == 1)):
                 # this is the usual case where we would have one observation 
                 # time-series to be compared with only one simulation series
-
+                
                 obs = obs.flatten()
                 sim = sim.flatten()
                 if use_uncertainty: 
-                    lim1, lim2 = lb, ub
+                    lim1, lim2 = lb.flatten(), ub.flatten()
 
                 f = stats.objective_function(
                         fun=fun, 
@@ -397,11 +397,12 @@ class Calibration:
                 # note that in this case simulation data array must not contain
                 # more than one time-series (e.g., time-series for each cell in
                 # a basin)    
-
+                
                 sim = sim.flatten()
                 for i in range(obs.shape[1]):
                     o = obs[:, i].flatten()
-                    if use_uncertainty: lim1, lim2 = lb[:, i], ub[:, i]
+                    if use_uncertainty: 
+                        lim1, lim2 = lb[:, i].flatten(), ub[:, i].flatten()
 
                     f = stats.objective_function(
                         fun=fun, 
@@ -418,11 +419,13 @@ class Calibration:
                 # say for each cell or for multiple basins, this case will apply.
                 # sim must contain simulation values for corresponding cells or
                 # basins
+                
                 for i in range(obs.shape[1]):
                     o = obs[:, i].flatten()
                     s = sim[:, i].flatten()
                     
-                    if use_uncertainty: lim1, lim2 = lb[:, i], ub[:, i]
+                    if use_uncertainty: 
+                        lim1, lim2 = lb[:, i].flatten(), ub[:, i].flatten()
 
                     f = stats.objective_function(
                         fun=fun, sim=s, obs=o, lb=lim1, ub=lim2
