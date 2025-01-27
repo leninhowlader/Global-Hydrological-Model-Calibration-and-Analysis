@@ -702,7 +702,7 @@ class BorgMOEA:
             return
         
         print('Problem definition:', file=out)
-        if BorgMOEA.__nproblems == 1:
+        if poc_config.calibration_type in ['single', 'one']:
             line = '\tModel parameter(s):'.ljust(56) + 'Min'.ljust(10) + 'Max'.ljust(10)
             print(line, file=out)
             
@@ -733,7 +733,9 @@ class BorgMOEA:
             
             n = poc_config.get_constraints_count()
             print('\tTotal number of constraints: %d'%n, file=out)
-        elif BorgMOEA.__nproblems > 1:
+        
+        # if poc_config.calibration_type in ['multiple', 'many']:
+        else:
             messages = '\t(summary info)\n'
             messages += '\tthis is a multi-problem calibration.\n'
             messages += '\ttotal number of problems: %d\n'%BorgMOEA.__nproblems
