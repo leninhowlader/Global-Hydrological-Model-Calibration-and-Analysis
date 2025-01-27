@@ -41,12 +41,12 @@ class Calibration:
     def set_calibration_configurations(config:Configuration):
         Calibration.__config = config
 
-        nprobs = config.poc_problem_count
-        if nprobs == 1:
+        if config.calibration_type in ['single', 'one']:
             Calibration.__nvars = config.get_parameter_count()
             Calibration.__nobjs = config.get_objective_count()
             Calibration.__nconts = config.get_constraints_count()
         else:
+            nprobs = config.poc_problem_count
             Calibration.__nvars = np.sum(
                 [config.get_parameter_count(i) for i in range(nprobs)]
             )
@@ -58,6 +58,7 @@ class Calibration:
             Calibration.__nconts = np.sum(
                 [config.get_constraints_count(i) for i in range(nprobs)]
             )
+        #
 
     @staticmethod
     def is_okay():
