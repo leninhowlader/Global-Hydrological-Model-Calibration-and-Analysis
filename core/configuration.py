@@ -629,6 +629,11 @@ class Configuration:
                 # Note that cell level representation is not implemented for
                 # multi-problem calibration case
             
+            # else return total number of parameters for all problems
+            else:
+                for i in range(self.poc_problem_count):
+                    nparameters +=len(self.multiproblem_parameter_index_list[i])
+            
         return nparameters
             
 
