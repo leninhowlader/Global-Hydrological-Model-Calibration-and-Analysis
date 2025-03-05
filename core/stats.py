@@ -487,6 +487,11 @@ class stats:
         if reference_means.shape[0] != ensemble.shape[0]:
             reference_means = np.nanmean(ensemble, axis=0)[:,np.newaxis]
             
+
+            # if reference mean become is zero, reference mean will be ignored
+            # by setting values to one. 
+            if reference_means.round(5).sum() == 0:
+                reference_means = np.ones(ensemble.shape[0])[:,np.newaxis]
         
         mins = ensemble.min(axis=1)
         maxs = ensemble.max(axis=1)
