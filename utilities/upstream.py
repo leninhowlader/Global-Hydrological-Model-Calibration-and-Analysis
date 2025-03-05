@@ -474,6 +474,60 @@ class Upstream:
         return super_basin
 
     @staticmethod
+    def find_upstream_basin_chains(outlets, downstream_upstream_dict={}):
+        '''
+        
+        Parameters:
+        :param outlets: list of tuples (of row and column)
+        :param downstream_upstream_dict: dict (of downstream-basin and upstream-basin structure)
+        '''
+
+        def find_chain(outlet, downup_dict):
+            if outlet in downup_dict.keys():
+                temp = [outlet]
+                for ol in downup_dict[outlet]:
+                    temp += find_chain(ol, downup_dict)
+                return temp
+            else: return [outlet]
+        
+        if not downstream_upstream_dict: 
+            downstream_upstream_dict = Upstream.find_super_basin(outlets)
+        
+        upstream_basin_chains = OrderedDict()
+        for ol in outlets:
+            sub_outlets = []
+            for k in upstream_basin_chains.keys(): 
+                sub_outlets += upstream_basin_chains[k]
+            
+            if ol not in sub_outlets:
+                upstream_basin_chains[ol] \
+                = find_chain(ol, downstream_upstream_dict)
+        
+        return upstream_basin_chains
+    
+    @staticmethod
+    def find_downstream_basin_chains(outlets, downstream_upstream_dict={}):
+        '''
+        
+        Parameters:
+        :param outlets: list of tuples (of row and column)
+        :param downstream_upstream_dict: dict (of downstream-basin and upstream-basin structure)
+        '''
+        
+        def downstream_chain(outlet, downstream_upstream_dict):
+            for k in downstream_upstream_dict.keys(): 
+                if outlet in downstream_upstream_dict[k]:
+                    return [k] + downstream_chain(k, downstream_upstream_dict)
+            return []
+        
+        
+        downstream_chains = OrderedDict()
+        for ol in outlets:
+            downstream_chains[ol] = [ol] + downstream_chain(ol, downstream_upstream_dict)
+        
+        return downstream_chains
+    
+    @staticmethod
     def compute_basin_extent(basin_outlets, remove_overlapping_cells=False):
         '''
         This method find the upstream basin coverage (i.e., cells) from each given outlet points. The outlet points are
@@ -974,16 +1028,24 @@ class Upstream:
     @staticmethod
     def create_shape_with_data(
         filename_output_shape, 
-        basin_id, 
-        data, 
         wghm_cnum_list, 
+        basin_ids, 
+        data:np.ndarray, 
+        colnames=[],
         model_grid_resolution=0.5
     ):
 
         # step: check input parameters
         if not filename_output_shape: return False
-        if not (len(wghm_cnum_list) == len(data)): return False
-        if basin_id <= 0: return False
+        ncells = len(wghm_cnum_list)
+        if len(data) != ncells: return False
+        if not basin_ids:
+            basin_ids = [1] * ncells
+        elif len(basin_ids) != ncells: return False
+
+        data = np.array(data)
+        if data.ndim == 1: data = data[:, np.newaxis]
+        ncol = data.shape[1]
 
         # step: find cell centroid for each cell in each basin
         geopoints, centroids = [], []
@@ -1009,18 +1071,23 @@ class Upstream:
             # add fields
             shp_basin.field('BASIN', 'N', 8)
             shp_basin.field('CNUM', 'N', 8)
-            shp_basin.field('Value', 'N', decimal=10)
+            if colnames and len(colnames) == ncol:
+                for i in range(ncol):
+                    shp_basin.field(colnames[i], 'N', decimal=15)
+            else:
+                for i in range(ncol):
+                    shp_basin.field('Value_%02d'%i, 'N', decimal=15)
 
             # create shape for each basin
             if version == 1:
                 for j in range(len(wghm_cnum_list)):
-                    record_row = [basin_id, wghm_cnum_list[j], data[j]]
+                    record_row = [basin_ids[j], wghm_cnum_list[j]] + [x for x in data[j]]
                     shp_basin.poly(parts=[geopoints[j]], shapeType=shp.POLYGON)
                     shp_basin.record(*record_row)
                 
             else: # version == 2
                 for j in range(len(wghm_cnum_list)):
-                    record_row = [basin_id, wghm_cnum_list[j], data[j]]
+                    record_row = [basin_ids[j], wghm_cnum_list[j]] + [x for x in data[j]]
                     shp_basin.poly([geopoints[j]])
                     shp_basin.record(*record_row)
 
