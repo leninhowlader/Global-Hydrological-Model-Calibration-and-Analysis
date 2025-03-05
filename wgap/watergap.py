@@ -333,94 +333,93 @@ class WaterGAP:
         return True
 
     @staticmethod
-    def update_parameter_file(parameter_list, filename):
+    def update_parameter_file(
+        parameter_list, filename, update_initial_paramset=False
+    ):
+        
+
+        if not parameter_list: return False
+        
+        # [step-01] load json parameterset if not preloaded
+        if not WaterGAP.json_paramset:
+            parameter_filename = WaterGAP.get_json_parameter_filename()
+            if parameter_filename:
+                WaterGAP.read_json_parameter_file(parameter_filename)
+        if not WaterGAP.json_paramset: return False
+        # end [step-01]
+
+        # [step-02] update parameter values
         succeed = True
+        param_set = deepcopy(WaterGAP.json_paramset)
 
-        if not (parameter_list and filename): succeed = False
-        else:
-            if not WaterGAP.json_paramset:
-                parameter_filename = WaterGAP.get_json_parameter_filename()
-                if parameter_filename:
-                    WaterGAP.read_json_parameter_file(parameter_filename)
+        for param in parameter_list:
+            try:
+                param_name = param.parameter_name
+                value_curr = param_set[param_name]
+                
+                value_new = param.get_parameter_value()
+                if type(value_curr) is list:
+                    # new code
+                    cell_list = param.get_cell_list()
+                    
+                    if type(value_new) is list:
+                        n = len(cell_list)
 
-            if not WaterGAP.json_paramset: succeed = False
-            else:
-                param_set = deepcopy(WaterGAP.json_paramset)
-
-                for param in parameter_list:
-                    try:
-                        param_name = param.parameter_name
-                        value_curr = param_set[param_name]
+                        if len(value_new) != n:
+                            succeed = False
+                            break
                         
-                        value_new = param.get_parameter_value()
-                        if type(value_curr) is list:
-                            # new code
-                            cell_list = param.get_cell_list()
-                            
-                            if type(value_new) is list:
-                                n = len(cell_list)
+                        for i in range(n):
+                            cell = cell_list[i]
+                            value = value_new[i]
 
-                                if len(value_new) != n:
-                                    succeed = False
-                                    break
-                                
-                                for i in range(n):
-                                    cell = cell_list[i]
-                                    value = value_new[i]
-
-                                    if type(cell) is list:
-                                        for c in cell:
-                                            value_curr[c-1] = value
-                                    else: value_curr[cell - 1] = value
-                            else:
-                                temp = []
-                                for cells in cell_list:
-                                    if type(cells) is list: temp += cells
-                                    else: temp.append(cells)
-                                
-                                if temp:
-                                    for c in temp: 
-                                        value_curr[c - 1] = value_new
-                                else:
-                                    for i in range(len(value_curr)):
-                                        value_curr[i] = value_new
-                            # end of new code segment
-
-                            # # old code
-                            # if (param.has_multiple_cells() 
-                            #     and param.get_single_value_flag()):
-                            #     clist = param.get_cell_list()
-                            #     if clist:
-                            #         temp = []
-                            #         for c in clist:
-                            #             if type(c) is list: temp+= c
-                            #             else: temp.append(c)
-                            #         clist = temp
-                            #     for c in clist: 
-                            #         value_curr[c-1] = value_new
-                            # else:
-                            #     for i in range(len(value_curr)): 
-                            #         value_curr[i] = value_new
-
+                            if type(cell) is list:
+                                for c in cell:
+                                    value_curr[c-1] = value
+                            else: value_curr[cell - 1] = value
+                    else:
+                        temp = []
+                        for cells in cell_list:
+                            if type(cells) is list: temp += cells
+                            else: temp.append(cells)
+                        
+                        if temp:
+                            for c in temp: 
+                                value_curr[c - 1] = value_new
                         else:
-                            if type(value_new) is list:
-                                succeed = False
-                                break 
-                            
-                            param_set[param_name] = value_new
-                    except:
-                        succeed = False
-                        break
+                            for i in range(len(value_curr)):
+                                value_curr[i] = value_new
+                    # end of new code segment
 
-                if succeed:
-                    f = None
-                    try:
-                        f = open(filename, 'w')
-                        json.dump(param_set, f)
-                    except: succeed = False
-                    finally:
-                        try: f.close()
-                        except: pass
+
+                else:
+                    if type(value_new) is list:
+                        succeed = False
+                        break 
+                    
+                    param_set[param_name] = value_new
+            except:
+                succeed = False
+                break
+        # end [step-02]
+
+        # [step-03] write parameterset into new json parameter file
+        if succeed and filename:
+            f = None
+            try:
+                f = open(filename, 'w')
+                json.dump(param_set, f)
+            except: succeed = False
+            finally:
+                try: f.close()
+                except: pass
+        # end [step-03]
+
+        # [step-04] update the initial parameterset
+        if succeed and update_initial_paramset:
+            WaterGAP.json_paramset = param_set
+        # end [step-04]
+
         return succeed
 
     @staticmethod
