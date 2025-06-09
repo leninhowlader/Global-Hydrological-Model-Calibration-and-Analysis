@@ -234,9 +234,13 @@ class WaterGAPSimulation:
             WaterGAP.home_directory, WaterGAP.model_config.output_directory
         )
         
-        sub_directory = '%s_cdaunit_%03d'%(
-            os.path.split(path_experiment_home)[-1], calunit_index
-        )
+        # if the path has an ending of '/', the splitting results an empty 
+        # string as the second element. In such case, a second split operation
+        # is neccessary. 
+        str1, str2 = os.path.split(path_experiment_home)
+        if str2.strip() == '': _, str2 = os.path.split(str1)
+        sub_directory = '%s_cdaunit_%03d'%(str2, calunit_index)
+
         dump_directory = os.path.join(
             path_experiment_home, path_output, sub_directory
         )
