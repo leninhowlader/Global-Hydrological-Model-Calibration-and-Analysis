@@ -297,10 +297,14 @@ class WaterGAPSimulation:
         nparams = len(param_indices_curr)
         
         # [ ] read parameter values in the solution
+        s1, s2 = os.path.split(path_experiment_home)
+        if s2.strip()=='': _, s2 = os.path.split(s1)
+        identifier_experiment = s2
+
         f = os.path.join(
             path_experiment_home, 
             '%s_%02d'%(config.output_directory, repeat_index+1), 
-            'results_%02d.csv'%calunit_index
+            'results_%s_%02d.csv'%(identifier_experiment, calunit_index)
         )
         
         rr = BorgOutput.read_borg_output(f)
