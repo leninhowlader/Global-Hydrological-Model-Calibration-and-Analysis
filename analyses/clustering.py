@@ -46,6 +46,7 @@ class Clustering:
         ax = fig.add_subplot(1, 1, 1)
         Clustering.__plot_dendrogram__(model, truncate_mode='level', p=nlevel, ax=ax)
 
+        return fig
 
 
     @staticmethod
