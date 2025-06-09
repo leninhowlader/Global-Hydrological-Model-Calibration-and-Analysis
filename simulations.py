@@ -23,7 +23,7 @@ calunit_count = 0
 repeat_count = 0
 filename_config = ''
 filename_solution_table = 'solution_table.csv'
-all_stations_filename = 'STAIONS_5TESTCU.DAT'
+all_stations_filename = ''
 world_size, world_rank = 0, -1
 path_output = 'simulations'
 run_only_recomputed_pareto_solutions = True
@@ -441,6 +441,7 @@ def run_simulations(argv):
     global repeat_count, filename_solution_table, path_output
     global world_size, world_rank
     global run_only_recomputed_pareto_solutions, path_recomputed_pareto_front
+    global all_stations_filename
     
     # [ ] read in and process the command line arguments
     try:
@@ -466,6 +467,8 @@ def run_simulations(argv):
     
     if not config.is_okay(skip_observation=True) or not WaterGAP.is_okay(): 
         return 100
+    
+    all_stations_filename = WaterGAP.station_filename
     # [.]
 
     # [ ] create directory to save variable time-series
