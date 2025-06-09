@@ -26,6 +26,8 @@ filename_solution_table = 'solution_table.csv'
 all_stations_filename = 'STAIONS_5TESTCU.DAT'
 world_size, world_rank = 0, -1
 path_output = 'simulations'
+run_only_recomputed_pareto_solutions = True
+path_recomputed_pareto_front = 'pareto_solutions_recomputed'
 
 class WaterGAPSimulation:
     @staticmethod
@@ -75,7 +77,10 @@ class WaterGAPSimulation:
     @staticmethod
     def create_solution_id(cuindex, repeatindex, solindex):
         solution_id = int('1%03d%02d%05d'%(cuindex, repeatindex, solindex))
-        
+        # note that the solution id has been assigned to an integer number,
+        # intentionally because this solution id will be stored in the 
+        # simulation summary binary files.
+        #  
         return solution_id
     
     @staticmethod
@@ -229,7 +234,13 @@ class WaterGAPSimulation:
             WaterGAP.home_directory, WaterGAP.model_config.output_directory
         )
         
-        dump_directory = os.path.join(path_experiment_home, path_output)
+        sub_directory = '%s_cdaunit_%03d'%(
+            os.path.split(path_experiment_home)[-1], calunit_index
+        )
+        dump_directory = os.path.join(
+            path_experiment_home, path_output, sub_directory
+        )
+        if not os.path.exists(dump_directory): os.mkdir(dump_directory, 0o777)
         
         for var in var_arr:
             # [ ] read model output
@@ -425,6 +436,7 @@ def run_simulations(argv):
     global config, path_experiment_home, filename_config, calunit_count
     global repeat_count, filename_solution_table, path_output
     global world_size, world_rank
+    global run_only_recomputed_pareto_solutions, path_recomputed_pareto_front
     
     # [ ] read in and process the command line arguments
     try:
