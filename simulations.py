@@ -295,7 +295,7 @@ class WaterGAPSimulation:
         # [ ] read parameter values in the solution
         f = os.path.join(
             path_experiment_home, 
-            '%s_%02d'%(config.output_directory, repeat_index+1), 
+            '%s_repeat_%02d'%(config.output_directory, repeat_index+1), 
             'results%s_%02d.csv'%(
                 '_%s'%experiment_name if experiment_name else '', 
                 calunit_index
