@@ -19,6 +19,7 @@ from utilities.fileio import FileInputOutput as io
 
 config = None
 path_experiment_home = ''
+experiment_name = ''
 calunit_count = 0
 repeat_count = 0
 filename_config = ''
@@ -216,7 +217,7 @@ class WaterGAPSimulation:
     
     @staticmethod
     def read_and_dump_watergap_output(var_arr, solution_id:int):
-        global world_rank, path_experiment_home, path_output
+        global world_rank, path_experiment_home, path_output, experiment_name
         
         succeed = True
         
@@ -234,12 +235,7 @@ class WaterGAPSimulation:
             WaterGAP.home_directory, WaterGAP.model_config.output_directory
         )
         
-        # if the path has an ending of '/', the splitting results an empty 
-        # string as the second element. In such case, a second split operation
-        # is neccessary. 
-        str1, str2 = os.path.split(path_experiment_home)
-        if str2.strip() == '': _, str2 = os.path.split(str1)
-        sub_directory = '%s_cdaunit_%03d'%(str2, calunit_index)
+        sub_directory = '%s_cdaunit_%03d'%(experiment_name, calunit_index)
 
         dump_directory = os.path.join(
             path_experiment_home, path_output, sub_directory
@@ -277,7 +273,7 @@ class WaterGAPSimulation:
     
     @staticmethod
     def get_parameter_copies(calunit_index, repeat_index, solindex):
-        global config, path_experiment_home
+        global config, path_experiment_home, experiment_name
         
         # [ ] listing parameter indices in the earlier basins which is used to 
         # determine index of the cell list for the current basin. Note that not 
@@ -297,14 +293,13 @@ class WaterGAPSimulation:
         nparams = len(param_indices_curr)
         
         # [ ] read parameter values in the solution
-        s1, s2 = os.path.split(path_experiment_home)
-        if s2.strip()=='': _, s2 = os.path.split(s1)
-        identifier_experiment = s2
-
         f = os.path.join(
             path_experiment_home, 
             '%s_%02d'%(config.output_directory, repeat_index+1), 
-            'results_%s_%02d.csv'%(identifier_experiment, calunit_index)
+            'results%s_%02d.csv'%(
+                '_%s'%experiment_name if experiment_name else '', 
+                calunit_index
+            )
         )
         
         rr = BorgOutput.read_borg_output(f)
@@ -446,13 +441,15 @@ def run_simulations(argv):
     global world_size, world_rank
     global run_only_recomputed_pareto_solutions, path_recomputed_pareto_front
     global all_stations_filename
+    global experiment_name
     
     # [ ] read in and process the command line arguments
     try:
-        path_experiment_home = argv[1]
-        filename_config = argv[2]
-        repeat_count = int(argv[3])
-        if len(argv[:-2]) == 5: path_output = argv[4]
+        experiment_name = argv[1]
+        path_experiment_home = argv[2]
+        filename_config = argv[3]
+        repeat_count = int(argv[4])
+        if len(argv[:-2]) == 6: path_output = argv[5]
         world_size = int(argv[-2])
         world_rank = int(argv[-1])
     except: return -100
