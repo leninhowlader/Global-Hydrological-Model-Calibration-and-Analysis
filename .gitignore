@@ -1,6 +1,7 @@
 *
 !.gitignore
 !LICENSE.txt
+!README.md
 !algorithm/*.py
 !analyses/*.py
 !core/*.py
