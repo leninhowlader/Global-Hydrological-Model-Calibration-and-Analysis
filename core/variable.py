@@ -1178,7 +1178,14 @@ class SimVariable(Variable):
         self.__has_conversion_applied = True
 
         self.__allow_insertion_of_cellnum_list = True
-        
+    
+    @property
+    def period_of_reference_mean(self): return self.__reference_period_for_mean
+    @period_of_reference_mean.setter
+    def period_of_reference_mean(self, start_year, end_year): 
+        self.__reference_period_for_mean = (start_year, end_year)
+
+
     @property
     def conversion_factor(self): return self.__conversion_factor
     @conversion_factor.setter
