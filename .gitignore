@@ -1,5 +1,6 @@
 *
 !.gitignore
+!LICENSE.txt
 !algorithm/*.py
 !analyses/*.py
 !core/*.py
